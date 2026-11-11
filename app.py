@@ -83,10 +83,15 @@ def login():
         return redirect(url_for('index'))
     
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
+        raw_user = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         
-        user = User.query.filter_by(username=username).first()
+        # Match case-insensitively on username, matric_no, or email
+        user = User.query.filter(
+            (db.func.lower(User.username) == raw_user.lower()) |
+            (db.func.lower(User.matric_no) == raw_user.lower()) |
+            (db.func.lower(User.email) == raw_user.lower())
+        ).first()
         
         if user and user.check_password(password):
             login_user(user, remember=True)
@@ -100,9 +105,50 @@ def login():
                 return redirect(url_for('admin_dashboard'))
             return redirect(url_for('student_dashboard'))
         
-        flash('Invalid username or password.', 'danger')
+        flash('Invalid Matric Number (or email) or password.', 'danger')
     
     return render_template('login.html')
+
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        identifier = request.form.get('identifier', '').strip()
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        if not identifier or not new_password:
+            flash('Please provide your Matric Number (or Email) and a new password.', 'danger')
+            return redirect(url_for('reset_password'))
+            
+        if new_password != confirm_password:
+            flash('Passwords do not match. Please try again.', 'danger')
+            return redirect(url_for('reset_password'))
+            
+        if len(new_password) < 4:
+            flash('Password must be at least 4 characters long.', 'danger')
+            return redirect(url_for('reset_password'))
+            
+        user = User.query.filter(
+            (db.func.lower(User.matric_no) == identifier.lower()) |
+            (db.func.lower(User.username) == identifier.lower()) |
+            (db.func.lower(User.email) == identifier.lower())
+        ).first()
+        
+        if not user:
+            flash('No account found with that Matric Number or Email.', 'danger')
+            return redirect(url_for('reset_password'))
+            
+        user.set_password(new_password)
+        db.session.commit()
+        
+        flash('Password successfully reset! You can now log in with your new password.', 'success')
+        return redirect(url_for('login'))
+        
+    return render_template('reset_password.html')
 
 
 @app.route('/staff/login', methods=['GET', 'POST'])
@@ -985,8 +1031,11 @@ def create_sample_data():
     print("✓ Sample NOUN exams and questions created")
 
 
-if __name__ == '__main__':
+with app.app_context():
     init_db()
+
+
+if __name__ == '__main__':
     print("\n🚀 NOUN Exam Mock Platform is running!")
     print("   Open: http://127.0.0.1:5000")
     print("\nDefault accounts:")
