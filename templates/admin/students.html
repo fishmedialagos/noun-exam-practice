@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Students - NOUN Exam Mock{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Registered Students</h2>
+
+{% if students %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Faculty</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>{{ s.full_name or '-' }}</td>
+                    <td>{{ s.username }}</td>
+                    <td>{{ s.email }}</td>
+                    <td><small>{{ s.faculty or '-' }}</small></td>
+                    <td>{{ s.created_at.strftime('%d %b %Y') if s.created_at else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        No students have registered yet.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

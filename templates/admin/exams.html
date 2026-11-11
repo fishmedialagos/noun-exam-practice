@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Exams - NOUN Exam Mock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">All Exams</h2>
+    <a href="{{ url_for('create_exam') }}" class="btn btn-noun">
+        <i class="bi bi-plus-lg me-1"></i>Create Exam
+    </a>
+</div>
+
+{% if exams %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Course</th>
+                    <th>Units</th>
+                    <th>Faculty</th>
+                    <th>Questions</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in exams %}
+                <tr>
+                    <td>
+                        <strong>{{ exam.title[:40] }}{% if exam.title|length > 40 %}...{% endif %}</strong>
+                    </td>
+                    <td>{{ exam.course_code or '-' }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ exam.credit_units or 2 }}U</span></td>
+                    <td><small>{{ exam.faculty or '-' }}</small></td>
+                    <td>{{ exam.total_questions }}</td>
+                    <td>{{ exam.duration_minutes }}m</td>
+                    <td>
+                        {% if exam.is_published %}
+                        <span class="badge bg-success">Published</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Draft</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('manage_questions', exam_id=exam.id) }}" class="btn btn-outline-primary" title="Questions">
+                                <i class="bi bi-list-ul"></i>
+                            </a>
+                            <a href="{{ url_for('edit_exam', exam_id=exam.id) }}" class="btn btn-outline-secondary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if current_user.is_admin() %}
+                            <form method="POST" action="{{ url_for('delete_exam', exam_id=exam.id) }}" class="d-inline" onsubmit="return confirm('Delete this exam and all its questions?')">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <p class="text-muted">No exams created yet.</p>
+        <a href="{{ url_for('create_exam') }}" class="btn btn-noun">Create First Exam</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

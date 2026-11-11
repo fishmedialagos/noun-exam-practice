@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - NOUN Exam Mock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Admin Dashboard</h2>
+    <a href="{{ url_for('create_exam') }}" class="btn btn-noun">
+        <i class="bi bi-plus-lg me-1"></i>Create New Exam
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <i class="bi bi-journal-text display-5 text-success"></i>
+                <h3 class="mt-2 mb-0">{{ total_exams }}</h3>
+                <p class="text-muted mb-0">Total Exams</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <i class="bi bi-people display-5 text-primary"></i>
+                <h3 class="mt-2 mb-0">{{ total_students }}</h3>
+                <p class="text-muted mb-0">Registered Students</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <i class="bi bi-pencil-square display-5 text-warning"></i>
+                <h3 class="mt-2 mb-0">{{ total_attempts }}</h3>
+                <p class="text-muted mb-0">Exam Attempts</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between">
+        <span>Recent Exams</span>
+        <a href="{{ url_for('admin_exams') }}" class="btn btn-sm btn-outline-success">Manage All</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_exams %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Course</th>
+                        <th>Questions</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exam in recent_exams %}
+                    <tr>
+                        <td>{{ exam.title[:45] }}{% if exam.title|length > 45 %}...{% endif %}</td>
+                        <td>{{ exam.course_code or '-' }}</td>
+                        <td>{{ exam.total_questions }}</td>
+                        <td>{{ exam.duration_minutes }} min</td>
+                        <td>
+                            {% if exam.is_published %}
+                            <span class="badge bg-success">Published</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('manage_questions', exam_id=exam.id) }}" class="btn btn-sm btn-outline-primary">
+                                Questions
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">No exams created yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

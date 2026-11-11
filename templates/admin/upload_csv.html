@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Questions - {{ exam.title }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin_exams') }}">Exams</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('manage_questions', exam_id=exam.id) }}">Questions</a></li>
+        <li class="breadcrumb-item active">Upload CSV</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">Bulk Upload Questions (CSV)</div>
+            <div class="card-body">
+                <p>Upload a CSV file to add many questions at once to <strong>{{ exam.title }}</strong>.</p>
+                
+                <div class="alert alert-info">
+                    <strong>CSV Format Required:</strong>
+                    <pre class="mb-0 mt-2 small">type,question,option_a,option_b,option_c,option_d,correct,explanation
+mcq,What is the capital of Nigeria?,Lagos,Abuja,Kano,Port Harcourt,B,Abuja is the capital.
+fill,The full meaning of CPU is __________.,,,,Central Processing Unit,CPU means Central Processing Unit</pre>
+                </div>
+
+                <ul class="small">
+                    <li><code>type</code> = <code>mcq</code> or <code>fill</code></li>
+                    <li>For <strong>mcq</strong>: fill option_a to option_d and put A/B/C/D in <code>correct</code></li>
+                    <li>For <strong>fill</strong>: leave options empty and put the answer text in <code>correct</code></li>
+                    <li><code>explanation</code> is optional</li>
+                </ul>
+
+                <form method="POST" enctype="multipart/form-data" class="mt-4">
+                    <div class="mb-3">
+                        <label class="form-label">Select CSV File</label>
+                        <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-noun">
+                        <i class="bi bi-upload me-1"></i>Upload & Import Questions
+                    </button>
+                    <a href="{{ url_for('manage_questions', exam_id=exam.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6>Download Sample CSV</h6>
+                <p class="small text-muted">Use this template to prepare your questions in Excel, then save as CSV.</p>
+                <a href="{{ url_for('download_sample_csv') }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-download me-1"></i>Download Sample CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

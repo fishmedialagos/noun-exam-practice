@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NOUN Exam Mock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">Hello, {{ current_user.full_name or current_user.username }}!</h2>
+        <p class="text-muted mb-0">Ready to practice today?</p>
+    </div>
+    <a href="{{ url_for('exam_list') }}" class="btn btn-noun">
+        <i class="bi bi-search me-1"></i>Browse Exams
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-journal-check display-5 text-success"></i>
+                <h3 class="mt-2 mb-0">{{ exams|length }}</h3>
+                <p class="text-muted mb-0">Available Exams</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-pencil-square display-5 text-primary"></i>
+                <h3 class="mt-2 mb-0">{{ total_attempts }}</h3>
+                <p class="text-muted mb-0">Exams Taken</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-trophy display-5 text-warning"></i>
+                <h3 class="mt-2 mb-0">{{ avg_score }}%</h3>
+                <p class="text-muted mb-0">Average Score</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Available Mock Exams</span>
+                <a href="{{ url_for('exam_list') }}" class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if exams %}
+                <div class="list-group list-group-flush">
+                    {% for exam in exams[:5] %}
+                    <a href="{{ url_for('exam_detail', exam_id=exam.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-1">{{ exam.title }}</h6>
+                                <small class="text-muted">
+                                    {% if exam.course_code %}<span class="badge bg-secondary me-1">{{ exam.course_code }}</span>{% endif %}
+                                    {{ exam.total_questions }} questions · {{ exam.duration_minutes }} mins
+                                </small>
+                            </div>
+                            <i class="bi bi-chevron-right align-self-center"></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">No exams available yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-5 mb-4">
+        <div class="card">
+            <div class="card-header">Recent Results</div>
+            <div class="card-body p-0">
+                {% if recent_attempts %}
+                <div class="list-group list-group-flush">
+                    {% for attempt in recent_attempts %}
+                    <a href="{{ url_for('view_result', attempt_id=attempt.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ attempt.exam.title[:40] }}{% if attempt.exam.title|length > 40 %}...{% endif %}</h6>
+                                <small class="text-muted">{{ attempt.completed_at.strftime('%d %b %Y, %H:%M') if attempt.completed_at else '' }}</small>
+                            </div>
+                            <span class="badge badge-score {% if attempt.percentage >= 70 %}bg-success{% elif attempt.percentage >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ attempt.percentage }}%
+                            </span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">You haven't taken any exam yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - NOUN Exam Mock Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-banner {
+        background: linear-gradient(135deg, rgba(0, 77, 38, 0.96), rgba(0, 102, 51, 0.90));
+        border-radius: 20px;
+        color: white;
+        padding: 3.5rem 2.5rem;
+        box-shadow: 0 15px 35px rgba(0, 102, 51, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+    .quote-badge {
+        display: inline-block;
+        background: rgba(201, 162, 39, 0.25);
+        border: 1px solid #C9A227;
+        color: #ffde59;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        padding: 6px 18px;
+        border-radius: 50px;
+        backdrop-filter: blur(4px);
+    }
+    .hero-headline {
+        font-size: 2.75rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    .hero-img-card {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        transition: transform 0.3s ease;
+    }
+    .hero-img-card:hover {
+        transform: scale(1.02);
+    }
+    .hero-img-card img {
+        width: 100%;
+        height: 100%;
+        max-height: 380px;
+        object-fit: cover;
+        display: block;
+    }
+    .feature-card {
+        background: white;
+        border-radius: 14px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        transition: transform 0.2s ease;
+        height: 100%;
+    }
+    .feature-card:hover {
+        transform: translateY(-4px);
+    }
+    .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #006633;
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-banner my-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <div class="mb-3">
+                <span class="quote-badge">
+                    <i class="bi bi-lightning-charge-fill me-1"></i>Study, Focus, Achieve — NOW OR NEVER
+                </span>
+            </div>
+            <h1 class="hero-headline mb-3">
+                Master Your NOUN Exams with Confidence.
+            </h1>
+            <p class="lead mb-4 text-light opacity-90">
+                Practice with real-style timed mock exams, get instant scoring, review detailed explanations, and build confidence before your real exams.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg px-4 py-3 fw-bold text-dark shadow">
+                    <i class="bi bi-person-plus-fill me-2"></i>Register with Matric No
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4 py-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Student Login
+                </a>
+                <a href="{{ url_for('staff_login') }}" class="btn btn-link text-white-50 text-decoration-none d-flex align-items-center">
+                    <i class="bi bi-shield-lock me-1"></i>Staff Portal
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-5 text-center">
+            <div class="hero-img-card">
+                <img src="{{ url_for('static', filename='images/landing_hero.png') }}" alt="NOUN Students Preparing for Exams" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Highlights Section -->
+<div class="row g-3 mb-5">
+    <div class="col-md-3 col-6">
+        <div class="feature-card text-center">
+            <i class="bi bi-stopwatch display-5 text-success mb-2"></i>
+            <h6 class="fw-bold mb-1">Timed Mocks</h6>
+            <small class="text-muted">Simulated exam conditions</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="feature-card text-center">
+            <i class="bi bi-layers display-5 text-success mb-2"></i>
+            <h6 class="fw-bold mb-1">2 & 3 Credit Units</h6>
+            <small class="text-muted">Comprehensive course coverage</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="feature-card text-center">
+            <i class="bi bi-check2-circle display-5 text-success mb-2"></i>
+            <h6 class="fw-bold mb-1">Instant Review</h6>
+            <small class="text-muted">Detailed answer rationales</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="feature-card text-center">
+            <i class="bi bi-graph-up-arrow display-5 text-success mb-2"></i>
+            <h6 class="fw-bold mb-1">Track Progress</h6>
+            <small class="text-muted">Monitor your performance</small>
+        </div>
+    </div>
+</div>
+
+<!-- How it Works -->
+<div class="row mt-4 mb-4">
+    <div class="col-12 text-center mb-4">
+        <h3 class="fw-bold">How It Works</h3>
+        <p class="text-muted">Three simple steps to exam readiness</p>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 text-center p-4 border-0 shadow-sm">
+            <div class="mb-3">
+                <div class="step-number">1</div>
+            </div>
+            <h5 class="fw-bold">Sign Up Free</h5>
+            <p class="text-muted mb-0">Register with your NOUN Matric Number and select your faculty.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 text-center p-4 border-0 shadow-sm">
+            <div class="mb-3">
+                <div class="step-number">2</div>
+            </div>
+            <h5 class="fw-bold">Choose a Course</h5>
+            <p class="text-muted mb-0">Select your 2-unit or 3-unit course from the exam catalog.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 text-center p-4 border-0 shadow-sm">
+            <div class="mb-3">
+                <div class="step-number">3</div>
+            </div>
+            <h5 class="fw-bold">Take Mock & Review</h5>
+            <p class="text-muted mb-0">Complete under exam timing, view instant scoring, and review step-by-step solutions.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
