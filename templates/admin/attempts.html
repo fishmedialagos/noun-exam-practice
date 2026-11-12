@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Exam Attempts & Performance - NOUN Exam Mock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">Student Attempts & Performance</h2>
+        <p class="text-muted small mb-0">Track all mock exam submissions, scores, and individual student answers</p>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+    </a>
+</div>
+
+{% if attempts %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Student Name</th>
+                    <th>Matric Number</th>
+                    <th>Faculty</th>
+                    <th>Course</th>
+                    <th>Score</th>
+                    <th>Percentage</th>
+                    <th>Time Taken</th>
+                    <th>Date & Time</th>
+                    <th>Review</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in attempts %}
+                <tr>
+                    <td>
+                        <strong>{{ a.student.full_name or 'Unnamed Student' }}</strong>
+                        <br><small class="text-muted">{{ a.student.email }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ a.student.matric_no or a.student.username }}</span>
+                    </td>
+                    <td><small class="text-muted">{{ a.student.faculty or '-' }}</small></td>
+                    <td>
+                        <span class="fw-semibold text-success">{{ a.exam.course_code or 'General' }}</span>
+                        <br><small class="text-muted">{{ a.exam.title[:35] }}{% if a.exam.title|length > 35 %}...{% endif %}</small>
+                    </td>
+                    <td>
+                        <strong>{{ a.score }}</strong> / {{ a.total_questions }}
+                    </td>
+                    <td>
+                        <span class="badge {% if a.percentage >= 70 %}bg-success{% elif a.percentage >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6 px-2 py-1">
+                            {{ a.percentage }}%
+                        </span>
+                    </td>
+                    <td>
+                        {% if a.time_taken_seconds %}
+                            {{ (a.time_taken_seconds // 60) }}m {{ (a.time_taken_seconds % 60) }}s
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small class="text-muted">
+                            {{ a.completed_at.strftime('%d %b %Y, %I:%M %p') if a.completed_at else '-' }}
+                        </small>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('view_result', attempt_id=a.id) }}" class="btn btn-sm btn-outline-primary" target="_blank" title="View Detailed Answers">
+                            <i class="bi bi-eye me-1"></i>View Script
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-clipboard-x display-4 d-block mb-3 text-secondary"></i>
+        <h5>No exam attempts recorded yet</h5>
+        <p class="small text-muted mb-0">When students take mock exams and submit, their scores and answers will appear here in real time.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

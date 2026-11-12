@@ -649,6 +649,17 @@ def admin_students():
     return render_template('admin/students.html', students=students)
 
 
+@app.route('/admin/attempts')
+@login_required
+def admin_attempts():
+    if not current_user.is_teacher():
+        flash('Access denied.', 'danger')
+        return redirect(url_for('student_dashboard'))
+    
+    attempts = Attempt.query.order_by(Attempt.completed_at.desc()).all()
+    return render_template('admin/attempts.html', attempts=attempts)
+
+
 @app.route('/admin/exam/<int:exam_id>/upload-csv', methods=['GET', 'POST'])
 @login_required
 def upload_questions_csv(exam_id):
