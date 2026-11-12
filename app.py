@@ -815,25 +815,23 @@ def init_db():
             print("  Admin  → username: admin  | password: admin123")
             print("  Teacher → username: teacher1 | password: teacher123")
         
-        # If exams table is empty (e.g. freshly created PostgreSQL database),
-        # import all existing exams and questions from the bundled SQLite database if available!
-        if Exam.query.count() == 0:
-            sqlite_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'noun_exam.db')
-            migrated = False
-            if os.path.exists(sqlite_file) and not Config.SQLALCHEMY_DATABASE_URI.startswith('sqlite:'):
-                try:
-                    import sqlite3
-                    s_conn = sqlite3.connect(sqlite_file)
-                    s_cur = s_conn.cursor()
-                    
-                    # Fetch exams from sqlite
-                    s_cur.execute("SELECT id, title, description, course_code, faculty, credit_units, duration_minutes, total_questions, is_published, created_by FROM exams ORDER BY id")
-                    sqlite_exams = s_cur.fetchall()
-                    
-                    for row in sqlite_exams:
-                        e_id, title, desc, code, faculty, units, dur, tot, pub, c_by = row
+        # If PostgreSQL has fewer exams than our bundled SQLite database (e.g. only the 3 sample exams),
+        # sync all missing exams and questions from noun_exam.db!
+        sqlite_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'noun_exam.db')
+        if os.path.exists(sqlite_file) and not Config.SQLALCHEMY_DATABASE_URI.startswith('sqlite:'):
+            try:
+                import sqlite3
+                s_conn = sqlite3.connect(sqlite_file)
+                s_cur = s_conn.cursor()
+                
+                s_cur.execute("SELECT id, title, description, course_code, faculty, credit_units, duration_minutes, total_questions, is_published FROM exams ORDER BY id")
+                sqlite_exams = s_cur.fetchall()
+                
+                for row in sqlite_exams:
+                    e_id, title, desc, code, faculty, units, dur, tot, pub = row
+                    existing_exam = Exam.query.filter_by(course_code=code, title=title).first()
+                    if not existing_exam:
                         ex = Exam(
-                            id=e_id,
                             title=title,
                             description=desc,
                             course_code=code,
@@ -845,37 +843,35 @@ def init_db():
                             created_by=admin.id
                         )
                         db.session.add(ex)
-                    db.session.flush()
-                    
-                    # Fetch questions from sqlite
-                    s_cur.execute("SELECT exam_id, question_text, question_type, option_a, option_b, option_c, option_d, correct_answer, explanation, [order] FROM questions ORDER BY id")
-                    sqlite_questions = s_cur.fetchall()
-                    for qrow in sqlite_questions:
-                        eid, qtext, qtype, oa, ob, oc, od, ca, exp, ord_val = qrow
-                        qn = Question(
-                            exam_id=eid,
-                            question_text=qtext,
-                            question_type=qtype or 'mcq',
-                            option_a=oa,
-                            option_b=ob,
-                            option_c=oc,
-                            option_d=od,
-                            correct_answer=ca,
-                            explanation=exp,
-                            order=ord_val or 1
-                        )
-                        db.session.add(qn)
-                    
-                    db.session.commit()
-                    s_conn.close()
-                    migrated = True
-                    print(f"✓ Automatically migrated {len(sqlite_exams)} courses and {len(sqlite_questions)} questions from noun_exam.db to PostgreSQL!")
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"SQLite migration notice: {e}")
-            
-            if not migrated and Exam.query.count() == 0:
-                create_sample_data()
+                        db.session.flush()
+                        
+                        # Copy questions for this exam
+                        s_cur.execute("SELECT question_text, question_type, option_a, option_b, option_c, option_d, correct_answer, explanation, [order] FROM questions WHERE exam_id=? ORDER BY id", (e_id,))
+                        sqlite_questions = s_cur.fetchall()
+                        for qrow in sqlite_questions:
+                            qtext, qtype, oa, ob, oc, od, ca, exp, ord_val = qrow
+                            qn = Question(
+                                exam_id=ex.id,
+                                question_text=qtext,
+                                question_type=qtype or 'mcq',
+                                option_a=oa,
+                                option_b=ob,
+                                option_c=oc,
+                                option_d=od,
+                                correct_answer=ca,
+                                explanation=exp,
+                                order=ord_val or 1
+                            )
+                            db.session.add(qn)
+                
+                db.session.commit()
+                s_conn.close()
+                print("✓ Successfully synchronized all courses and questions into database!")
+            except Exception as e:
+                db.session.rollback()
+                print(f"Sync notice: {e}")
+        elif Exam.query.count() == 0:
+            create_sample_data()
 
 
 def create_sample_data():
