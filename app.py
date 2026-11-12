@@ -815,61 +815,67 @@ def init_db():
             print("  Admin  → username: admin  | password: admin123")
             print("  Teacher → username: teacher1 | password: teacher123")
         
-        # If PostgreSQL has fewer exams than our bundled SQLite database (e.g. only the 3 sample exams),
-        # sync all missing exams and questions from noun_exam.db!
-        sqlite_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'noun_exam.db')
-        if os.path.exists(sqlite_file) and not Config.SQLALCHEMY_DATABASE_URI.startswith('sqlite:'):
+        # Automatically seed and synchronize all 8 courses and 362 questions from courses_data.json
+        json_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'courses_data.json')
+        if os.path.exists(json_file):
             try:
-                import sqlite3
-                s_conn = sqlite3.connect(sqlite_file)
-                s_cur = s_conn.cursor()
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    seed_data = json.load(f)
                 
-                s_cur.execute("SELECT id, title, description, course_code, faculty, credit_units, duration_minutes, total_questions, is_published FROM exams ORDER BY id")
-                sqlite_exams = s_cur.fetchall()
-                
-                for row in sqlite_exams:
-                    e_id, title, desc, code, faculty, units, dur, tot, pub = row
-                    existing_exam = Exam.query.filter_by(course_code=code, title=title).first()
-                    if not existing_exam:
+                # Map old json exam_id to newly created/found exam.id
+                id_map = {}
+                for e in seed_data.get('exams', []):
+                    ex = Exam.query.filter_by(course_code=e['course_code'], title=e['title']).first()
+                    if not ex:
                         ex = Exam(
-                            title=title,
-                            description=desc,
-                            course_code=code,
-                            faculty=faculty,
-                            credit_units=units or 2,
-                            duration_minutes=dur or 30,
-                            total_questions=tot or 0,
-                            is_published=bool(pub),
+                            title=e['title'],
+                            description=e.get('description', ''),
+                            course_code=e.get('course_code', ''),
+                            faculty=e.get('faculty', 'General Studies'),
+                            credit_units=e.get('credit_units', 2),
+                            duration_minutes=e.get('duration_minutes', 30),
+                            total_questions=e.get('total_questions', 0),
+                            is_published=e.get('is_published', True),
                             created_by=admin.id
                         )
                         db.session.add(ex)
                         db.session.flush()
-                        
-                        # Copy questions for this exam
-                        s_cur.execute("SELECT question_text, question_type, option_a, option_b, option_c, option_d, correct_answer, explanation, [order] FROM questions WHERE exam_id=? ORDER BY id", (e_id,))
-                        sqlite_questions = s_cur.fetchall()
-                        for qrow in sqlite_questions:
-                            qtext, qtype, oa, ob, oc, od, ca, exp, ord_val = qrow
+                    id_map[e['id']] = ex.id
+                
+                db.session.commit()
+                
+                # Check and populate questions for exams that have none
+                for q in seed_data.get('questions', []):
+                    target_exam_id = id_map.get(q['exam_id'])
+                    if target_exam_id:
+                        # Only add if not already in database
+                        existing_q = Question.query.filter_by(exam_id=target_exam_id, question_text=q['question_text']).first()
+                        if not existing_q:
                             qn = Question(
-                                exam_id=ex.id,
-                                question_text=qtext,
-                                question_type=qtype or 'mcq',
-                                option_a=oa,
-                                option_b=ob,
-                                option_c=oc,
-                                option_d=od,
-                                correct_answer=ca,
-                                explanation=exp,
-                                order=ord_val or 1
+                                exam_id=target_exam_id,
+                                question_text=q['question_text'],
+                                question_type=q.get('question_type', 'mcq'),
+                                option_a=q.get('option_a'),
+                                option_b=q.get('option_b'),
+                                option_c=q.get('option_c'),
+                                option_d=q.get('option_d'),
+                                correct_answer=q.get('correct_answer'),
+                                explanation=q.get('explanation'),
+                                order=q.get('order', 1)
                             )
                             db.session.add(qn)
                 
+                # Update total_questions count
                 db.session.commit()
-                s_conn.close()
-                print("✓ Successfully synchronized all courses and questions into database!")
-            except Exception as e:
+                for real_id in set(id_map.values()):
+                    ex_obj = Exam.query.get(real_id)
+                    if ex_obj:
+                        ex_obj.total_questions = ex_obj.questions.count()
+                db.session.commit()
+                print("✓ Successfully synchronized courses_data.json into database!")
+            except Exception as err:
                 db.session.rollback()
-                print(f"Sync notice: {e}")
+                print(f"courses_data.json sync notice: {err}")
         elif Exam.query.count() == 0:
             create_sample_data()
 
