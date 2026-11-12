@@ -24,6 +24,83 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+@app.route('/sync-courses')
+@login_required
+def trigger_sync():
+    """Manual sync route for admin to refresh all 8 courses and 362 questions anytime."""
+    if not current_user.is_teacher():
+        flash('Access denied.', 'danger')
+        return redirect(url_for('student_dashboard'))
+    
+    admin = User.query.filter_by(role='admin').first() or current_user
+    json_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'courses_data.json')
+    if not os.path.exists(json_file):
+        flash('courses_data.json file not found on server.', 'danger')
+        return redirect(url_for('admin_exams'))
+        
+    try:
+        with open(json_file, 'r', encoding='utf-8') as f:
+            seed_data = json.load(f)
+            
+        id_map = {}
+        added_exams = 0
+        for e in seed_data.get('exams', []):
+            ex = Exam.query.filter_by(course_code=e['course_code'], title=e['title']).first()
+            if not ex:
+                ex = Exam(
+                    title=e['title'],
+                    description=e.get('description', ''),
+                    course_code=e.get('course_code', ''),
+                    faculty=e.get('faculty', 'General Studies'),
+                    credit_units=e.get('credit_units', 2),
+                    duration_minutes=e.get('duration_minutes', 30),
+                    total_questions=e.get('total_questions', 0),
+                    is_published=e.get('is_published', True),
+                    created_by=admin.id
+                )
+                db.session.add(ex)
+                db.session.flush()
+                added_exams += 1
+            id_map[e['id']] = ex.id
+            
+        db.session.commit()
+        
+        added_questions = 0
+        for q in seed_data.get('questions', []):
+            target_id = id_map.get(q['exam_id'])
+            if target_id:
+                existing_q = Question.query.filter_by(exam_id=target_id, question_text=q['question_text']).first()
+                if not existing_q:
+                    qn = Question(
+                        exam_id=target_id,
+                        question_text=q['question_text'],
+                        question_type=q.get('question_type', 'mcq'),
+                        option_a=q.get('option_a'),
+                        option_b=q.get('option_b'),
+                        option_c=q.get('option_c'),
+                        option_d=q.get('option_d'),
+                        correct_answer=q.get('correct_answer'),
+                        explanation=q.get('explanation'),
+                        order=q.get('order', 1)
+                    )
+                    db.session.add(qn)
+                    added_questions += 1
+                    
+        db.session.commit()
+        for real_id in set(id_map.values()):
+            ex_obj = db.session.get(Exam, real_id)
+            if ex_obj:
+                ex_obj.total_questions = ex_obj.questions.count()
+        db.session.commit()
+        
+        flash(f'Synchronization successful! Total courses verified: {Exam.query.count()}. Added {added_exams} new courses & {added_questions} questions.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error during sync: {e}', 'danger')
+        
+    return redirect(url_for('admin_exams'))
+
+
 # ==================== AUTH ROUTES ====================
 
 @app.route('/')

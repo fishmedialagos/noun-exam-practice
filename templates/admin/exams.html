@@ -5,9 +5,14 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">All Exams</h2>
-    <a href="{{ url_for('create_exam') }}" class="btn btn-noun">
-        <i class="bi bi-plus-lg me-1"></i>Create Exam
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('trigger_sync') }}" class="btn btn-outline-warning" title="Synchronize all courses from courses_data.json">
+            <i class="bi bi-arrow-repeat me-1"></i>Sync Course Bank (All 8 Courses)
+        </a>
+        <a href="{{ url_for('create_exam') }}" class="btn btn-noun">
+            <i class="bi bi-plus-lg me-1"></i>Create Exam
+        </a>
+    </div>
 </div>
 
 {% if exams %}
