@@ -20,6 +20,17 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'warning'
 
 
+@app.template_filter('safe_bold')
+def safe_bold_filter(text):
+    """Safely render **markdown bold** text into <strong> tags without exposing XSS."""
+    if not text:
+        return ''
+    import markupsafe
+    escaped = markupsafe.escape(str(text))
+    rendered = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', str(escaped))
+    return markupsafe.Markup(rendered)
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -514,21 +525,36 @@ def _extract_pdf_text(path, max_pages=200):
 def _split_modules_units(full_text):
     """Robust split of NOUN materials into modules and units."""
     text = re.sub(r'\r', '', full_text)
-    # Broader heading patterns used in NOUN courseware
-    module_pat = re.compile(
-        r'(?im)^(?:module|mod\.?)\s*([0-9]{1,2})(?:\s*[:\-–—.]\s*|\s+)(.{0,120})$'
-    )
-    unit_pat = re.compile(
-        r'(?im)^(?:unit|unt\.?)\s*([0-9]{1,2})(?:\s*[:\-–—.]\s*|\s+)(.{0,120})$'
-    )
-    # Also catch "MODULE ONE" style
-    module_word = re.compile(
-        r'(?im)^module\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b(?:\s*[:\-–—.]\s*|\s+)(.{0,120})$'
-    )
+
     word_to_num = {
         'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
         'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10',
+        'eleven': '11', 'twelve': '12', 'thirteen': '13', 'fourteen': '14', 'fifteen': '15',
+        'sixteen': '16', 'seventeen': '17', 'eighteen': '18', 'nineteen': '19', 'twenty': '20',
+        'twenty-one': '21', 'twenty-two': '22', 'twenty-three': '23', 'twenty-four': '24', 'twenty-five': '25',
+        'i': '1', 'ii': '2', 'iii': '3', 'iv': '4', 'v': '5',
+        'vi': '6', 'vii': '7', 'viii': '8', 'ix': '9', 'x': '10',
+        'xi': '11', 'xii': '12', 'xiii': '13', 'xiv': '14', 'xv': '15',
+        'xvi': '16', 'xvii': '17', 'xviii': '18', 'xix': '19', 'xx': '20',
     }
+    num_words_pat = '|'.join(word_to_num.keys())
+
+    module_pat = re.compile(
+        rf'(?im)^(?:module|mod\.?)\s*([0-9]{{1,2}}|{num_words_pat})\b(?:\s*[:\-–—.]\s*|\s+)?(.*)$'
+    )
+    unit_pat = re.compile(
+        rf'(?im)^(?:unit|unt\.?)\s*([0-9]{{1,2}}|{num_words_pat})\b(?:\s*[:\-–—.]\s*|\s+)?(.*)$'
+    )
+
+    def is_toc_line(line):
+        """Detect if line is a Table of Contents entry (dot leaders or page numbers)."""
+        if re.search(r'[\.·•]{3,}', line):
+            return True
+        if re.search(r'\s*\.{2,}\s*\d+\s*$', line):
+            return True
+        if re.search(r'(?i)\b(?:page|pg\.?)\s*\d+$', line):
+            return True
+        return False
 
     lines = text.split('\n')
     modules = []
@@ -554,91 +580,222 @@ def _split_modules_units(full_text):
             current_mod = None
             buf = []
 
-    for line in lines:
-        raw = line.strip()
+    i = 0
+    total_lines = len(lines)
+    while i < total_lines:
+        raw = lines[i].strip()
+        i += 1
         if not raw:
             buf.append('')
             continue
-        # Strip leading page numbers / decorative chars
+
+        if is_toc_line(raw):
+            continue
+
         clean = re.sub(r'^[\d\W]+', '', raw).strip() or raw
 
+        # Check Module
         mm = module_pat.match(raw) or module_pat.match(clean)
-        if not mm:
-            mw = module_word.match(raw) or module_word.match(clean)
-            if mw:
-                num = word_to_num.get(mw.group(1).lower(), mw.group(1))
-                title = (mw.group(2) or '').strip()
-                flush_mod()
-                current_mod = {'label': f'Module {num}', 'title': title or f'Module {num}', 'units': [], 'body': ''}
-                buf = []
-                continue
         if mm:
+            raw_num = mm.group(1).lower()
+            num = word_to_num.get(raw_num, mm.group(1))
+            title = (mm.group(2) or '').strip()
+            if not title and i < total_lines:
+                next_line = lines[i].strip()
+                if next_line and not is_toc_line(next_line) and not module_pat.match(next_line) and not unit_pat.match(next_line) and len(next_line) < 120:
+                    title = next_line
+                    i += 1
+
             flush_mod()
             current_mod = {
-                'label': f"Module {mm.group(1)}",
-                'title': (mm.group(2) or '').strip() or f"Module {mm.group(1)}",
+                'label': f'Module {num}',
+                'title': title or f'Module {num}',
                 'units': [],
                 'body': '',
             }
             buf = []
             continue
 
+        # Check Unit
         um = unit_pat.match(raw) or unit_pat.match(clean)
-        if um and current_mod is not None:
+        if um:
+            raw_num = um.group(1).lower()
+            num = word_to_num.get(raw_num, um.group(1))
+            title = (um.group(2) or '').strip()
+            if not title and i < total_lines:
+                next_line = lines[i].strip()
+                if next_line and not is_toc_line(next_line) and not module_pat.match(next_line) and not unit_pat.match(next_line) and len(next_line) < 120:
+                    title = next_line
+                    i += 1
+
+            if current_mod is None:
+                current_mod = {
+                    'label': 'Module 1',
+                    'title': 'General Course Content',
+                    'units': [],
+                    'body': '',
+                }
+
             flush_unit()
             current_unit = {
-                'label': f"Unit {um.group(1)}",
-                'title': (um.group(2) or '').strip(),
+                'label': f'Unit {num}',
+                'title': title or f'Unit {num}',
                 'body': '',
             }
             buf = []
             continue
+
         buf.append(raw)
 
     flush_mod()
-    return modules
+
+    # Deduplicate modules: keep the instance of each Module that has the richest unit content
+    by_label = {}
+    for m in modules:
+        label = m['label']
+        # Clean title from TOC dot leaders or page numbers
+        m['title'] = re.sub(r'[\.·•]{2,}.*$', '', m.get('title', '')).strip() or m.get('title', '')
+
+        valid_units = []
+        seen_unit_labels = {}
+        for u in m.get('units', []):
+            u['title'] = re.sub(r'[\.·•]{2,}.*$', '', u.get('title', '')).strip() or u.get('title', '')
+            u_label = u['label']
+            u_len = len(u.get('body', ''))
+            if u_label in seen_unit_labels:
+                prev_idx = seen_unit_labels[u_label]
+                if u_len > len(valid_units[prev_idx].get('body', '')):
+                    valid_units[prev_idx] = u
+            else:
+                if u_len > 40 or u['title'] != u_label:
+                    seen_unit_labels[u_label] = len(valid_units)
+                    valid_units.append(u)
+        m['units'] = valid_units
+
+        total_substantive = len(m.get('body', '')) + sum(len(u.get('body', '')) for u in valid_units)
+        if total_substantive < 100:
+            continue
+
+        if label not in by_label:
+            by_label[label] = m
+        else:
+            prev_m = by_label[label]
+            prev_len = len(prev_m.get('body', '')) + sum(len(u.get('body', '')) for u in prev_m.get('units', []))
+            if total_substantive > prev_len:
+                by_label[label] = m
+
+    def mod_sort_key(mod):
+        m = re.search(r'\d+', mod.get('label', ''))
+        return int(m.group()) if m else 999
+
+    return sorted(by_label.values(), key=mod_sort_key)
 
 
-def _summarize_block(text, max_points=6, max_chars=1200):
-    """Stronger extractive summary with definition/importance bias."""
+def _clean_sentence_for_point(s):
+    """Format and bold lead-in concepts for study notes."""
+    s = s.strip()
+    s = re.sub(r'^(?:[0-9\.\)\-\*•]+\s*)+', '', s).strip()
+    s = re.sub(r'^(?:[A-Z][A-Za-z0-9\s\-]{2,30}\?\s+)', '', s).strip()
+    m = re.match(
+        r'^([A-Z][A-Za-z0-9\s\-]{2,35}?)\s+(is defined as|refers to|is the study of|is a form of|is known as|means|is)\s+(.+)$',
+        s, re.IGNORECASE
+    )
+    if m:
+        term = m.group(1).strip()
+        verb = m.group(2).strip()
+        rest = m.group(3).strip()
+        return f"**{term}**: {verb.capitalize()} {rest}"
+    return s
+
+
+def _summarize_block(text, max_points=7, max_chars=1200):
+    """High-yield extractive summary extracting keypoints and definitions."""
     if not text:
-        return '', []
-    text = re.sub(r'\s+', ' ', text).strip()
-    parts = re.split(r'(?<=[\.\!\?])\s+', text)
+        return '', [], []
+
+    # Filter out boilerplate, running headers, and noise lines
+    lines = []
+    for l in text.split('\n'):
+        l_str = l.strip()
+        if not l_str:
+            continue
+        if re.search(r'(?i)\b(?:self-assessment|tma|exercise|tutor-marked|fig\.?|table|www\.|http|copyright)\b', l_str):
+            continue
+        # Running header / code lines
+        if re.match(r'^(?:[A-Z]{2,4}\s*\d{2,3})\b', l_str, re.IGNORECASE):
+            continue
+        if re.match(r'^\d{1,4}$', l_str):
+            continue
+        lines.append(l_str)
+    cleaned_text = ' '.join(lines)
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+
+    parts = re.split(r'(?<=[\.\!\?])\s+', cleaned_text)
     scored = []
+    key_terms = []
+
     for s in parts:
         s = s.strip()
-        if len(s) < 35 or len(s) > 400:
+        if len(s) < 35 or len(s) > 380:
+            continue
+        # Skip blanks / underscores
+        if re.search(r'_{2,}', s):
             continue
         low = s.lower()
+        if re.search(r'(?i)\b(in this unit|in this module|you will learn|we shall discuss|turn to|see above|as mentioned earlier|you are following me|welcome to this unit|dear student)\b', low):
+            continue
+        if re.search(r'(?i)\b(objectives|at the end of this unit|you should be able to)\b', low):
+            continue
+
         score = 0
-        for kw, w in (
-            (' is ', 2), (' are ', 1), (' means ', 3), (' refers to ', 3),
-            (' defined as ', 3), (' important ', 2), (' objective', 2),
-            (' aim', 2), (' purpose', 2), (' includes ', 1), (' consists ', 1),
-            (' therefore ', 1), (' in conclusion', 2), (' note that ', 1),
-            (' the concept ', 2), (' characteristics ', 1), (' types of ', 1),
-            (' steps ', 1), (' process ', 1), (' advantages ', 1), (' functions ', 1),
-        ):
+        is_def = False
+
+        # Definition check
+        for kw in (' is defined as ', ' refers to ', ' is the study of ', ' means ', ' is known as ', ' is a concept '):
             if kw in low:
-                score += w
-        if re.search(r'\b(e\.g\.|for example|such as)\b', low):
+                score += 4
+                is_def = True
+
+        # Taxonomy / classification
+        for kw in (' types of ', ' branches of ', ' classified into ', ' consists of ', ' divided into ', ' forms of ', ' elements of ', ' categories of '):
+            if kw in low:
+                score += 3
+
+        # Concepts / objectives / functions
+        for kw in (' objective', ' principle', ' purpose', ' aim', ' characteristic', ' feature', ' function', ' advantage', ' stage', ' step'):
+            if kw in low:
+                score += 2
+
+        # Scholar / theory
+        for kw in (' according to ', ' propounded by ', ' argued by ', ' introduced by ', ' theory of ', ' father of '):
+            if kw in low:
+                score += 2.5
+
+        if re.search(r'\b(e\.g\.|for example|such as|namely|specifically)\b', low):
             score += 1
         if re.search(r'\d', s):
             score += 0.3
+
+        if is_def and len(key_terms) < 4:
+            tm = re.match(r'^([A-Z][A-Za-z0-9\s\-]{2,30}?)\s+(?:is defined as|refers to|is the study of|means)\s+(.+)$', s, re.IGNORECASE)
+            if tm:
+                key_terms.append({'term': tm.group(1).strip(), 'definition': tm.group(2).strip()})
+
         scored.append((score, s))
+
     scored.sort(key=lambda x: (-x[0], -len(x[1])))
     picked, seen = [], set()
     for _, s in scored:
-        key = s[:50].lower()
+        key = s[:45].lower()
         if key in seen:
             continue
         seen.add(key)
-        picked.append(s)
+        picked.append(_clean_sentence_for_point(s))
         if len(picked) >= max_points:
             break
-    summary = ' '.join(picked[:4])[:max_chars]
-    return summary, picked
+
+    summary = ' '.join(picked[:3])[:max_chars] if picked else ''
+    return summary, picked, key_terms
 
 
 def _summary_cache_path(code):
@@ -647,31 +804,126 @@ def _summary_cache_path(code):
     return os.path.join(d, f'{code}.json')
 
 
-
-
-def _ai_summarize_text(text, course_code, section_title=''):
-    """Optional AI summary via Groq or OpenAI. Returns text or None."""
-    text = (text or '').strip()
-    if len(text) < 120:
+def _parse_ai_summary_response(raw_text):
+    """Robust parser for AI summary output (handles JSON, markdown code blocks, or plaintext)."""
+    raw_text = (raw_text or '').strip()
+    if not raw_text:
         return None
-    # Truncate to keep tokens reasonable
-    text = text[:12000]
+
+    # 1. Direct JSON parse
+    try:
+        data = json.loads(raw_text)
+        if isinstance(data, dict):
+            pts = [str(p).strip() for p in (data.get('key_points') or []) if str(p).strip()]
+            return {
+                'summary': str(data.get('summary') or '').strip(),
+                'key_points': pts,
+                'key_terms': data.get('key_terms') or []
+            }
+    except Exception:
+        pass
+
+    # 2. Extract ```json ... ``` codeblock
+    match = re.search(r'```(?:json)?\s*(\{[\s\S]*?\})\s*```', raw_text, re.DOTALL)
+    if match:
+        try:
+            data = json.loads(match.group(1))
+            if isinstance(data, dict):
+                pts = [str(p).strip() for p in (data.get('key_points') or []) if str(p).strip()]
+                return {
+                    'summary': str(data.get('summary') or '').strip(),
+                    'key_points': pts,
+                    'key_terms': data.get('key_terms') or []
+                }
+        except Exception:
+            pass
+
+    # 3. Fallback: Parse structured plaintext / markdown
+    summary_lines = []
+    key_points = []
+    key_terms = []
+    current_section = 'summary'
+
+    for line in raw_text.split('\n'):
+        sline = line.strip()
+        if not sline:
+            continue
+        low = sline.lower()
+        if re.match(r'^#*\s*(?:key\s*points?|exam\s*key\s*points?|bullet\s*points?|takeaways)\b', low):
+            current_section = 'points'
+            continue
+        elif re.match(r'^#*\s*(?:key\s*terms?|definitions?|glossary)\b', low):
+            current_section = 'terms'
+            continue
+        elif re.match(r'^#*\s*(?:summary|overview)\b', low):
+            current_section = 'summary'
+            continue
+
+        if current_section == 'points':
+            pt = re.sub(r'^(?:[-*•]|\d+[\.\)])\s*', '', sline).strip()
+            if pt and len(pt) > 5:
+                key_points.append(pt)
+        elif current_section == 'terms':
+            tm = re.match(r'^(?:[-*•]\s*)?\*{0,2}([^:*]+)\*{0,2}\s*[:\-–]\s*(.+)$', sline)
+            if tm:
+                key_terms.append({'term': tm.group(1).strip(), 'definition': tm.group(2).strip()})
+            else:
+                pt = re.sub(r'^(?:[-*•]|\d+[\.\)])\s*', '', sline).strip()
+                if pt:
+                    key_points.append(pt)
+        else:
+            if re.match(r'^(?:[-*•]|\d+[\.\)])\s*', sline):
+                pt = re.sub(r'^(?:[-*•]|\d+[\.\)])\s*', '', sline).strip()
+                if pt and len(pt) > 5:
+                    key_points.append(pt)
+            else:
+                summary_lines.append(sline)
+
+    summary = ' '.join(summary_lines).strip()
+    if summary or key_points:
+        return {
+            'summary': summary,
+            'key_points': key_points,
+            'key_terms': key_terms
+        }
+    return None
+
+
+def _ai_summarize_content(text, course_code, section_type='unit', label='', title=''):
+    """High-yield AI summary for exam revision via Groq or OpenAI. Returns dict {summary, key_points, key_terms} or None."""
+    text = (text or '').strip()
+    if len(text) < 100:
+        return None
+    # Truncate to keep tokens and latency fast
+    text = text[:8000]
+
     api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
     if not api_key:
         return None
+
     use_groq = bool(os.environ.get('GROQ_API_KEY'))
     try:
         import requests as http_requests
         prompt = (
-            f"You are an academic tutor for Nigerian Open University (NOUN) students.\\n"
-            f"Summarize the following course material clearly for exam revision.\\n"
-            f"Course: {course_code}. Section: {section_title or 'General'}.\\n"
-            f"Return:\\n"
-            f"1) A short paragraph summary (4-7 sentences)\\n"
-            f"2) 5-8 bullet key points\\n"
-            f"Use simple English. Do not invent facts not in the text.\\n\\n"
-            f"MATERIAL:\\n{text}"
+            f"You are an expert academic exam tutor preparing National Open University of Nigeria (NOUN) students for exams.\n"
+            f"Summarize the following {section_type.upper()} material from course {course_code}: {label} - {title}.\n"
+            f"Focus on exam-critical information: core concepts, definitions, classifications, rules, formulas, and historical scholars.\n\n"
+            f"Respond with a JSON object in this exact schema:\n"
+            f"{{\n"
+            f"  \"summary\": \"A concise 2-3 sentence overview of this {section_type}'s core subject.\",\n"
+            f"  \"key_points\": [\n"
+            f"    \"High-yield exam takeaway with **bold key terms**: explanation of definition or rule.\",\n"
+            f"    \"Another essential exam point with **core concept**: key facts, steps or classifications.\",\n"
+            f"    \"Key scholar, formula, distinction or principle mentioned in this unit.\"\n"
+            f"  ],\n"
+            f"  \"key_terms\": [\n"
+            f"    {{\"term\": \"Core Term\", \"definition\": \"Accurate definition based on the text.\"}}\n"
+            f"  ]\n"
+            f"}}\n\n"
+            f"Provide 5 to 8 exam-focused key_points. Return ONLY valid JSON.\n\n"
+            f"MATERIAL:\n{text}"
         )
+
         if use_groq:
             url = 'https://api.groq.com/openai/v1/chat/completions'
             model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
@@ -679,11 +931,12 @@ def _ai_summarize_text(text, course_code, section_title=''):
             payload = {
                 'model': model,
                 'messages': [
-                    {'role': 'system', 'content': 'You summarize university course materials accurately.'},
+                    {'role': 'system', 'content': 'You are an elite university exam tutor. You output only valid JSON with high-yield exam keypoints and definitions.'},
                     {'role': 'user', 'content': prompt},
                 ],
-                'temperature': 0.3,
-                'max_tokens': 900,
+                'temperature': 0.2,
+                'max_tokens': 1200,
+                'response_format': {'type': 'json_object'},
             }
         else:
             url = 'https://api.openai.com/v1/chat/completions'
@@ -692,28 +945,31 @@ def _ai_summarize_text(text, course_code, section_title=''):
             payload = {
                 'model': model,
                 'messages': [
-                    {'role': 'system', 'content': 'You summarize university course materials accurately.'},
+                    {'role': 'system', 'content': 'You are an elite university exam tutor. You output only valid JSON with high-yield exam keypoints and definitions.'},
                     {'role': 'user', 'content': prompt},
                 ],
-                'temperature': 0.3,
-                'max_tokens': 900,
+                'temperature': 0.2,
+                'max_tokens': 1200,
+                'response_format': {'type': 'json_object'},
             }
-        r = http_requests.post(url, headers=headers, json=payload, timeout=60)
+
+        r = http_requests.post(url, headers=headers, json=payload, timeout=25)
         if r.status_code != 200:
             app.logger.warning('AI summarize HTTP %s: %s', r.status_code, r.text[:300])
             return None
         data = r.json()
-        return data['choices'][0]['message']['content'].strip()
+        raw_content = data['choices'][0]['message']['content'].strip()
+        return _parse_ai_summary_response(raw_content)
     except Exception as e:
         app.logger.warning('AI summarize failed: %s', e)
         return None
 
 
-
 @app.route('/materials/summarize/<course_code>')
-@login_required
 def summarize_material(course_code):
-    """Extended module/unit auto-summarizer with caching and wider coverage."""
+    """Extended module/unit auto-summarizer with caching and unit-by-unit exam keypoints."""
+    from concurrent.futures import ThreadPoolExecutor
+
     code, course_title, local_path, urls = _resolve_material(course_code)
     if course_title == code:
         _, nu_title = _discover_nounupdate_pdf(code)
@@ -733,6 +989,7 @@ def summarize_material(course_code):
                                    modules=cached.get('modules') or [],
                                    overview=cached.get('overview') or '',
                                    highlights=cached.get('highlights') or [],
+                                   ai_generated=cached.get('ai_generated', False),
                                    page_count=cached.get('page_count') or 0)
         except Exception:
             pass
@@ -742,62 +999,109 @@ def summarize_material(course_code):
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
                                error='Could not download the course PDF to summarize. Open the full material first, then try again.',
-                               modules=[], overview='', highlights=[], page_count=0)
+                               modules=[], overview='', highlights=[], ai_generated=False, page_count=0)
 
     pages, err = _extract_pdf_text(path, max_pages=220)
     if err:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
-                               error=err, modules=[], overview='', highlights=[], page_count=0)
+                               error=err, modules=[], overview='', highlights=[], ai_generated=False, page_count=0)
 
     full_text = '\n'.join(pages)
     if len(full_text.strip()) < 200:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
                                error='This PDF has little extractable text (likely scanned images). The on-page PDF viewer still works; summary needs a text-based PDF.',
-                               modules=[], overview='', highlights=[], page_count=len(pages))
+                               modules=[], overview='', highlights=[], ai_generated=False, page_count=len(pages))
 
     raw_modules = _split_modules_units(full_text)
-    modules = []
     ai_enabled = bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
+    ai_results = {}
 
-    for m in raw_modules[:16]:
+    # Run AI summarization concurrently for fast response times
+    if ai_enabled:
+        futures = {}
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            if len(full_text.strip()) > 300:
+                futures['overview'] = executor.submit(
+                    _ai_summarize_content, full_text[:14000], code, 'course_overview', 'Course Overview', course_title
+                )
+            for m_idx, m in enumerate(raw_modules[:12]):
+                body = m.get('body') or ''
+                if len(body) < 100:
+                    body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
+                if len(body) > 200:
+                    futures[f'mod_{m_idx}'] = executor.submit(
+                        _ai_summarize_content, body, code, 'module', m.get('label') or f'Module {m_idx+1}', m.get('title') or ''
+                    )
+                for u_idx, u in enumerate((m.get('units') or [])[:12]):
+                    u_body = u.get('body') or ''
+                    if len(u_body) > 180:
+                        futures[f'unit_{m_idx}_{u_idx}'] = executor.submit(
+                            _ai_summarize_content, u_body, code, 'unit', u.get('label') or f'Unit {u_idx+1}', u.get('title') or ''
+                        )
+
+        for key, fut in futures.items():
+            try:
+                res = fut.result(timeout=25)
+                if res:
+                    ai_results[key] = res
+            except Exception as e:
+                app.logger.warning('AI summary task failed for %s: %s', key, e)
+
+    modules = []
+    for m_idx, m in enumerate(raw_modules[:12]):
         body = m.get('body') or ''
         if len(body) < 100:
             body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
-        m_sum, m_pts = _summarize_block(body, max_points=8, max_chars=1400)
-        if ai_enabled and len(body) > 200:
-            ai_text = _ai_summarize_text(body, code, f"{m.get('label')} {m.get('title')}")
-            if ai_text:
-                # Prefer AI paragraph; keep extractive bullets as backup key points
-                m_sum = ai_text
+        ext_sum, ext_pts, ext_terms = _summarize_block(body, max_points=7, max_chars=1200)
+
+        ai_m = ai_results.get(f'mod_{m_idx}')
+        if ai_m:
+            m_sum = ai_m.get('summary') or ext_sum
+            m_pts = ai_m.get('key_points') or ext_pts
+            m_terms = ai_m.get('key_terms') or ext_terms
+        else:
+            m_sum, m_pts, m_terms = ext_sum, ext_pts, ext_terms
+
         units_out = []
-        for u in (m.get('units') or [])[:12]:
+        for u_idx, u in enumerate((m.get('units') or [])[:12]):
             u_body = u.get('body') or ''
-            u_sum, u_pts = _summarize_block(u_body, max_points=5, max_chars=900)
-            if ai_enabled and len(u_body) > 250:
-                ai_u = _ai_summarize_text(u_body, code, f"{u.get('label')} {u.get('title')}")
-                if ai_u:
-                    u_sum = ai_u
+            u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u_body, max_points=6, max_chars=900)
+
+            ai_u = ai_results.get(f'unit_{m_idx}_{u_idx}')
+            if ai_u:
+                u_sum = ai_u.get('summary') or u_ext_sum
+                u_pts = ai_u.get('key_points') or u_ext_pts
+                u_terms = ai_u.get('key_terms') or u_ext_terms
+            else:
+                u_sum, u_pts, u_terms = u_ext_sum, u_ext_pts, u_ext_terms
+
             units_out.append({
                 'label': u.get('label'),
                 'title': u.get('title'),
                 'summary': u_sum,
-                'key_points': u_pts[:5],
+                'key_points': u_pts,
+                'key_terms': u_terms,
             })
+
         modules.append({
             'label': m.get('label'),
             'title': m.get('title'),
             'summary': m_sum,
-            'key_points': m_pts[:6],
+            'key_points': m_pts,
+            'key_terms': m_terms,
             'units': units_out,
         })
 
-    overview, highlights = _summarize_block(full_text[:20000], max_points=10, max_chars=900)
-    if ai_enabled:
-        ai_overview = _ai_summarize_text(full_text[:14000], code, 'Course Overview')
-        if ai_overview:
-            overview = ai_overview
+    ext_overview, ext_highlights, _ = _summarize_block(full_text[:20000], max_points=10, max_chars=1000)
+    ai_ov = ai_results.get('overview')
+    if ai_ov:
+        overview = ai_ov.get('summary') or ext_overview
+        highlights = ai_ov.get('key_points') or ext_highlights
+    else:
+        overview = ext_overview
+        highlights = ext_highlights
 
     # Cache result
     try:
@@ -808,6 +1112,7 @@ def summarize_material(course_code):
                 'modules': modules,
                 'overview': overview,
                 'highlights': highlights[:12],
+                'ai_generated': bool(ai_results),
                 'page_count': len(pages),
             }, f, ensure_ascii=False)
     except Exception:
@@ -820,6 +1125,7 @@ def summarize_material(course_code):
                            modules=modules,
                            overview=overview,
                            highlights=highlights[:12],
+                           ai_generated=bool(ai_results),
                            page_count=len(pages))
 
 
