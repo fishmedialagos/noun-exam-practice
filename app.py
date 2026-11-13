@@ -306,15 +306,15 @@ def course_materials():
 
 
 
+
 def _resolve_material(course_code):
-    """Return (code, title, local_path_or_None, remote_url)."""
+    """Return (code, title, local_path_or_None, url_list). Includes nounupdate.com."""
     code = course_code.replace(' ', '').upper()
     upload_dir = os.path.join(app.root_path, 'static', 'materials')
     os.makedirs(upload_dir, exist_ok=True)
     local_pdf = os.path.join(upload_dir, f"{code}.pdf")
     local_path = local_pdf if os.path.exists(local_pdf) else None
 
-    # Also check cache folder of previously proxied files
     cache_dir = os.path.join(app.root_path, 'static', 'materials_cache')
     os.makedirs(cache_dir, exist_ok=True)
     cache_pdf = os.path.join(cache_dir, f"{code}.pdf")
@@ -336,8 +336,12 @@ def _resolve_material(course_code):
         except Exception:
             pass
 
-    # Common NOUN URL patterns as fallbacks
-    candidates = []
+    # Priority order: local/cache handled above; remote candidates:
+    # 1) nounupdate.com direct file  2) timetable url  3) official NOUN patterns
+    candidates = [
+        f"https://nounupdate.com/file-course-materials/{code}.pdf",
+        f"https://nounupdate.com/file-course-materials/{code}_0.pdf",
+    ]
     if matched_url:
         candidates.append(matched_url)
     candidates.extend([
@@ -346,9 +350,7 @@ def _resolve_material(course_code):
         f"https://www.nou.edu.ng/coursewarecontent/{code}.pdf",
         f"https://www.nou.edu.ng/coursewarecontent/{code}_0.pdf",
     ])
-    # de-dupe
-    seen = set()
-    urls = []
+    seen, urls = set(), []
     for u in candidates:
         if u and u not in seen:
             seen.add(u)
@@ -356,8 +358,47 @@ def _resolve_material(course_code):
     return code, course_title, local_path, urls
 
 
+def _discover_nounupdate_pdf(code):
+    """Scrape nounupdate course page for a downloadable PDF link."""
+    import requests as http_requests
+    page_url = f"https://nounupdate.com/courses/{code}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+    }
+    try:
+        r = http_requests.get(page_url, timeout=25, headers=headers, allow_redirects=True)
+        if r.status_code != 200:
+            return None, None
+        html = r.text
+        # Title
+        title = code
+        mt = re.search(r'<h1[^>]*>\s*' + re.escape(code) + r'\s*[—\-–:]\s*([^<]+)', html, re.I)
+        if mt:
+            title = mt.group(1).strip()
+        else:
+            mt2 = re.search(r'<title>\s*' + re.escape(code) + r'\s+([^|<]+)', html, re.I)
+            if mt2:
+                title = mt2.group(1).replace('Course Material', '').strip()
+        # PDF links
+        links = re.findall(r'href=["\']([^"\']*?(?:file-course-materials/[^"\']+\.pdf|coursewarecontent/[^"\']+\.pdf)[^"\']*)["\']', html, re.I)
+        links += re.findall(r'href=["\']([^"\']+\.pdf)["\']', html, re.I)
+        abs_links = []
+        for link in links:
+            if link.startswith('//'):
+                link = 'https:' + link
+            elif link.startswith('/'):
+                link = 'https://nounupdate.com' + link
+            if link.lower().endswith('.pdf') and link not in abs_links:
+                abs_links.append(link)
+        return (abs_links[0] if abs_links else None), title
+    except Exception as e:
+        app.logger.warning('nounupdate discover failed for %s: %s', code, e)
+        return None, None
+
+
 def _fetch_and_cache_pdf(code, urls):
-    """Download first working PDF and cache locally. Returns path or None."""
+    """Download first working PDF and cache locally. Also tries nounupdate page scrape."""
     import requests as http_requests
     cache_dir = os.path.join(app.root_path, 'static', 'materials_cache')
     os.makedirs(cache_dir, exist_ok=True)
@@ -365,20 +406,27 @@ def _fetch_and_cache_pdf(code, urls):
     if os.path.exists(cache_pdf) and os.path.getsize(cache_pdf) > 1000:
         return cache_pdf
 
+    # Live discover from nounupdate course page
+    discovered, _ = _discover_nounupdate_pdf(code)
+    all_urls = []
+    if discovered:
+        all_urls.append(discovered)
+    for u in urls:
+        if u not in all_urls:
+            all_urls.append(u)
+
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/pdf,*/*',
     }
-    for url in urls:
+    for url in all_urls:
         try:
-            r = http_requests.get(url, timeout=50, stream=True, headers=headers, allow_redirects=True)
+            r = http_requests.get(url, timeout=55, stream=True, headers=headers, allow_redirects=True)
             ctype = (r.headers.get('Content-Type') or '').lower()
             if r.status_code != 200:
                 continue
-            # Accept PDF content-type or octet-stream with .pdf URL
             if 'pdf' not in ctype and 'octet' not in ctype and not url.lower().endswith('.pdf'):
                 continue
-            # Stream to cache
             tmp = cache_pdf + '.part'
             size = 0
             with open(tmp, 'wb') as f:
@@ -386,7 +434,7 @@ def _fetch_and_cache_pdf(code, urls):
                     if chunk:
                         f.write(chunk)
                         size += len(chunk)
-            if size < 1000:
+            if size < 1500:
                 try:
                     os.remove(tmp)
                 except OSError:
@@ -402,19 +450,13 @@ def _fetch_and_cache_pdf(code, urls):
 
 @app.route('/materials/proxy/<course_code>')
 def proxy_material(course_code):
-    """Serve PDF same-origin (local, cache, or fetch+cache) so on-page viewer always works."""
+    """Serve PDF same-origin so on-page viewer works for (almost) all courses."""
     from flask import send_file
     code, title, local_path, urls = _resolve_material(course_code)
-
-    path = local_path
-    if not path:
-        path = _fetch_and_cache_pdf(code, urls)
-
+    path = local_path or _fetch_and_cache_pdf(code, urls)
     if path and os.path.exists(path):
         return send_file(path, mimetype='application/pdf', as_attachment=False,
                          download_name=f'{code}.pdf', max_age=3600)
-
-    # Last resort: redirect to first remote URL
     flash(f'Could not load {code} inside the platform. Opening external source…', 'warning')
     return redirect(urls[0] if urls else url_for('course_materials'))
 
@@ -424,8 +466,12 @@ def download_material(course_code):
     """View online (in-platform) or force download."""
     from flask import send_file
     code, course_title, local_path, urls = _resolve_material(course_code)
+    # Enrich title from nounupdate when possible
+    if course_title == code:
+        _, nu_title = _discover_nounupdate_pdf(code)
+        if nu_title:
+            course_title = nu_title
     action = request.args.get('action', 'view')
-
     if action == 'download':
         path = local_path or _fetch_and_cache_pdf(code, urls)
         if path and os.path.exists(path):
@@ -443,8 +489,8 @@ def download_material(course_code):
                            pdf_url=urls[0] if urls else '')
 
 
-def _extract_pdf_text(path, max_pages=80):
-    """Extract text page by page using pypdf."""
+def _extract_pdf_text(path, max_pages=200):
+    """Extract text page by page (extended coverage)."""
     try:
         from pypdf import PdfReader
     except ImportError:
@@ -452,9 +498,10 @@ def _extract_pdf_text(path, max_pages=80):
     try:
         reader = PdfReader(path)
         pages = []
-        for i, page in enumerate(reader.pages[:max_pages]):
+        n = min(len(reader.pages), max_pages)
+        for i in range(n):
             try:
-                t = page.extract_text() or ''
+                t = reader.pages[i].extract_text() or ''
             except Exception:
                 t = ''
             pages.append(t)
@@ -464,16 +511,23 @@ def _extract_pdf_text(path, max_pages=80):
 
 
 def _split_modules_units(full_text):
-    """Heuristic split of NOUN materials into modules and units."""
-    # Normalize
+    """Robust split of NOUN materials into modules and units."""
     text = re.sub(r'\r', '', full_text)
-    # Split on MODULE / UNIT headings common in NOUN courseware
+    # Broader heading patterns used in NOUN courseware
     module_pat = re.compile(
-        r'(?im)^(module\s*(\d+)[:\.\s\-]*(.*?))$',
+        r'(?im)^(?:module|mod\.?)\s*([0-9]{1,2})(?:\s*[:\-–—.]\s*|\s+)(.{0,120})$'
     )
     unit_pat = re.compile(
-        r'(?im)^(unit\s*(\d+)[:\.\s\-]*(.*?))$',
+        r'(?im)^(?:unit|unt\.?)\s*([0-9]{1,2})(?:\s*[:\-–—.]\s*|\s+)(.{0,120})$'
     )
+    # Also catch "MODULE ONE" style
+    module_word = re.compile(
+        r'(?im)^module\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b(?:\s*[:\-–—.]\s*|\s+)(.{0,120})$'
+    )
+    word_to_num = {
+        'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
+        'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10',
+    }
 
     lines = text.split('\n')
     modules = []
@@ -484,8 +538,7 @@ def _split_modules_units(full_text):
     def flush_unit():
         nonlocal current_unit, buf
         if current_unit is not None:
-            body = '\n'.join(buf).strip()
-            current_unit['body'] = body
+            current_unit['body'] = '\n'.join(buf).strip()
             current_mod['units'].append(current_unit)
             current_unit = None
             buf = []
@@ -495,7 +548,7 @@ def _split_modules_units(full_text):
         flush_unit()
         if current_mod is not None:
             if buf:
-                current_mod['body'] = (current_mod.get('body') or '') + '\n' + '\n'.join(buf)
+                current_mod['body'] = ((current_mod.get('body') or '') + '\n' + '\n'.join(buf)).strip()
             modules.append(current_mod)
             current_mod = None
             buf = []
@@ -505,23 +558,36 @@ def _split_modules_units(full_text):
         if not raw:
             buf.append('')
             continue
-        mm = module_pat.match(raw)
+        # Strip leading page numbers / decorative chars
+        clean = re.sub(r'^[\d\W]+', '', raw).strip() or raw
+
+        mm = module_pat.match(raw) or module_pat.match(clean)
+        if not mm:
+            mw = module_word.match(raw) or module_word.match(clean)
+            if mw:
+                num = word_to_num.get(mw.group(1).lower(), mw.group(1))
+                title = (mw.group(2) or '').strip()
+                flush_mod()
+                current_mod = {'label': f'Module {num}', 'title': title or f'Module {num}', 'units': [], 'body': ''}
+                buf = []
+                continue
         if mm:
             flush_mod()
             current_mod = {
-                'label': f"Module {mm.group(2)}",
-                'title': (mm.group(3) or '').strip() or f"Module {mm.group(2)}",
+                'label': f"Module {mm.group(1)}",
+                'title': (mm.group(2) or '').strip() or f"Module {mm.group(1)}",
                 'units': [],
                 'body': '',
             }
             buf = []
             continue
-        um = unit_pat.match(raw)
+
+        um = unit_pat.match(raw) or unit_pat.match(clean)
         if um and current_mod is not None:
             flush_unit()
             current_unit = {
-                'label': f"Unit {um.group(2)}",
-                'title': (um.group(3) or '').strip(),
+                'label': f"Unit {um.group(1)}",
+                'title': (um.group(2) or '').strip(),
                 'body': '',
             }
             buf = []
@@ -532,57 +598,89 @@ def _split_modules_units(full_text):
     return modules
 
 
-def _summarize_block(text, max_points=5, max_chars=900):
-    """Extractive summary: pick informative sentences."""
+def _summarize_block(text, max_points=6, max_chars=1200):
+    """Stronger extractive summary with definition/importance bias."""
     if not text:
         return '', []
-    # Clean
     text = re.sub(r'\s+', ' ', text).strip()
-    # Sentence split
     parts = re.split(r'(?<=[\.\!\?])\s+', text)
-    sentences = []
+    scored = []
     for s in parts:
         s = s.strip()
-        if len(s) < 40 or len(s) > 320:
+        if len(s) < 35 or len(s) > 400:
             continue
-        # Prefer definition / importance style
-        score = 0
         low = s.lower()
-        for kw in ('is ', 'are ', 'means', 'refers', 'important', 'defined', 'purpose',
-                   'objective', 'aims', 'includes', 'consists', 'therefore', 'in conclusion'):
+        score = 0
+        for kw, w in (
+            (' is ', 2), (' are ', 1), (' means ', 3), (' refers to ', 3),
+            (' defined as ', 3), (' important ', 2), (' objective', 2),
+            (' aim', 2), (' purpose', 2), (' includes ', 1), (' consists ', 1),
+            (' therefore ', 1), (' in conclusion', 2), (' note that ', 1),
+            (' the concept ', 2), (' characteristics ', 1), (' types of ', 1),
+            (' steps ', 1), (' process ', 1), (' advantages ', 1), (' functions ', 1),
+        ):
             if kw in low:
-                score += 1
+                score += w
+        if re.search(r'\b(e\.g\.|for example|such as)\b', low):
+            score += 1
         if re.search(r'\d', s):
-            score += 0.5
-        sentences.append((score, s))
-    sentences.sort(key=lambda x: (-x[0], -len(x[1])))
-    picked = []
-    seen = set()
-    for _, s in sentences:
-        key = s[:60].lower()
+            score += 0.3
+        scored.append((score, s))
+    scored.sort(key=lambda x: (-x[0], -len(x[1])))
+    picked, seen = [], set()
+    for _, s in scored:
+        key = s[:50].lower()
         if key in seen:
             continue
         seen.add(key)
         picked.append(s)
         if len(picked) >= max_points:
             break
-    summary = ' '.join(picked[:3])[:max_chars]
+    summary = ' '.join(picked[:4])[:max_chars]
     return summary, picked
+
+
+def _summary_cache_path(code):
+    d = os.path.join(app.root_path, 'static', 'summary_cache')
+    os.makedirs(d, exist_ok=True)
+    return os.path.join(d, f'{code}.json')
 
 
 @app.route('/materials/summarize/<course_code>')
 @login_required
 def summarize_material(course_code):
-    """Auto module/unit summarizer for a course PDF."""
+    """Extended module/unit auto-summarizer with caching and wider coverage."""
     code, course_title, local_path, urls = _resolve_material(course_code)
+    if course_title == code:
+        _, nu_title = _discover_nounupdate_pdf(code)
+        if nu_title:
+            course_title = nu_title
+
+    # Serve cached summary when available (unless ?refresh=1)
+    cache_file = _summary_cache_path(code)
+    if request.args.get('refresh') != '1' and os.path.exists(cache_file):
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                cached = json.load(f)
+            return render_template('materials/summary.html',
+                                   course_code=code,
+                                   course_title=cached.get('course_title') or course_title,
+                                   error=None,
+                                   modules=cached.get('modules') or [],
+                                   overview=cached.get('overview') or '',
+                                   highlights=cached.get('highlights') or [],
+                                   page_count=cached.get('page_count') or 0)
+        except Exception:
+            pass
+
     path = local_path or _fetch_and_cache_pdf(code, urls)
     if not path:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
-                               error='Could not download the course PDF to summarize. Try opening the full material first.',
+                               error='Could not download the course PDF to summarize. Open the full material first, then try again.',
                                modules=[], overview='', highlights=[], page_count=0)
 
-    pages, err = _extract_pdf_text(path, max_pages=100)
+    pages, err = _extract_pdf_text(path, max_pages=220)
     if err:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
@@ -592,44 +690,113 @@ def summarize_material(course_code):
     if len(full_text.strip()) < 200:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
-                               error='This PDF has little extractable text (it may be scanned images). Use the full PDF viewer.',
+                               error='This PDF has little extractable text (likely scanned images). The on-page PDF viewer still works; summary needs a text-based PDF.',
                                modules=[], overview='', highlights=[], page_count=len(pages))
 
     raw_modules = _split_modules_units(full_text)
     modules = []
-    for m in raw_modules[:12]:
+    for m in raw_modules[:16]:
         body = m.get('body') or ''
-        # If body empty, use unit bodies
-        if len(body) < 80:
-            body = '\n'.join(u.get('body') or '' for u in m.get('units') or [])
-        m_sum, m_pts = _summarize_block(body, max_points=6)
+        if len(body) < 100:
+            body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
+        m_sum, m_pts = _summarize_block(body, max_points=8, max_chars=1400)
         units_out = []
-        for u in (m.get('units') or [])[:10]:
-            u_sum, u_pts = _summarize_block(u.get('body') or '', max_points=4)
+        for u in (m.get('units') or [])[:12]:
+            u_sum, u_pts = _summarize_block(u.get('body') or '', max_points=5, max_chars=900)
             units_out.append({
                 'label': u.get('label'),
                 'title': u.get('title'),
                 'summary': u_sum,
-                'key_points': u_pts[:4],
+                'key_points': u_pts[:5],
             })
         modules.append({
             'label': m.get('label'),
             'title': m.get('title'),
             'summary': m_sum,
-            'key_points': m_pts[:5],
+            'key_points': m_pts[:6],
             'units': units_out,
         })
 
-    overview, highlights = _summarize_block(full_text[:12000], max_points=8, max_chars=700)
-    # If no modules detected, still show highlights
+    overview, highlights = _summarize_block(full_text[:20000], max_points=10, max_chars=900)
+
+    # Cache result
+    try:
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump({
+                'course_code': code,
+                'course_title': course_title,
+                'modules': modules,
+                'overview': overview,
+                'highlights': highlights[:12],
+                'page_count': len(pages),
+            }, f, ensure_ascii=False)
+    except Exception:
+        pass
+
     return render_template('materials/summary.html',
                            course_code=code,
                            course_title=course_title,
                            error=None,
                            modules=modules,
                            overview=overview,
-                           highlights=highlights[:10],
+                           highlights=highlights[:12],
                            page_count=len(pages))
+
+
+@app.route('/materials/search-nounupdate')
+@login_required
+def search_nounupdate():
+    """Search nounupdate.com course index for a code/title and list matches."""
+    import requests as http_requests
+    q = (request.args.get('q') or '').strip()
+    results = []
+    error = None
+    if len(q) >= 2:
+        try:
+            # Prefer direct course page if looks like a code
+            code_guess = re.sub(r'[^A-Za-z0-9]', '', q).upper()
+            if re.match(r'^[A-Z]{2,4}\d{2,3}$', code_guess):
+                url = f'https://nounupdate.com/courses/{code_guess}'
+                pdf, title = _discover_nounupdate_pdf(code_guess)
+                results.append({
+                    'course_code': code_guess,
+                    'title': title or code_guess,
+                    'page_url': url,
+                    'pdf_url': pdf or f'https://nounupdate.com/file-course-materials/{code_guess}.pdf',
+                })
+            # Also scan main courses page for link matches
+            r = http_requests.get('https://nounupdate.com/courses/', timeout=25, headers={
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'text/html',
+            })
+            if r.status_code == 200:
+                # Links like /courses/BIO201 or ACC101 Elements...
+                for m in re.finditer(r'href=["\']/courses/([A-Za-z]{2,4}\d{2,3})["\'][^>]*>([^<]+)', r.text):
+                    code = m.group(1).upper()
+                    label = re.sub(r'\s+', ' ', m.group(2)).strip()
+                    if q.lower() in code.lower() or q.lower() in label.lower():
+                        if not any(x['course_code'] == code for x in results):
+                            results.append({
+                                'course_code': code,
+                                'title': label,
+                                'page_url': f'https://nounupdate.com/courses/{code}',
+                                'pdf_url': f'https://nounupdate.com/file-course-materials/{code}.pdf',
+                            })
+                # Fallback broader pattern
+                if not results:
+                    for m in re.finditer(r'/courses/([A-Za-z]{2,4}\d{2,3})', r.text):
+                        code = m.group(1).upper()
+                        if q.lower() in code.lower() and not any(x['course_code'] == code for x in results):
+                            results.append({
+                                'course_code': code,
+                                'title': code,
+                                'page_url': f'https://nounupdate.com/courses/{code}',
+                                'pdf_url': f'https://nounupdate.com/file-course-materials/{code}.pdf',
+                            })
+            results = results[:40]
+        except Exception as e:
+            error = f'Search failed: {e}'
+    return render_template('materials/nounupdate_search.html', q=q, results=results, error=error)
 
 
 
