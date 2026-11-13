@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}NOUN e-Courseware & Study Materials{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="mb-1 text-success fw-bold">
+            <i class="bi bi-book-half me-2"></i>NOUN Course Materials Library
+        </h2>
+        <p class="text-muted mb-0">
+            Access, view, and download official National Open University of Nigeria (NOUN) course study guides and materials directly on this platform.
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-success fs-6 px-3 py-2 shadow-sm">
+            <i class="bi bi-mortarboard me-1"></i>{{ total_count }} Courses Cataloged
+        </span>
+    </div>
+</div>
+
+<!-- Search & Faculty Filter -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4 bg-light rounded">
+        <form method="GET" action="{{ url_for('course_materials') }}" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold small text-muted">Search by Course Code or Title</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-start-0" placeholder="e.g. GST 101, CIT 211, EDU 212, Economics..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small text-muted">Filter by Faculty</label>
+                <select name="faculty" class="form-select">
+                    <option value="">All Faculties</option>
+                    {% for f in faculties %}
+                    <option value="{{ f }}" {% if current_faculty == f %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-noun w-100">
+                    <i class="bi bi-funnel me-1"></i>Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Courses Grid / Table -->
+{% if courses %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 15%;">Course Code</th>
+                    <th style="width: 45%;">Course Title</th>
+                    <th style="width: 25%;">Faculty</th>
+                    <th style="width: 15%;" class="text-end">Study / Download</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in courses %}
+                <tr>
+                    <td>
+                        <span class="badge bg-light text-dark border fw-bold fs-6 px-2 py-1">
+                            {{ c.course_code }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="fw-semibold text-dark">{{ c.title }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-secondary border">
+                            {{ c.faculty }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('download_material', course_code=c.course_code) }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-book me-1"></i>Open / Download
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if total_count > 100 %}
+    <div class="card-footer bg-white text-center py-3 text-muted small">
+        Showing top 100 courses. Use the search bar above to instantly find any specific course code.
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="card border-0 shadow-sm py-5 text-center">
+    <div class="card-body">
+        <i class="bi bi-journal-x display-4 text-muted mb-3 d-block"></i>
+        <h5>No course materials found</h5>
+        <p class="text-muted small">Try adjusting your search query or faculty filter.</p>
+        <a href="{{ url_for('course_materials') }}" class="btn btn-sm btn-outline-secondary">Reset Filters</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Educational Disclaimer Notice -->
+<div class="alert alert-light border mt-4 small text-muted">
+    <i class="bi bi-info-circle me-1 text-primary"></i>
+    <strong>Educational Purpose:</strong> All course titles and syllabus guides are aggregated from the National Open University of Nigeria (NOUN) open curriculum timetable and public Open Educational Resources (OER) repositories strictly for academic study and revision purposes.
+</div>
+{% endblock %}

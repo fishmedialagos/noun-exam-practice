@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course_code }} Study Material - NOUN e-Courseware{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('course_materials') }}">Course Materials</a></li>
+                <li class="breadcrumb-item active">{{ course_code }}</li>
+            </ol>
+        </nav>
+        <h3 class="mb-0 text-success fw-bold">
+            <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>{{ course_code }} Study Material
+        </h3>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ oer_url }}" target="_blank" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-download me-1"></i>Direct Download PDF
+        </a>
+        <a href="{{ url_for('course_materials') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Back to Library
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+        <span class="small text-muted"><i class="bi bi-eye me-1"></i>In-Platform PDF Document Viewer</span>
+        <span class="badge bg-success">National Open University of Nigeria (NOUN)</span>
+    </div>
+    <div class="card-body p-0" style="min-height: 750px;">
+        <iframe src="{{ oer_url }}#toolbar=1" width="100%" height="750px" style="border: none; display: block;" title="{{ course_code }} Course Material">
+            <div class="p-4 text-center">
+                <p>Your browser does not support embedded PDF viewing.</p>
+                <a href="{{ oer_url }}" class="btn btn-noun" target="_blank">
+                    <i class="bi bi-download me-1"></i>Click here to Open or Download PDF
+                </a>
+            </div>
+        </iframe>
+    </div>
+</div>
+
+<div class="alert alert-light border small text-muted">
+    <i class="bi bi-shield-check me-1 text-success"></i>
+    This material is rendered directly inside your NOUN Exam Mock portal for uninterrupted studying. You can also print, zoom, or save it offline using the controls above.
+</div>
+{% endblock %}

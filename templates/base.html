@@ -147,6 +147,17 @@
                                 </a>
                             </li>
                         {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white fw-semibold" href="{{ url_for('course_materials') }}">
+                                <i class="bi bi-book me-1"></i>Course Materials
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('course_materials') }}">
+                                <i class="bi bi-book me-1"></i>Course Materials
+                            </a>
+                        </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">

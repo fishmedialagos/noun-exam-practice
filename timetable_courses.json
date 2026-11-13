@@ -1,0 +1,3292 @@
+[
+  {
+    "course_code": "ARA227",
+    "title": "ARABIC LITERATURE FROM EARLY ISLAM",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS111",
+    "title": "Old Testament (o.t) Survey",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "BED212",
+    "title": "Fundamentals of Data Processing",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENT209",
+    "title": "Theory of Entrepreneurship",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "CIT236",
+    "title": "Analog and Digital Electronics",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "CRS214",
+    "title": "Pauline Epistles",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRD120",
+    "title": "Sociology of Co-operation",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "ARA114",
+    "title": "ARABIC GRAMMAR I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS173",
+    "title": "Introduction to The Study of Religion",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE282",
+    "title": "Introduction to French Literature (Prose Poetry & Drama)",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ECE121",
+    "title": "Child Development",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "HAU215",
+    "title": "Hausa Literary Criticism",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL102",
+    "title": "Mosque In Islam",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISS111",
+    "title": "Islamic Principles on Hygiene and Physiological development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HAU112",
+    "title": "Introduction to Hausa Linguistics II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EDU280",
+    "title": "Agricultural Science Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ECE222",
+    "title": "Developing Professional Skills and Competence",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ENG224",
+    "title": "Advanced English Composition II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "KHE209",
+    "title": "Gymnastics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT206",
+    "title": "Customers Relationship Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EDU250",
+    "title": "Subject Methos I (biology)",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "PED234",
+    "title": "Man Energy and Resources",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "HED208",
+    "title": "Personality and Growth in Health Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED123",
+    "title": "Physics For Integrated Science",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "KHE107",
+    "title": "Skills Development and Techniques in Sports and Ga",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOR213",
+    "title": "Use of Yoruba",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS218",
+    "title": "Introduction to Telecommunications",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BUA105",
+    "title": "Introduction to Insurance",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED222",
+    "title": "Chemistry For Integrated Science",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "BED115",
+    "title": "Introduction to Vocational Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIN111",
+    "title": "Introduction to Linguistics I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CTH121",
+    "title": "Introduction to Religion and Society",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ACC102",
+    "title": "Principles Of Accounting",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "EHE118",
+    "title": "Healthful School Environment NOUN-SED",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECE110",
+    "title": "Childhood Education In Traditional",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "IGB101",
+    "title": "Introduction to the People, Language and Culture of the Igbo",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "COS201",
+    "title": "Computer Programming I NOUN-ECE",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIN105",
+    "title": "Introduction to Linguistics I NOUN-ELE",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENG104",
+    "title": "Introduction to Semiotics",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "COS102",
+    "title": "Problem Solving NOUN-IFT",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS103",
+    "title": "Introduction to Library & Information Work",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHE120",
+    "title": "Introduction to Community and Public Health",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRE110",
+    "title": "History of the French Language",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "MKT111",
+    "title": "Element of Marketing",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HKE106",
+    "title": "Inclusive Physical Education and Sport",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ARA112",
+    "title": "Arabic Conversation II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENT104",
+    "title": "Nigeria Culture and Entrepreneurship Acceptance",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "IGB112",
+    "title": "Introduction to Igbo Semantics NOUN-ENT",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PAD126",
+    "title": "Introduction To Conflict Management",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "MTH102",
+    "title": "Elementary Mathematics II NOUN-MKT",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "GST111-A",
+    "title": "Communication Skill in English - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST203-A",
+    "title": "Introduction to Philosophy and Logic - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PAD251",
+    "title": "Introduction to Social Psychology",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "PAD204",
+    "title": "Introduction to Political Science",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "CRD204",
+    "title": "Man & His Environment",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "ARA127",
+    "title": "INTRODUCTION TO ARABIC LITERATURE",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS217",
+    "title": "Prophets",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE162",
+    "title": "Introduction to Francophone African",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA132",
+    "title": "ARABIC AS A SECOND LANGUAGE NOUN-ISS",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CTH122",
+    "title": "Issues in Marriage and Family",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IGB282",
+    "title": "Varieties of Prose in Igbo",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS152",
+    "title": "Marriage and Family",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL111",
+    "title": "Studies On The Qur_an",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "GST101-A",
+    "title": "Use of English and Communications Skills - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOR113",
+    "title": "Introduction to the History of the Yoruba People",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HAU106",
+    "title": "General Study of Hausa Genres",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CIT108",
+    "title": "Problem Solving Algorithm",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "HED204",
+    "title": "Communicable and Non-communicable Diseases",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HED101",
+    "title": "Personal Health",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IGB211",
+    "title": "Survey of the Literature in Igbo",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "KHE105",
+    "title": "Organization and Administration of Intramural Spor",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IGB224",
+    "title": "Syntax of Igbo I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HED206",
+    "title": "Health Agencies and Programme",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ISL272",
+    "title": "The Abbasid Caliphate",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PED237",
+    "title": "Measurement and Shapes",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "KHE212",
+    "title": "Driver Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED121",
+    "title": "Biology For Integrated Science",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "PED150",
+    "title": "Primary Science Curriculum and Method",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CRS101",
+    "title": "Introduction to The Study of Islam",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "YOR241",
+    "title": "Phonology of Yoruba I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST112-A",
+    "title": "Nigeria people and culture - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CTH107",
+    "title": "Early Church History",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENG101",
+    "title": "Survey of the English Language NOUN-CYB",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "GST113-A",
+    "title": "Nigerian Peoples and Culture - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHE116",
+    "title": "Organization and Administration of School Health Programme F",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BED116",
+    "title": "Business Methods",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IGB102",
+    "title": "Introduction to the History of Igbo People",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PHL108",
+    "title": "Introduction to Oriental Philosophy",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PHL117",
+    "title": "Ancient Philosophy",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IFT211",
+    "title": "Digital logic design",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOU101",
+    "title": "Introduction to the Yoruba People Language and Culture",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EDU102",
+    "title": "Introduction to Teaching and Foundations of Education",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "EEC102",
+    "title": "The pre school and Play in early childhood",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRN103",
+    "title": "Introduction to French Grammar",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS111",
+    "title": "Introduction to Library and Information Science",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT121",
+    "title": "Marketing of Financial Services",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CRD105",
+    "title": "Nigerian Agriculture",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "SED104",
+    "title": "Nigerian Secondary School Chemistry Curriculum and Implement",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "YOR112",
+    "title": "Introduction to the Grammatical Patterns of the Yoruba Langu",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT126",
+    "title": "Brand Content Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CRS261",
+    "title": "Christian Counseling",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU110",
+    "title": "Orthography of Hausa",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA211",
+    "title": "INTERMEDIATE ARABIC CONVERSATION",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG222",
+    "title": "Advanced English Syntax",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS104",
+    "title": "Common Themes In Christianity And Islam",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU217",
+    "title": "Introduction to Hausa Popular Music",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE101",
+    "title": "French Grammar I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE122",
+    "title": "Textual Analysis/practical French I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU104",
+    "title": "Introduction to the Hausa Sound System",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL172",
+    "title": "As-sirah: Biography of The Prophet",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IGB111",
+    "title": "Introduction to the Igbo People and Language NOUN-ELE",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL213",
+    "title": "Textual Study of The Quran",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISS113",
+    "title": "Guidance and Counselling in Islam",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BED111",
+    "title": "Keyboarding",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL241",
+    "title": "Comparative Philosophy",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CIT210",
+    "title": "Computer Hardware",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "KHE108",
+    "title": "Introduction to Movement Analysis NOUN-BUA",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS101",
+    "title": "Information Literacy",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS201",
+    "title": "Knowledge Organisation (Classification I) NOUN-SED",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED221",
+    "title": "Biology For Integrated Science",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "EHE119",
+    "title": "Health and Physical Fitness",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL202",
+    "title": "Marxist Philosophy",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "LIS214",
+    "title": "Literature & Library Services for Young people",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ARA101",
+    "title": "Arabic Language Drills",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PED236",
+    "title": "Elementary Mathematics",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CTH106",
+    "title": "Introduction to Old Testament",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENG161",
+    "title": "Theatre Workshop",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HKE107",
+    "title": "Introduction to Outdoor Sports",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CTH101",
+    "title": "Introduction to Greek I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENG102",
+    "title": "Introduction to English Grammar and Composition",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PHL112",
+    "title": "Arguments and critical thinking",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IRS104",
+    "title": "The Rise of Nation-States",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CIT102",
+    "title": "Software Application Skills",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "YOU102",
+    "title": "Introduction to the History of the Yoruba People NOUN-LIS",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EIS101",
+    "title": "Introduction to Science and Integrated Science Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "COS202",
+    "title": "Computer Programming II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HKE102",
+    "title": "Skill development and Techniques of Track and Field Events P",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IFT205",
+    "title": "Introduction to information technology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PED111",
+    "title": "Introduction to the Nigerian Child and Primary Education",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "EEC104",
+    "title": "Creativity, art, and activities in early childhood",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST204-A",
+    "title": "Entrepreneurship and Innovation - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CRD106",
+    "title": "Cooperative Education",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "BUA107",
+    "title": "Business Succession and Plan",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENT122",
+    "title": "The Nigerian Entrepreneurial Environment",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "AMS104",
+    "title": "Fundamentals of Project Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PAD108",
+    "title": "Introduction to Social Statistics II",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "FRN104",
+    "title": "Introduction to composition Writing in French",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ARA118",
+    "title": "ARABIC CREATIVE WRITING I NOUN-FRE",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "BFN203",
+    "title": "Basic Financial Literacy",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "CTH124",
+    "title": "Introduction to the Study of Religion",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ARA183",
+    "title": "Arabic Conversation",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRD208",
+    "title": "Nigeria & International Cooperative",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "CRS216",
+    "title": "Greek Syntax NOUN-IGB",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS222",
+    "title": "Christian Doctrines",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE112",
+    "title": "Oral and Aural Comprehension",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA282",
+    "title": "Arabic Grammar I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IGB103",
+    "title": "Advanced Comprehension and Composition in Igbo",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "GST103-A",
+    "title": "Computer Fundamentals - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CRS211",
+    "title": "Introduction to The Bible",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU203",
+    "title": "Phonology of Hausa I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE211",
+    "title": "Advanced Study In Oral and Written",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL245",
+    "title": "Ilm _l-kalam and Development of Mus",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU103",
+    "title": "Advanced Comprehension and Composition",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "KHE214",
+    "title": "Prevention and care of  Sports Injuries",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL252",
+    "title": "Philosophy of Religion",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "LIS211",
+    "title": "Learning and Communication Skills",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOR122",
+    "title": "Introduction to the Grammatical Patterns of Yoruba",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PED230",
+    "title": "Introduction to Music In Primary Sc NOUN-ECE",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "KHE205",
+    "title": "Accident Prevention and Safety Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL126",
+    "title": "INTRODUCTION TO AFRICAN PHILOSOPHY",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HED106",
+    "title": "Health Care Delivery System in Nigeria",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL214",
+    "title": "Philosophy of Language",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EDU111",
+    "title": "Introduction to Foundations of Educ",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "EHE121",
+    "title": "Human Anatomy and Physiology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS204",
+    "title": "Technical Services in Libraries & Information Centres",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOR215",
+    "title": "Introduction to Yoruba Oral Literature",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHE122",
+    "title": "Family Life Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CYB126",
+    "title": "Security in Social Networks NOUN-LIN",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS217",
+    "title": "Business Information Systems/Services",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PED271",
+    "title": "Primary School Phe Curriculum & Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CTH102",
+    "title": "Introduction to Greek II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IFT232",
+    "title": "Information Storage and Retrieval",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIN116",
+    "title": "History of Linguistics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED214",
+    "title": "History and Philosophyof Integrated",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "INS202",
+    "title": "Human-Computer Interface",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENG103",
+    "title": "Spoken English (Practical)",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EEC106",
+    "title": "Administration and supervision of early childhood education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HKE111",
+    "title": "Introduction to African and Folk dance",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRN110",
+    "title": "History of the French Language NOUN-BUA",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PED113",
+    "title": "Introduction to Special Needs Education",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ENT121",
+    "title": "Introduction to Entrepreneurship Venture Venture Creation GS",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "ELE104",
+    "title": "Literacy Skills for Language Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CIT215",
+    "title": "Introduction to Programming Language NOUN-MKT",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "FRE231",
+    "title": "Introduction to French Phonology NOUN-PAD",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA116",
+    "title": "ARABIC MORPHOLOGY",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG122",
+    "title": "Structure of Modern English II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA111",
+    "title": "ARABIC CONVERSATION I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS231",
+    "title": "Christian Ethics NOUN-FRE",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG121",
+    "title": "Structure of Modern English I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG216",
+    "title": "Survey of English Literature II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG131",
+    "title": "English for Public Relations",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE271",
+    "title": "Introduction to Francophone African",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG241",
+    "title": "Introduction to Phonetics & Phonology NOUN-IFT",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU206",
+    "title": "Hausa Recreational Activities",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU109",
+    "title": "Introduction to Hausa Orthography",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PHL101",
+    "title": "Introduction to Philosophy",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU208",
+    "title": "Hausa Social Institutions",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CIT212",
+    "title": "Systems Analysis and Design",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ISL212",
+    "title": "Introduction to Tajwid",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EDU233",
+    "title": "General Teaching Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "PHL152",
+    "title": "INTRODUCTION TO LOGIC II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HED124",
+    "title": "Community Health Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOR217",
+    "title": "The Yoruba Traditional and Contemporary Profession",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "KHE208",
+    "title": "Nutrition and Sports performance",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CIT208",
+    "title": "Information Systems",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "LIS107",
+    "title": "Basic Computer Skills & Operating Systems",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED114",
+    "title": "School Science Laboratory",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "MED134",
+    "title": "Introductory Statics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS213",
+    "title": "Library & Information Services to People with Special Needs",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECE113",
+    "title": "Introduction to Philosophy of Early",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "PED232",
+    "title": "Aesthetic Expression In Primary Edu NOUN-ECE",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ISS103",
+    "title": "Studies on the Quran",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST104-A",
+    "title": "Use of Library - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIT104",
+    "title": "Introduction to Poetry",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CTH109",
+    "title": "Introduction to Sociology of Religion",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOU103",
+    "title": "Advanced Comprehension and Composition",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRE104",
+    "title": "Introduction to Composition Writing in French",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CSO101",
+    "title": "Computer in Society",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ISS106",
+    "title": "Basis of Islamic Thought and Civilization",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHE114",
+    "title": "Environmental Health",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT129",
+    "title": "Marketing Channels",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRN106",
+    "title": "Introduction to Literary Appreciation",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HKE104",
+    "title": "Skill development and Techniques in Gymnastics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS114",
+    "title": "Introduction to Digital Libraries",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PED114",
+    "title": "Social Studies in Primary Education NOUN-PED",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ISL271",
+    "title": "The Rightly Guided Caliphs and  The Umayyads",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRD104",
+    "title": "Rural Development II",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "ACC204",
+    "title": "Introduction to Financial Accounting",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "PAD105",
+    "title": "Introduction to Social Statistics I",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "BUA110",
+    "title": "Transport and Logistics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT104",
+    "title": "Retail Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CRD122",
+    "title": "Nigeria Agriculture",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "CRS210",
+    "title": "History and Religion of Israel",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS272",
+    "title": "Ecumenism",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA228",
+    "title": "ARABIC LITERATURE- ABBASID PERIOD",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG221",
+    "title": "Introduction to Syntactic Models",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG212",
+    "title": "Creative Writing I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE111",
+    "title": "Language Laboratory Work/oral French",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IGB106",
+    "title": "Introduction to Linguistics II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE241",
+    "title": "Introduction to French Literary Genre",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IGB215",
+    "title": "Introduction to Igbo Oral Literature",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL231",
+    "title": "Intorduction to The Shariah",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PHL216",
+    "title": "Medieval Philosophy",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "YOR124",
+    "title": "Advanced Comprehension and Composition in Yoruba NOUN-YOR",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "YOR222",
+    "title": "Morphology of Yoruba",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CYB192",
+    "title": "Cyber Security (Tools) Practical II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECE221",
+    "title": "Language and Literacy In The Early",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CIT211",
+    "title": "Introduction to Operating Systems",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "HAU213",
+    "title": "Folktales",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EDU292",
+    "title": "Primary Education Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "LIS210",
+    "title": "Library Application Software Packages",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HED203",
+    "title": "Field experience in Health Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NOU107-A",
+    "title": "A STUDY GUIDE FOR DISTANCE LEARNER - Batch A NOUN-BED",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "KHE202",
+    "title": "Human Kinetics Methods",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT130",
+    "title": "Cases in Marketing Analytics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS110",
+    "title": "Learning and Communication Skills",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED224",
+    "title": "Energy and Matter",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "FRE105",
+    "title": "Initiation into Translation",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU212",
+    "title": "Syntax of Hausa I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IRS105",
+    "title": "History of Nigeria",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL107",
+    "title": "Theories of Human Nature",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISS105",
+    "title": "Introduction to Hadith NOUN-LIS",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "VTE115",
+    "title": "Introduction to Vocational Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL113",
+    "title": "Elementary Ethics",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PAD104",
+    "title": "Introduction to e-governance and Innovation",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "IFT203",
+    "title": "Introduction to web technology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ARA222",
+    "title": "CLASSICAL AND MODERN ARABIC LIBRARI",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EHE113",
+    "title": "Personal Health and Dental Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "KHE110",
+    "title": "Social Institutions and Sports",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PED115",
+    "title": "School Library and ICT Services in Primary Education",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "FRE107",
+    "title": "Introduction to French Literary Genres-Prose",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "BUA102",
+    "title": "Introduction to Business II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ISS107",
+    "title": "Introduction to Islamic Philosophy",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ENT124",
+    "title": "Basic Financial Literacy",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "BUA114",
+    "title": "Employment Laws and Administration",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MCM111",
+    "title": "Word Processing I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PAD202",
+    "title": "Introduction to Public Administration NOUN-ACC",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "CRD101",
+    "title": "Principles and Practice of Co-operation",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "PED123",
+    "title": "Reading in Early Childhood and Primary Education",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "SED118",
+    "title": "Introduction to Problem Solving in Physics I",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CRS113",
+    "title": "Bible Geography",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS192",
+    "title": "Intro. to African Traditional Religion",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU108",
+    "title": "Hausa and the Media",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG226",
+    "title": "English Morphology",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA229",
+    "title": "ARABIC RHETORIC I: AL-BAYAN",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG215",
+    "title": "Survey of English Literature I (Medieval & Renaissance)",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS218",
+    "title": "Biblical Hermeneutics",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE131",
+    "title": "Textual Analysis I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU111",
+    "title": "Introduction to Hausa Linguistics I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU202",
+    "title": "Use of Hausa",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IGB222",
+    "title": "Morphology of Igbo",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU209",
+    "title": "Introduction to Hausa Popular Fiction",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "MED131",
+    "title": "Social Media in Mathematics Teaching and Learning",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IGB213",
+    "title": "Use of Igbo",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CIT217",
+    "title": "Foundation of Sequetial Programming",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "IFT210",
+    "title": "Computer Hardware",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BED214",
+    "title": "Computer Application In Business",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ISL142",
+    "title": "Islam and Inter-religious Dialogue",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ECE231",
+    "title": "Science In The Early Years NOUN-PED",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "YOR224",
+    "title": "Syntax of Yoruba I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED223",
+    "title": "Physics For Integrated Science",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "EDU282",
+    "title": "Business Education Teaching Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "LIS102",
+    "title": "Libraries and Society",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "KHE201",
+    "title": "Human Anatomy Physiology and Sports I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT124",
+    "title": "International Marketing",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS212",
+    "title": "Indigenous Knowledge Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SED225",
+    "title": "Nigerian Integrated Science Curriculum",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ENG251",
+    "title": "Language and Society",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CIT202",
+    "title": "Applications of Computer In Busines",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "FRE106",
+    "title": "Introduction to Literary Appreciation NOUN-PED",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ECE232",
+    "title": "Observation Recording and Assessmen",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "YOR128",
+    "title": "Elements of Communication NOUN-PAD",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "KHE125",
+    "title": "Adaptive Physical Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ISS108",
+    "title": "Islamic Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHE111",
+    "title": "Introduction to Health Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRN109",
+    "title": "Nigeria and Her Francophone Neighbours NOUN-BED",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRN108",
+    "title": "Introduction to Negro African Literature in French",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HKE105",
+    "title": "Introduction to  Psychology  and Sociology of Sport and Exer",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CTH104",
+    "title": "Study of Synoptic Gospels",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST105-A",
+    "title": "History & Philosophy of Science - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST302-A",
+    "title": "Business Creation and Growth - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FIN101",
+    "title": "Introduction to Finance",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CRD102",
+    "title": "Organization and Management of Cooperatives",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "CRD124",
+    "title": "Introduction to Cooperatives",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "ENT208",
+    "title": "Biographical Studies of Entrepreneurship",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "ARA113",
+    "title": "ARABIC READING SKILLS",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ARA182",
+    "title": "Arabic Reading",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS212",
+    "title": "Pentateuch",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG281",
+    "title": "The African Novel",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG223",
+    "title": "Advanced English Composition I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRS251",
+    "title": "Pastoral Theology",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU204",
+    "title": "Introduction to the Oral Literature of Hausa",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU107",
+    "title": "Introduction to Hausa Cultural Studies",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE132",
+    "title": "Textual Analysis II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU210",
+    "title": "Morphology of Hausa",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HAU211",
+    "title": "Varieties of Prose Writing in Hausa",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL136",
+    "title": "Women In Islam",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL121",
+    "title": "Studies On The Hadith",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ISL241",
+    "title": "Prophethood and The Prophets In Islam",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PHL204",
+    "title": "Introduction to Ethics",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "YOR226",
+    "title": "Yoruba Traditional Foods and Dietary Practices",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CIT191",
+    "title": "Computer Laboratory I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "CIT204",
+    "title": "Computer Appreciation and Application",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "CYB191",
+    "title": "Cybersecurity Practical I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECE123",
+    "title": "Health Care In The Early Years",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "EDU258",
+    "title": "Computer Science Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "IFT191",
+    "title": "Computer Laboratory I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "KHE203",
+    "title": "Basic Psychology in coaching",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS215",
+    "title": "Rural Community Info Systems, Services & Info Repackaging",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES110",
+    "title": "Political Economy Of Development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PED235",
+    "title": "Clothing and Textiles",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "BED114",
+    "title": "Business Methods",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EDU112",
+    "title": "Professionalism In Teaching",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ECE120",
+    "title": "Development of Appropriate Skills I",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ECE230",
+    "title": "Introduction to Early Childhood Education",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "EDU254",
+    "title": "Integrated Science Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "ARA215",
+    "title": "ARABIC GRAMMAR II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "HED213",
+    "title": "Family Life and Sex Education",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NOU707-A",
+    "title": "A STUDY GUIDE FOR DISTANCE LEARNER - Batch A",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "LIS206",
+    "title": "Introduction to Information Science",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ACC201",
+    "title": "Taxation",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "PED261",
+    "title": "Primary School Social Studies Curriculum",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "SED122",
+    "title": "Chemistry For Integrated Science",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CIT206",
+    "title": "Discrete Structure NOUN-POL",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ENG151",
+    "title": "Introduction to English  As A Second NOUN-HTM",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EDU114",
+    "title": "History of Education In Nigeria",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "PED101",
+    "title": "Special Infant Abilities",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "PHL251",
+    "title": "African Philosophy II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "EHE115",
+    "title": "Health problems and health of the school child",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "AMS101",
+    "title": "Principles of Management NOUN-HKE",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "IGB113",
+    "title": "Introduction to Igbo Arts and Craft",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE103",
+    "title": "Introduction to French Grammar",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "PED112",
+    "title": "Reading In Early Childhood and Prim",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CIT104",
+    "title": "Introduction to Computer Science",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "AMS102",
+    "title": "Basic Mathematics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MKT127",
+    "title": "Promotion",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BFN209",
+    "title": "Introduction to Finance",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "PAD124",
+    "title": "Element Of Human Resource Management",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "LIS125",
+    "title": "Introduction to Library Application Packages",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HKE110",
+    "title": "Elements of Sports",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EDU290",
+    "title": "Early Childhood Education Methods",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "MKT201",
+    "title": "Element of Marketing (principles)",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MCM107",
+    "title": "Introduction to Photojournalism",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ELE101",
+    "title": "Basic Skills in English Language",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECE227",
+    "title": "Organization and Service Provision",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "GST202-A",
+    "title": "Fundamentals of Peace Studies and Conflict Resolution - Batc",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ISL214",
+    "title": "Textual Study of Qur_an II",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENG172",
+    "title": "Introduction to Poetry",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "FRE121",
+    "title": "Textual Analysis/practical French I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "BUS105",
+    "title": "Elements of Management I NOUN-ISS",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "HAU207",
+    "title": "Survey of Hausa Oral Literature",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "ENT202",
+    "title": "Introduction to Entrepreneurial Ventures NOUN-IFT",
+    "faculty": "Faculty of Management Sciences"
+  },
+  {
+    "course_code": "ISL132",
+    "title": "Advanced Study of Salat and Zakat",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "IGB105",
+    "title": "Introduction to Linguistics I",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "CRD108",
+    "title": "Producers and Consumers Cooperative",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "YOR117",
+    "title": "Introduction to Traditional and Modern African Communication",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHL253",
+    "title": "Social and Political Philosophy",
+    "faculty": "Faculty of Arts"
+  },
+  {
+    "course_code": "SED115",
+    "title": "Energy and Matter",
+    "faculty": "Faculty of Education"
+  },
+  {
+    "course_code": "CYB122",
+    "title": "Ethics and Professional Practice in Cybersecurity",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ISS115",
+    "title": "Articles of Faith in Islam",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CTH123",
+    "title": "Types of Theology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO154",
+    "title": "Introduction to Quantitative Method",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "NSC219",
+    "title": "Foundation of Professional Nursing Practice I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHS204",
+    "title": "Introduction to Environmental Health",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "ANP204",
+    "title": "Introduction to Agricultural Biochemistry",
+    "faculty": "Faculty of Agricultural Sciences"
+  },
+  {
+    "course_code": "ESM112",
+    "title": "Introductory Ecology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM235",
+    "title": "Food Beverage & Costs",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMC113",
+    "title": "History of Nigerian Films & Cinemas",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO210",
+    "title": "Seed Plants",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "GST203-B",
+    "title": "Introduction to Philosophy and Logic - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CHM103",
+    "title": "Introduction to Physical Chemistry",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "HCM134",
+    "title": "Food & Nutrition",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "STT102",
+    "title": "Introductory Statistics",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "MAC116",
+    "title": "African Communication Systems II",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "DES216",
+    "title": "Nigerian Economy in Perspective II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MTH103",
+    "title": "Elementary Mathematics IIi",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ECO253",
+    "title": "Statistics For Economist I",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "TSM244",
+    "title": "tourist Sites: Products & Operation",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "INR261",
+    "title": "International Environmental Politics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HTM103",
+    "title": "Earth and Environment",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "POL124",
+    "title": "Organisation of Government",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "GST113-B",
+    "title": "Nigerian Peoples and Culture - Batch B NOUN-DES",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ESM231",
+    "title": "Introductory toxicology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST112-B",
+    "title": "Nigeria people and culture - Batch B NOUN-HTM",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHS202",
+    "title": "Nutrition In Health and Disease",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "EHS201",
+    "title": "General Microbiology",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "NSC217",
+    "title": "Human Anatomy II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO102",
+    "title": "General Biology II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "AFS220",
+    "title": "Introduction to Fisheries and Wildl",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FRM211",
+    "title": "Forestry and Wildlife Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES106",
+    "title": "Damocratization, Governance And Developing Society",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM232",
+    "title": "Menu Development & Planning",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES222",
+    "title": "Technology and Socio-Economic Development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO218",
+    "title": "General Biochemistry Laboratory",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "MAC214",
+    "title": "Investigative & Interpretative Reporting",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "PHY103",
+    "title": "Geometrics and Wave Optics",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "TSM221",
+    "title": "Ecotourism",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST105-B",
+    "title": "History & Philosophy of Science - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS212",
+    "title": "The Sociology of Punishment and Corrections",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO231",
+    "title": "Micro Economic Theory I",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "PHY206",
+    "title": "Optics I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "INR132",
+    "title": "Africa and The Western Powers",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HTM104",
+    "title": "Fundamentals of Leisure and Recreation",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "POL103",
+    "title": "Organisation of Government NOUN-POL",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "STT211",
+    "title": "Probaility Distribution I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "FMC221",
+    "title": "Fundamentals of Scriptwriting, Directing and Acting",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NOU807-B",
+    "title": "A STUDY GUIDE FOR DISTANCE LEARNER - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "AGR202",
+    "title": "Introduction to Agric. Engineering",
+    "faculty": "Faculty of Agricultural Sciences"
+  },
+  {
+    "course_code": "AEM251",
+    "title": "Introduction to Agricultural Economy",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ESM102",
+    "title": "The Nigerian Environment",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES211",
+    "title": "Environment and Sustainable Develop",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO220",
+    "title": "Fisheries and Wildlife",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "DES105",
+    "title": "Colonization And Development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MTH213",
+    "title": "Numerical Analysis I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ESM106",
+    "title": "Environmental Resource Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHY104",
+    "title": "General Physics IV",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "GST202-B",
+    "title": "Fundamentals of Peace Studies and Conflict Resolution - Batc",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CHM291",
+    "title": "Practical Chemistry IIi- Inorganic NOUN-PHY",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "HCM142",
+    "title": "tourism As An Industry",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS211",
+    "title": "Sociology of Crime and Delinquency",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "INR111",
+    "title": "Introduction to International Studies",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO232",
+    "title": "Micro Economic Theory II",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "FMC215",
+    "title": "Principle of Sound Recording & Editing in Film",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MAC221",
+    "title": "Editing & Graphics of Communication",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "INR142",
+    "title": "Introduction to Public Administration",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NSC211",
+    "title": "Medical Microbiology and Parasitology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM237",
+    "title": "Hospitality Sales and Marketing",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PCR271",
+    "title": "Understanding Conflicts and War",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "TSM146",
+    "title": "The Cultural Heritage",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHY201",
+    "title": "Classical Mechanics I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "AGG112",
+    "title": "Introduction to Agriculture II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST111-B",
+    "title": "Communication Skill in English - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HTM105",
+    "title": "Tourism Movements and Historical Development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ESM108",
+    "title": "Introduction to Environmental Science",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NSC216",
+    "title": "Human Anatomy III",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NSC210",
+    "title": "Introduction to Sociology II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "AGR205",
+    "title": "Introduction to Agro-climatology",
+    "faculty": "Faculty of Agricultural Sciences"
+  },
+  {
+    "course_code": "AGR207",
+    "title": "Anatomy and Physiology of Farm Animals",
+    "faculty": "Faculty of Agricultural Sciences"
+  },
+  {
+    "course_code": "HCM144",
+    "title": "tourism Marketing",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO215",
+    "title": "General Biochemistry Laboratory",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ESM222",
+    "title": "Water Resource Evaluation NOUN-FMM",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BCJ125",
+    "title": "Digitisation and the Broadcast Industry",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHY101",
+    "title": "Elementary Mechanics Heat andprope",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "MTH282",
+    "title": "Mathematical Methods II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "PHY205",
+    "title": "Introduction to Space Physics",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "CSS242",
+    "title": "Measurements and Patterns of Crimes",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "INR112",
+    "title": "Introduction to Law and Diplomacy I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES213",
+    "title": "Introduction to Public Finance Mana",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "INR122",
+    "title": "Basic Concepts in International Relations",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO247",
+    "title": "The Nigerian Economy In Perspective",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "MAC211",
+    "title": "Theories of Mass Communication",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "INR212",
+    "title": "International Law and Diplomacy In the",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHY208",
+    "title": "Network Analysis and Devises",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "MAC117",
+    "title": "Writing For Mass Media I",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "TSM145",
+    "title": "Geography of tourism",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PCR114",
+    "title": "Introduction to Conflict Resolution",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "CHM101",
+    "title": "Introductory Inorganic Chemistry I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "POL231",
+    "title": "Essentials of International Relatio",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "TSM144",
+    "title": "Tourism Marketing",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES104",
+    "title": "Psychological Perspective on Development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "SOC101",
+    "title": "Introduction to sociology",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "BIO209",
+    "title": "Chordates",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ARD202",
+    "title": "Introduction to Rural Sociology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS241",
+    "title": "Basic Security and Security Threats",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO217",
+    "title": "General Microbiology",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "FMC132",
+    "title": "Media, Culture and Films",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CHM202",
+    "title": "Analytical Chemistry I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "GST204-B",
+    "title": "Entrepreneurship and Innovation - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHS207",
+    "title": "GENERAL BIOCHEMISTRY",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "INR211",
+    "title": "International Law and Diplomacy In NOUN-PHY",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ESM221",
+    "title": "Ecotourism",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BCJ122",
+    "title": "Cross Cultural Communication",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MCM112",
+    "title": "Word Processing II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NSC209",
+    "title": "Physical and Health Assessment",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM234",
+    "title": "Facility Maintenance Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PCR111",
+    "title": "Introduction to Peace Studies",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "ESM104",
+    "title": "Introductory Ecology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MTH101",
+    "title": "Elementary Mathematics I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "INR221",
+    "title": "History and Practice of Diplomacy",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MAC223",
+    "title": "Magazine & Feature Article Writing",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "DES103",
+    "title": "Economics for Development Studies NOUN-ECO",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MTH106",
+    "title": "Mathematics For Management Sciences",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ECO103",
+    "title": "Introductory Mathematics l",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "NSC223",
+    "title": "Medical Biochemistry I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MCM101",
+    "title": "Foundations of Broadcasting and Film",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PHY261",
+    "title": "Geophysics I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "POL105",
+    "title": "Nigerian Constitutional Development",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "POL228",
+    "title": "Introduction to Comparative Politics",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "CHM108",
+    "title": "General Chemistry Practical II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "GST101-B",
+    "title": "Use of English and Communications Skills - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO104",
+    "title": "Introductory Mathematics ll",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "NSC204",
+    "title": "Epidemiology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO214",
+    "title": "Structure and Functions of Major Cell Components",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "BIO101",
+    "title": "General Biology I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "PHY204",
+    "title": "Electromagnetism NOUN-BCJ",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "DES112",
+    "title": "Introduction to Development Studies",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO206",
+    "title": "Statistics For Agriculture and Biol",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "POL214",
+    "title": "Introduction to Political Analysis",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "HCM131",
+    "title": "Introduction to Hospitality Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST201-B",
+    "title": "Nigerian People and Culture - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM231",
+    "title": "Introduction to Food & Beverage Pro",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "AGE104",
+    "title": "Farm Technology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MAC134",
+    "title": "Principles and Practice of Public Relations",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "CSS101",
+    "title": "Introduction to Criminology and Security Studies",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MAC242",
+    "title": "Foundations  of Broadcasting",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "ECO102",
+    "title": "Principles of Economics II",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "MTH212",
+    "title": "Linear Algebra II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "NSC222",
+    "title": "Human Physiology II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HTM101",
+    "title": "The Travel Concept",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PCR113",
+    "title": "Introduction to Peace Education",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "HTM102",
+    "title": "Nigerian Culture and Tourism NOUN-ECO",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMM115",
+    "title": "Introduction to Film Technology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "PCR104",
+    "title": "Introduction to the History of Nigeria",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "POL226",
+    "title": "Organization and Administrative Theories",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "TSM241",
+    "title": "Understanding tourist and Hosts",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "POL223",
+    "title": "Foundation of Political Economy",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "NOU707-B",
+    "title": "A STUDY GUIDE FOR DISTANCE LEARNER - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BED124",
+    "title": "Principles of Marketing for Business Educators",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CHM112",
+    "title": "General Chemistry II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ANP201",
+    "title": "Introduction to Biotechnology",
+    "faculty": "Faculty of Agricultural Sciences"
+  },
+  {
+    "course_code": "PHS203",
+    "title": "Introduction to Public Health",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "BIO211",
+    "title": "Coelomate Invertebrates",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "BIO204",
+    "title": "Biological Techniques",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ECO255",
+    "title": "Mathematics For Economist",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "TSM243",
+    "title": "tourist Sites: Products  & Operation",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMC217",
+    "title": "Films and Aesthetics Theory",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MTH241",
+    "title": "Introduction to Real Analysis",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "HCM241",
+    "title": "Understanding tourists and Hosts",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "AFS202",
+    "title": "Principles of Food Science Technolo",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "INR222",
+    "title": "Europe From French Revolution to The World Wars",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES221",
+    "title": "Social Change and Development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NSC220",
+    "title": "Foundation of Professional Nursing Practice II",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO254",
+    "title": "Statistics For Economist II",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "PHS201",
+    "title": "Anatomy",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "INR251",
+    "title": "Evolution of Modern International System",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "POL126",
+    "title": "Citizens and The State",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "MAC212",
+    "title": "Media and Society",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "STT205",
+    "title": "Statistics For Management Sciences",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "PCR115",
+    "title": "Introduction to Conflict Resolution",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "BED122",
+    "title": "Business Mathematics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "JLS111",
+    "title": "Introduction to Journalism",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS106",
+    "title": "Introduction to Criminalities NOUN-ESM",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NSC218",
+    "title": "Human Anatomy IV",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BCJ116",
+    "title": "Fundamentals of Public Speaking",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMC116",
+    "title": "Elements of Film Production",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMM102",
+    "title": "Film Multimedia and Culture I NOUN-ECO",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO107",
+    "title": "General Biology Practical I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ECO106",
+    "title": "Introductory Statistics II",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "PCR118",
+    "title": "Third Party Intervention in Conflict Resolution",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "DES101",
+    "title": "Introduction to Development Studies",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "NOU107-B",
+    "title": "A STUDY GUIDE FOR DISTANCE LEARNER - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MCM106",
+    "title": "African Communication Systems",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "EHS206",
+    "title": "Climate Change and Contemporary Issues",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "PHS204",
+    "title": "Introduction to Sociology",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "ARD201",
+    "title": "Principles of Agricultural Extension",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM145",
+    "title": "Geography of tourism",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM236",
+    "title": "Beverage Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO192",
+    "title": "General Biology Practical II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "BIO216",
+    "title": "Chemistry of Carbohydrates, Lipids",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "ESM206",
+    "title": "Community Participation In Environm",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CHM203",
+    "title": "Organic Chemistry II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "PHY207",
+    "title": "Thermodynamics",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "MTH232",
+    "title": "Elementary Differential Equation",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "CSS246",
+    "title": "Legal & Social Framework of Private Security Services in Nig",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS134",
+    "title": "Geography of Nigeria",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS133",
+    "title": "Introduction to Criminology I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES215",
+    "title": "Nigerian Economy in Perspective I",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "DES220",
+    "title": "Poverty, Inequality and Development",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMC212",
+    "title": "Visual Language of Film",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO153",
+    "title": "Introduction to Quantitative Method",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "MAC121",
+    "title": "Introduction to News Writing & Reporting",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "MAC246",
+    "title": "Educational Broadcasting",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "PCR274",
+    "title": "Introduction to Conflict Transformation",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "POL221",
+    "title": "Nigerian Government and Politics NOUN-PCR",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "POL123",
+    "title": "Introduction to Trade Union Politics",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "GST302-B",
+    "title": "Business Creation and Growth - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO213",
+    "title": "Chemistry of Amino Acids and Protein",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "BED121",
+    "title": "Office Administration and Management",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ECO105",
+    "title": "Introductory Statistics I",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "BIO108",
+    "title": "General Biology Practical II",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "MAC213",
+    "title": "Foundation of Communication Research",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "BCJ104",
+    "title": "Study Skills in Mass Communication",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CMS102",
+    "title": "Writing for the Media NOUN-CHM",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMM101",
+    "title": "History of Film & Multimedia",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "FMM112",
+    "title": "Fundamentals of Visual Communication NOUN-FMM",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BCJ114",
+    "title": "Introduction to Computer Application in Online Mass Communic",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "GST102-B",
+    "title": "Use of English and Communications Skills - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS132",
+    "title": "Ethnography of Social Structure of Nigeria",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CSS111",
+    "title": "Introduction to Sociology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "TSM141",
+    "title": "Understanding tourism",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ESM105",
+    "title": "Sedimentary Petrology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CHM204",
+    "title": "Structure andbonding",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "EHS208",
+    "title": "HYGIENE EDUCATION AND PROMOTION NOUN-ESM",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "GST104-B",
+    "title": "Use of Library - Batch B",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "BIO208",
+    "title": "Seedless Plants",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "NSC214",
+    "title": "Cellular and General Pathology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "MAC115",
+    "title": "African Communication Systems I NOUN-CSS",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "ANP202",
+    "title": "Principles of Animal Production",
+    "faculty": "Faculty of Agricultural Sciences"
+  },
+  {
+    "course_code": "CHM191",
+    "title": "Introductory Practical Chemistry I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "EHS202",
+    "title": "Introduction to Ecology and Environ",
+    "faculty": "Faculty of Health Sciences"
+  },
+  {
+    "course_code": "FST202",
+    "title": "Principles of Food Science and Technology",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "ESM291",
+    "title": "Map Analysis",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "AEM203",
+    "title": "Introduction to Home Economics",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "POL212",
+    "title": "Basic Statistics For Social Science",
+    "faculty": "Faculty of Social Sciences"
+  },
+  {
+    "course_code": "MCM104",
+    "title": "Introduction to News Writing",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "HCM135",
+    "title": "Introduction to Food & Beverage Ser",
+    "faculty": "General Studies"
+  },
+  {
+    "course_code": "CHM111",
+    "title": "General Chemistry I",
+    "faculty": "Faculty of Sciences"
+  },
+  {
+    "course_code": "AGR203",
+    "title": "Principles of Crop Production",
+    "faculty": "Faculty of Agricultural Sciences"
+  }
+]

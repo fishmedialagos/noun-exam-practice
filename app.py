@@ -267,6 +267,65 @@ def logout():
     return redirect(url_for('index'))
 
 
+# ==================== COURSE MATERIALS (E-COURSEWARE) ====================
+
+@app.route('/materials')
+def course_materials():
+    faculty = request.args.get('faculty', '').strip()
+    search = request.args.get('search', '').strip().lower()
+    
+    json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'timetable_courses.json')
+    courses = []
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                courses = json.load(f)
+        except Exception:
+            courses = []
+            
+    # Filter
+    filtered = []
+    for c in courses:
+        if faculty and c.get('faculty') != faculty:
+            continue
+        if search:
+            code_match = search in c.get('course_code', '').lower()
+            title_match = search in c.get('title', '').lower()
+            if not (code_match or title_match):
+                continue
+        filtered.append(c)
+        
+    faculties = sorted(list(set(c.get('faculty') for c in courses if c.get('faculty'))))
+    
+    return render_template('materials/index.html', 
+                           courses=filtered[:100], 
+                           total_count=len(filtered),
+                           faculties=faculties, 
+                           current_faculty=faculty,
+                           search_query=search)
+
+
+@app.route('/materials/download/<course_code>')
+def download_material(course_code):
+    """Serve official NOUN course material or redirect with educational viewer."""
+    code = course_code.replace(' ', '').upper()
+    
+    # Check if a custom uploaded PDF exists in uploads/materials
+    upload_dir = os.path.join(app.root_path, 'static', 'materials')
+    local_pdf = os.path.join(upload_dir, f"{code}.pdf")
+    if os.path.exists(local_pdf):
+        from flask import send_from_directory
+        return send_from_directory(upload_dir, f"{code}.pdf", as_attachment=True)
+    
+    # Direct official OER repository download fallback
+    official_oer_url = f"https://oer.nou.edu.ng/sites/default/files/2025-10/{code}.pdf"
+    
+    # Alternatively provide embedded in-site PDF reader page
+    return render_template('materials/reader.html', 
+                           course_code=code, 
+                           oer_url=official_oer_url)
+
+
 # ==================== STUDENT ROUTES ====================
 
 @app.route('/dashboard')
