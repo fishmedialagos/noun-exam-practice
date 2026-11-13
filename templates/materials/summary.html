@@ -112,7 +112,10 @@
                 {% for h in highlights[:6] %}
                 <div class="col">
                     <div class="small p-2 bg-light rounded border-start border-3 border-success">
-                        {{ h|safe_bold }}
+                        <strong class="text-dark">{{ h.concept if h is mapping and h.concept else (h.title if h is mapping else h) }}</strong>
+                        {% if h is mapping and h.explanation %}
+                        <div class="text-secondary mt-1">{{ h.explanation|safe_bold }}</div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -158,16 +161,23 @@
                 {% if m.key_points %}
                 <div class="mb-4">
                     <h6 class="text-success fw-bold small text-uppercase mb-2">
-                        <i class="bi bi-check2-circle me-1"></i>Module Core Keypoints
+                        <i class="bi bi-check2-circle me-1"></i>Module Core Concepts & Explanations
                     </h6>
-                    <ul class="list-unstyled mb-0">
+                    <div class="d-flex flex-column gap-2">
                         {% for p in m.key_points %}
-                        <li class="d-flex align-items-start mb-2 keypoint-item">
-                            <i class="bi bi-check-circle-fill text-success me-2 mt-1 flex-shrink-0"></i>
-                            <div>{{ p|safe_bold }}</div>
-                        </li>
+                        <div class="p-2 p-md-3 bg-light rounded border-start border-3 border-success study-point-card">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bi bi-check-circle-fill text-success flex-shrink-0"></i>
+                                <strong class="text-dark">{{ p.concept if p is mapping and p.concept else (p.title if p is mapping else p) }}</strong>
+                            </div>
+                            {% if p is mapping and p.explanation %}
+                            <div class="text-secondary small ps-4" style="line-height: 1.55;">
+                                {{ p.explanation|safe_bold }}
+                            </div>
+                            {% endif %}
+                        </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 </div>
                 {% endif %}
 
@@ -204,16 +214,23 @@
                                 {% if u.key_points %}
                                 <div class="mb-3">
                                     <h6 class="text-success fw-bold small text-uppercase mb-2">
-                                        <i class="bi bi-list-check me-1"></i>Key Exam Points & Concepts
+                                        <i class="bi bi-list-check me-1"></i>Exam Concepts & Quick Explanations
                                     </h6>
-                                    <ul class="list-unstyled mb-0">
+                                    <div class="d-flex flex-column gap-2">
                                         {% for pt in u.key_points %}
-                                        <li class="d-flex align-items-start mb-2 keypoint-item">
-                                            <i class="bi bi-check-circle text-success me-2 mt-1 flex-shrink-0"></i>
-                                            <div>{{ pt|safe_bold }}</div>
-                                        </li>
+                                        <div class="p-2 p-md-3 bg-light rounded border-start border-3 border-success study-point-card">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <i class="bi bi-check-circle-fill text-success flex-shrink-0"></i>
+                                                <strong class="text-dark">{{ pt.concept if pt is mapping and pt.concept else (pt.title if pt is mapping else pt) }}</strong>
+                                            </div>
+                                            {% if pt is mapping and pt.explanation %}
+                                            <div class="text-secondary small ps-4" style="line-height: 1.55;">
+                                                {{ pt.explanation|safe_bold }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
                                         {% endfor %}
-                                    </ul>
+                                    </div>
                                 </div>
                                 {% endif %}
 
@@ -258,7 +275,12 @@
         {% for h in highlights %}
         <li class="list-group-item d-flex align-items-start py-2">
             <i class="bi bi-check-circle-fill text-success me-2 mt-1 flex-shrink-0"></i>
-            <div>{{ h|safe_bold }}</div>
+            <div>
+                <strong class="text-dark">{{ h.concept if h is mapping and h.concept else (h.title if h is mapping else h) }}</strong>
+                {% if h is mapping and h.explanation %}
+                <div class="text-secondary small mt-1">{{ h.explanation|safe_bold }}</div>
+                {% endif %}
+            </div>
         </li>
         {% endfor %}
     </ul>
@@ -270,9 +292,8 @@
         <i class="bi bi-mortarboard-fill text-success fs-5"></i>
         <div>
             <strong>NOUN Exam Study Guide:</strong>
-            Review these unit-by-unit keypoints alongside your past questions and TMAs.
-            Definitions, classifications, and historical figures highlighted above commonly appear in 100/200 level e-exams and 300+ level POP theory exams.
-            To generate AI summaries on your Render deployment, ensure you configure <code>OPENAI_API_KEY</code> or <code>GROQ_API_KEY</code> in Render's Environment settings.
+            Review these unit-by-unit concepts and brief explanations alongside your past questions and TMAs.
+            Definitions, classifications, and principles highlighted here frequently appear in 100/200 level e-exams and 300+ level POP theory examinations.
         </div>
     </div>
 </div>

@@ -41,6 +41,26 @@
             <div class="spinner-border text-light mb-2"></div>
             <div class="small">Loading document on platform…</div>
         </div>
+        <!-- Error State -->
+        <div id="viewer-error" class="text-center text-white py-5 d-none px-3">
+            <i class="bi bi-file-earmark-x text-warning display-4 mb-3 d-block"></i>
+            <h5 class="fw-bold">Course Material PDF Not Available for {{ course_code }}</h5>
+            <p class="text-light-50 small mx-auto" style="max-width: 500px;">
+                This material is not currently in the local cache or could not be loaded from the external university server.
+                You can search NOUN Update or check back later.
+            </p>
+            <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+                <a href="{{ url_for('search_nounupdate', q=course_code) }}" class="btn btn-warning btn-sm text-dark fw-semibold">
+                    <i class="bi bi-search me-1"></i>Search NOUN Update
+                </a>
+                <a href="{{ url_for('summarize_material', course_code=course_code) }}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-stars me-1"></i>Try Auto Summarize
+                </a>
+                <a href="{{ url_for('course_materials') }}" class="btn btn-outline-secondary btn-sm text-white">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Materials Hub
+                </a>
+            </div>
+        </div>
         <!-- PDF.js canvas viewer -->
         <div id="pdfjs-wrap" class="d-none" style="height: 85vh; overflow: auto; background: #525659;">
             <div id="pdf-pages" class="d-flex flex-column align-items-center gap-3 py-3"></div>
@@ -62,24 +82,45 @@
 (function(){
     const proxyUrl = {{ proxy_url|tojson }};
     const statusEl = document.getElementById('viewer-status');
+    const errorEl = document.getElementById('viewer-error');
     const wrap = document.getElementById('pdfjs-wrap');
     const pagesEl = document.getElementById('pdf-pages');
     const frame = document.getElementById('pdf-frame');
 
+    function showError() {
+        statusEl.classList.add('d-none');
+        wrap.classList.add('d-none');
+        frame.classList.add('d-none');
+        errorEl.classList.remove('d-none');
+    }
+
     function showNative() {
         statusEl.classList.add('d-none');
         wrap.classList.add('d-none');
+        errorEl.classList.add('d-none');
         frame.classList.remove('d-none');
         frame.style.display = 'block';
     }
 
     async function renderWithPdfJs() {
+        try {
+            // First verify proxyUrl doesn't 404
+            const check = await fetch(proxyUrl, { method: 'HEAD' });
+            if (!check.ok) {
+                showError();
+                return;
+            }
+        } catch(err) {
+            console.warn('Proxy check failed:', err);
+        }
+
         if (!window.pdfjsLib) { showNative(); return; }
         pdfjsLib.GlobalWorkerOptions.workerSrc =
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         try {
             const pdf = await pdfjsLib.getDocument({ url: proxyUrl, withCredentials: false }).promise;
             statusEl.classList.add('d-none');
+            errorEl.classList.add('d-none');
             wrap.classList.remove('d-none');
             const scale = Math.min(1.35, (window.innerWidth - 48) / 612);
             for (let i = 1; i <= pdf.numPages; i++) {
@@ -93,8 +134,8 @@
                 await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
             }
         } catch (e) {
-            console.warn('PDF.js failed, using native viewer', e);
-            showNative();
+            console.warn('PDF.js failed, checking status', e);
+            showError();
         }
     }
     renderWithPdfJs();

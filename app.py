@@ -379,7 +379,7 @@ def _discover_nounupdate_pdf(code):
         'Accept': 'text/html,application/xhtml+xml',
     }
     try:
-        r = http_requests.get(page_url, timeout=25, headers=headers, allow_redirects=True)
+        r = http_requests.get(page_url, timeout=(3.0, 7.0), headers=headers, allow_redirects=True)
         if r.status_code != 200:
             return None, None
         html = r.text
@@ -411,6 +411,7 @@ def _discover_nounupdate_pdf(code):
 
 def _fetch_and_cache_pdf(code, urls):
     """Download first working PDF and cache locally. Also tries nounupdate page scrape."""
+    import time
     import requests as http_requests
     cache_dir = os.path.join(app.root_path, 'static', 'materials_cache')
     os.makedirs(cache_dir, exist_ok=True)
@@ -431,9 +432,14 @@ def _fetch_and_cache_pdf(code, urls):
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/pdf,*/*',
     }
+    start_t = time.time()
     for url in all_urls:
+        # Enforce 20s overall timeout to prevent Render 60s HTTP 502 Bad Gateway
+        if time.time() - start_t > 20:
+            app.logger.warning('PDF fetch overall timeout exceeded for %s', code)
+            break
         try:
-            r = http_requests.get(url, timeout=55, stream=True, headers=headers, allow_redirects=True)
+            r = http_requests.get(url, timeout=(3.5, 9.0), stream=True, headers=headers, allow_redirects=True)
             ctype = (r.headers.get('Content-Type') or '').lower()
             if r.status_code != 200:
                 continue
@@ -463,14 +469,14 @@ def _fetch_and_cache_pdf(code, urls):
 @app.route('/materials/proxy/<course_code>')
 def proxy_material(course_code):
     """Serve PDF same-origin so on-page viewer works for (almost) all courses."""
-    from flask import send_file
+    from flask import send_file, abort
     code, title, local_path, urls = _resolve_material(course_code)
     path = local_path or _fetch_and_cache_pdf(code, urls)
     if path and os.path.exists(path):
         return send_file(path, mimetype='application/pdf', as_attachment=False,
                          download_name=f'{code}.pdf', max_age=3600)
-    flash(f'Could not load {code} inside the platform. Opening external source…', 'warning')
-    return redirect(urls[0] if urls else url_for('course_materials'))
+    # Return 404 so reader.html shows in-page friendly status instead of redirecting to broken external 404
+    abort(404)
 
 
 @app.route('/materials/download/<course_code>')
@@ -489,7 +495,8 @@ def download_material(course_code):
         if path and os.path.exists(path):
             return send_file(path, mimetype='application/pdf', as_attachment=True,
                              download_name=f'{code}.pdf')
-        return redirect(urls[0] if urls else url_for('course_materials'))
+        flash(f'Material for {code} is currently unavailable for direct download.', 'warning')
+        return redirect(url_for('download_material', course_code=code))
 
     proxy_url = url_for('proxy_material', course_code=code)
     download_url = url_for('download_material', course_code=code, action='download')
@@ -691,11 +698,45 @@ def _split_modules_units(full_text):
     return sorted(by_label.values(), key=mod_sort_key)
 
 
+def _normalize_key_point(p):
+    """Normalize a keypoint into a structured dict with 'concept' and 'explanation'."""
+    if isinstance(p, dict):
+        concept = str(p.get('concept') or p.get('topic') or p.get('title') or p.get('term') or '').strip()
+        explanation = str(p.get('explanation') or p.get('detail') or p.get('desc') or p.get('definition') or '').strip()
+        if not concept and explanation:
+            return _normalize_key_point(explanation)
+        return {'concept': concept or 'Key Concept', 'explanation': explanation}
+
+    s = str(p or '').strip()
+    s = re.sub(r'^(?:[-*•]|\d+[\.\)])\s*', '', s).strip()
+    # Match "**Concept**: Explanation" or "**Concept** - Explanation"
+    m = re.match(r'^\*{0,2}(.+?)\*{0,2}\s*[:\-–—]\s*(.+)$', s)
+    if m:
+        c = m.group(1).replace('*', '').strip()
+        e = m.group(2).strip()
+        if len(c) <= 65 and len(e) > 5:
+            return {'concept': c, 'explanation': e}
+
+    # Split on first sentence if short
+    parts = re.split(r'(?<=[\.\!\?])\s+', s, maxsplit=1)
+    if len(parts) == 2 and len(parts[0]) <= 80:
+        return {'concept': parts[0].replace('*', '').strip(), 'explanation': parts[1].strip()}
+
+    words = s.split()
+    if len(words) > 5:
+        return {'concept': ' '.join(words[:4]).strip('.,:- '), 'explanation': s}
+    return {'concept': 'Exam Takeaway', 'explanation': s}
+
+
 def _clean_sentence_for_point(s):
-    """Format and bold lead-in concepts for study notes."""
+    """Format concepts and explanations for study notes."""
     s = s.strip()
+    s = re.sub(r'[\uf000-\uf0ff\ufb00-\ufb4f•·\u2022]+', ', ', s)
+    s = re.sub(r'\s*,\s*', ', ', s)
+    s = re.sub(r':\s*,', ':', s)
     s = re.sub(r'^(?:[0-9\.\)\-\*•]+\s*)+', '', s).strip()
     s = re.sub(r'^(?:[A-Z][A-Za-z0-9\s\-]{2,30}\?\s+)', '', s).strip()
+
     m = re.match(
         r'^([A-Z][A-Za-z0-9\s\-]{2,35}?)\s+(is defined as|refers to|is the study of|is a form of|is known as|means|is)\s+(.+)$',
         s, re.IGNORECASE
@@ -704,8 +745,19 @@ def _clean_sentence_for_point(s):
         term = m.group(1).strip()
         verb = m.group(2).strip()
         rest = m.group(3).strip()
-        return f"**{term}**: {verb.capitalize()} {rest}"
-    return s
+        return {'concept': term, 'explanation': f"{term} {verb} {rest}"}
+
+    m2 = re.match(
+        r'^([A-Za-z0-9\s\-]{3,35})\s+(can (?:therefore )?be divided into|is divided into|consists of|comprises of|includes)\s+(.+)$',
+        s, re.IGNORECASE
+    )
+    if m2:
+        term = m2.group(1).strip().title()
+        verb = m2.group(2).strip()
+        rest = m2.group(3).strip()
+        return {'concept': term, 'explanation': f"{term} {verb} {rest}"}
+
+    return _normalize_key_point(s)
 
 
 def _summarize_block(text, max_points=7, max_chars=1200):
@@ -794,7 +846,7 @@ def _summarize_block(text, max_points=7, max_chars=1200):
         if len(picked) >= max_points:
             break
 
-    summary = ' '.join(picked[:3])[:max_chars] if picked else ''
+    summary = ' '.join(p['explanation'] for p in picked[:3])[:max_chars] if picked else ''
     return summary, picked, key_terms
 
 
@@ -814,7 +866,7 @@ def _parse_ai_summary_response(raw_text):
     try:
         data = json.loads(raw_text)
         if isinstance(data, dict):
-            pts = [str(p).strip() for p in (data.get('key_points') or []) if str(p).strip()]
+            pts = [_normalize_key_point(p) for p in (data.get('key_points') or []) if p]
             return {
                 'summary': str(data.get('summary') or '').strip(),
                 'key_points': pts,
@@ -829,7 +881,7 @@ def _parse_ai_summary_response(raw_text):
         try:
             data = json.loads(match.group(1))
             if isinstance(data, dict):
-                pts = [str(p).strip() for p in (data.get('key_points') or []) if str(p).strip()]
+                pts = [_normalize_key_point(p) for p in (data.get('key_points') or []) if p]
                 return {
                     'summary': str(data.get('summary') or '').strip(),
                     'key_points': pts,
@@ -849,7 +901,7 @@ def _parse_ai_summary_response(raw_text):
         if not sline:
             continue
         low = sline.lower()
-        if re.match(r'^#*\s*(?:key\s*points?|exam\s*key\s*points?|bullet\s*points?|takeaways)\b', low):
+        if re.match(r'^#*\s*(?:key\s*points?|exam\s*key\s*points?|bullet\s*points?|takeaways|concepts)\b', low):
             current_section = 'points'
             continue
         elif re.match(r'^#*\s*(?:key\s*terms?|definitions?|glossary)\b', low):
@@ -862,7 +914,7 @@ def _parse_ai_summary_response(raw_text):
         if current_section == 'points':
             pt = re.sub(r'^(?:[-*•]|\d+[\.\)])\s*', '', sline).strip()
             if pt and len(pt) > 5:
-                key_points.append(pt)
+                key_points.append(_normalize_key_point(pt))
         elif current_section == 'terms':
             tm = re.match(r'^(?:[-*•]\s*)?\*{0,2}([^:*]+)\*{0,2}\s*[:\-–]\s*(.+)$', sline)
             if tm:
@@ -870,12 +922,12 @@ def _parse_ai_summary_response(raw_text):
             else:
                 pt = re.sub(r'^(?:[-*•]|\d+[\.\)])\s*', '', sline).strip()
                 if pt:
-                    key_points.append(pt)
+                    key_points.append(_normalize_key_point(pt))
         else:
             if re.match(r'^(?:[-*•]|\d+[\.\)])\s*', sline):
                 pt = re.sub(r'^(?:[-*•]|\d+[\.\)])\s*', '', sline).strip()
                 if pt and len(pt) > 5:
-                    key_points.append(pt)
+                    key_points.append(_normalize_key_point(pt))
             else:
                 summary_lines.append(sline)
 
@@ -890,11 +942,10 @@ def _parse_ai_summary_response(raw_text):
 
 
 def _ai_summarize_content(text, course_code, section_type='unit', label='', title=''):
-    """High-yield AI summary for exam revision via Groq or OpenAI. Returns dict {summary, key_points, key_terms} or None."""
+    """High-yield AI summary with concepts and brief explanations for exam revision via Groq or OpenAI."""
     text = (text or '').strip()
     if len(text) < 100:
         return None
-    # Truncate to keep tokens and latency fast
     text = text[:8000]
 
     api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
@@ -905,22 +956,24 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
     try:
         import requests as http_requests
         prompt = (
-            f"You are an expert academic exam tutor preparing National Open University of Nigeria (NOUN) students for exams.\n"
+            f"You are an expert university academic exam tutor preparing National Open University of Nigeria (NOUN) students for examinations.\n"
             f"Summarize the following {section_type.upper()} material from course {course_code}: {label} - {title}.\n"
-            f"Focus on exam-critical information: core concepts, definitions, classifications, rules, formulas, and historical scholars.\n\n"
+            f"Students use this on their phones while on the go for fast, high-retention exam revision.\n\n"
+            f"REQUIREMENT: Do NOT output bare, terse bullet phrases. For each key point, provide an explicit 'concept' heading AND a brief 2-3 sentence clear 'explanation' explaining what it means, the rules/steps/principles involved, and why it is critical for exams.\n\n"
             f"Respond with a JSON object in this exact schema:\n"
             f"{{\n"
             f"  \"summary\": \"A concise 2-3 sentence overview of this {section_type}'s core subject.\",\n"
             f"  \"key_points\": [\n"
-            f"    \"High-yield exam takeaway with **bold key terms**: explanation of definition or rule.\",\n"
-            f"    \"Another essential exam point with **core concept**: key facts, steps or classifications.\",\n"
-            f"    \"Key scholar, formula, distinction or principle mentioned in this unit.\"\n"
+            f"    {{\n"
+            f"      \"concept\": \"Core Exam Concept / Rule / Classification / Scholar\",\n"
+            f"      \"explanation\": \"Brief 2-3 sentence explanation explaining the rule, definition, classification, or exam implication so students studying on the go can fully understand and memorize it.\"\n"
+            f"    }}\n"
             f"  ],\n"
             f"  \"key_terms\": [\n"
             f"    {{\"term\": \"Core Term\", \"definition\": \"Accurate definition based on the text.\"}}\n"
             f"  ]\n"
             f"}}\n\n"
-            f"Provide 5 to 8 exam-focused key_points. Return ONLY valid JSON.\n\n"
+            f"Provide 5 to 8 exam-focused key_points with brief explanations. Return ONLY valid JSON.\n\n"
             f"MATERIAL:\n{text}"
         )
 
@@ -931,11 +984,11 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
             payload = {
                 'model': model,
                 'messages': [
-                    {'role': 'system', 'content': 'You are an elite university exam tutor. You output only valid JSON with high-yield exam keypoints and definitions.'},
+                    {'role': 'system', 'content': 'You are an elite university exam tutor. You output only valid JSON with high-yield exam concepts, brief explanations, and definitions.'},
                     {'role': 'user', 'content': prompt},
                 ],
                 'temperature': 0.2,
-                'max_tokens': 1200,
+                'max_tokens': 1400,
                 'response_format': {'type': 'json_object'},
             }
         else:
@@ -945,11 +998,11 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
             payload = {
                 'model': model,
                 'messages': [
-                    {'role': 'system', 'content': 'You are an elite university exam tutor. You output only valid JSON with high-yield exam keypoints and definitions.'},
+                    {'role': 'system', 'content': 'You are an elite university exam tutor. You output only valid JSON with high-yield exam concepts, brief explanations, and definitions.'},
                     {'role': 'user', 'content': prompt},
                 ],
                 'temperature': 0.2,
-                'max_tokens': 1200,
+                'max_tokens': 1400,
                 'response_format': {'type': 'json_object'},
             }
 
