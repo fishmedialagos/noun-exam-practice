@@ -87,6 +87,9 @@
                             <a href="{{ url_for('download_material', course_code=c.course_code) }}" class="btn btn-outline-success">
                                 <i class="bi bi-eye me-1"></i>Study
                             </a>
+                            <a href="{{ url_for('summarize_material', course_code=c.course_code) }}" class="btn btn-outline-warning" title="Auto summarize modules & units">
+                                <i class="bi bi-stars"></i>
+                            </a>
                             <a href="{{ url_for('download_material', course_code=c.course_code, action='download') }}" target="_blank" class="btn btn-outline-secondary" title="Direct PDF Download">
                                 <i class="bi bi-download"></i>
                             </a>

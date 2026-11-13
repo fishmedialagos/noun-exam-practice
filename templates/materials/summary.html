@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ course_code }} Summary - Module by Module{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('course_materials') }}">Course Materials</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('download_material', course_code=course_code) }}">{{ course_code }}</a></li>
+                <li class="breadcrumb-item active">Summary</li>
+            </ol>
+        </nav>
+        <h3 class="mb-0 text-success fw-bold">
+            <i class="bi bi-stars me-2 text-warning"></i>{{ course_code }} — Module & Unit Summaries
+        </h3>
+        <p class="text-muted mb-0 small">{{ course_title }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('download_material', course_code=course_code) }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-pdf me-1"></i>Open Full Material
+        </a>
+        <a href="{{ url_for('course_materials') }}" class="btn btn-outline-secondary btn-sm">Back to Library</a>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+    <div class="mt-2">
+        <a class="btn btn-sm btn-success" href="{{ url_for('download_material', course_code=course_code) }}">Open PDF instead</a>
+    </div>
+</div>
+{% endif %}
+
+{% if overview %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-success text-white fw-semibold">
+        <i class="bi bi-journal-text me-1"></i>Course Overview
+    </div>
+    <div class="card-body">
+        <p class="mb-0">{{ overview }}</p>
+        {% if page_count %}<p class="small text-muted mb-0 mt-2">Source pages analysed: {{ page_count }}</p>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if modules %}
+<div class="accordion" id="moduleAccordion">
+{% for m in modules %}
+    <div class="accordion-item border-0 shadow-sm mb-3">
+        <h2 class="accordion-header" id="h{{ loop.index }}">
+            <button class="accordion-button {% if not loop.first %}collapsed{% endif %} fw-semibold" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#c{{ loop.index }}">
+                <span class="badge bg-success me-2">{{ m.label }}</span> {{ m.title }}
+            </button>
+        </h2>
+        <div id="c{{ loop.index }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}"
+             data-bs-parent="#moduleAccordion">
+            <div class="accordion-body">
+                {% if m.summary %}
+                <p>{{ m.summary }}</p>
+                {% endif %}
+                {% if m.key_points %}
+                <h6 class="text-success mt-3"><i class="bi bi-check2-circle me-1"></i>Key points</h6>
+                <ul class="mb-3">
+                    {% for p in m.key_points %}<li>{{ p }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+                {% if m.units %}
+                <h6 class="text-secondary mt-3"><i class="bi bi-list-ul me-1"></i>Units</h6>
+                <div class="list-group list-group-flush">
+                    {% for u in m.units %}
+                    <div class="list-group-item px-0">
+                        <div class="fw-semibold">{{ u.label }}{% if u.title %}: {{ u.title }}{% endif %}</div>
+                        {% if u.summary %}<div class="small text-muted mt-1">{{ u.summary }}</div>{% endif %}
+                        {% if u.key_points %}
+                        <ul class="small mb-0 mt-1">
+                            {% for p in u.key_points %}<li>{{ p }}</li>{% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+{% elif not error %}
+<div class="alert alert-info">No clear module/unit structure was detected. Showing extractive highlights from the material instead.</div>
+{% endif %}
+
+{% if highlights and not modules %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header fw-semibold">Key extracts for quick study</div>
+    <ul class="list-group list-group-flush">
+        {% for h in highlights %}
+        <li class="list-group-item small">{{ h }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="alert alert-light border mt-4 small text-muted">
+    <i class="bi bi-info-circle me-1"></i>
+    Summaries are generated automatically from the course PDF (module/unit headings and key sentences).
+    Always cross-check with the full material before exams.
+</div>
+{% endblock %}

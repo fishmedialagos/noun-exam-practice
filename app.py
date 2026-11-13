@@ -305,20 +305,22 @@ def course_materials():
                            search_query=search)
 
 
-@app.route('/materials/download/<course_code>')
-def download_material(course_code):
-    """Serve official NOUN course material or view online."""
+
+def _resolve_material(course_code):
+    """Return (code, title, local_path_or_None, remote_url)."""
     code = course_code.replace(' ', '').upper()
-    action = request.args.get('action', 'view') # 'view' or 'download'
-    
-    # 1. Check if a custom uploaded PDF exists in static/materials
     upload_dir = os.path.join(app.root_path, 'static', 'materials')
+    os.makedirs(upload_dir, exist_ok=True)
     local_pdf = os.path.join(upload_dir, f"{code}.pdf")
-    if os.path.exists(local_pdf):
-        from flask import send_from_directory
-        return send_from_directory(upload_dir, f"{code}.pdf", as_attachment=(action == 'download'))
-    
-    # 2. Look up matched URL from timetable_courses.json
+    local_path = local_pdf if os.path.exists(local_pdf) else None
+
+    # Also check cache folder of previously proxied files
+    cache_dir = os.path.join(app.root_path, 'static', 'materials_cache')
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_pdf = os.path.join(cache_dir, f"{code}.pdf")
+    if not local_path and os.path.exists(cache_pdf) and os.path.getsize(cache_pdf) > 1000:
+        local_path = cache_pdf
+
     json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'timetable_courses.json')
     matched_url = None
     course_title = code
@@ -333,18 +335,302 @@ def download_material(course_code):
                         break
         except Exception:
             pass
-            
-    if not matched_url:
-        matched_url = f"https://nou.edu.ng/coursewarecontent/{code}.pdf"
-        
+
+    # Common NOUN URL patterns as fallbacks
+    candidates = []
+    if matched_url:
+        candidates.append(matched_url)
+    candidates.extend([
+        f"https://nou.edu.ng/coursewarecontent/{code}.pdf",
+        f"https://nou.edu.ng/coursewarecontent/{code}_0.pdf",
+        f"https://www.nou.edu.ng/coursewarecontent/{code}.pdf",
+        f"https://www.nou.edu.ng/coursewarecontent/{code}_0.pdf",
+    ])
+    # de-dupe
+    seen = set()
+    urls = []
+    for u in candidates:
+        if u and u not in seen:
+            seen.add(u)
+            urls.append(u)
+    return code, course_title, local_path, urls
+
+
+def _fetch_and_cache_pdf(code, urls):
+    """Download first working PDF and cache locally. Returns path or None."""
+    import requests as http_requests
+    cache_dir = os.path.join(app.root_path, 'static', 'materials_cache')
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_pdf = os.path.join(cache_dir, f"{code}.pdf")
+    if os.path.exists(cache_pdf) and os.path.getsize(cache_pdf) > 1000:
+        return cache_pdf
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/pdf,*/*',
+    }
+    for url in urls:
+        try:
+            r = http_requests.get(url, timeout=50, stream=True, headers=headers, allow_redirects=True)
+            ctype = (r.headers.get('Content-Type') or '').lower()
+            if r.status_code != 200:
+                continue
+            # Accept PDF content-type or octet-stream with .pdf URL
+            if 'pdf' not in ctype and 'octet' not in ctype and not url.lower().endswith('.pdf'):
+                continue
+            # Stream to cache
+            tmp = cache_pdf + '.part'
+            size = 0
+            with open(tmp, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=64 * 1024):
+                    if chunk:
+                        f.write(chunk)
+                        size += len(chunk)
+            if size < 1000:
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+                continue
+            os.replace(tmp, cache_pdf)
+            return cache_pdf
+        except Exception as e:
+            app.logger.warning('PDF fetch failed %s from %s: %s', code, url, e)
+            continue
+    return None
+
+
+@app.route('/materials/proxy/<course_code>')
+def proxy_material(course_code):
+    """Serve PDF same-origin (local, cache, or fetch+cache) so on-page viewer always works."""
+    from flask import send_file
+    code, title, local_path, urls = _resolve_material(course_code)
+
+    path = local_path
+    if not path:
+        path = _fetch_and_cache_pdf(code, urls)
+
+    if path and os.path.exists(path):
+        return send_file(path, mimetype='application/pdf', as_attachment=False,
+                         download_name=f'{code}.pdf', max_age=3600)
+
+    # Last resort: redirect to first remote URL
+    flash(f'Could not load {code} inside the platform. Opening external source…', 'warning')
+    return redirect(urls[0] if urls else url_for('course_materials'))
+
+
+@app.route('/materials/download/<course_code>')
+def download_material(course_code):
+    """View online (in-platform) or force download."""
+    from flask import send_file
+    code, course_title, local_path, urls = _resolve_material(course_code)
+    action = request.args.get('action', 'view')
+
     if action == 'download':
-        return redirect(matched_url)
-    
-    # Render in-platform viewer page
-    return render_template('materials/reader.html', 
-                           course_code=code, 
+        path = local_path or _fetch_and_cache_pdf(code, urls)
+        if path and os.path.exists(path):
+            return send_file(path, mimetype='application/pdf', as_attachment=True,
+                             download_name=f'{code}.pdf')
+        return redirect(urls[0] if urls else url_for('course_materials'))
+
+    proxy_url = url_for('proxy_material', course_code=code)
+    download_url = url_for('download_material', course_code=code, action='download')
+    return render_template('materials/reader.html',
+                           course_code=code,
                            course_title=course_title,
-                           pdf_url=matched_url)
+                           proxy_url=proxy_url,
+                           download_url=download_url,
+                           pdf_url=urls[0] if urls else '')
+
+
+def _extract_pdf_text(path, max_pages=80):
+    """Extract text page by page using pypdf."""
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return [], 'PDF engine not installed on server (pypdf).'
+    try:
+        reader = PdfReader(path)
+        pages = []
+        for i, page in enumerate(reader.pages[:max_pages]):
+            try:
+                t = page.extract_text() or ''
+            except Exception:
+                t = ''
+            pages.append(t)
+        return pages, None
+    except Exception as e:
+        return [], f'Could not read PDF text: {e}'
+
+
+def _split_modules_units(full_text):
+    """Heuristic split of NOUN materials into modules and units."""
+    # Normalize
+    text = re.sub(r'\r', '', full_text)
+    # Split on MODULE / UNIT headings common in NOUN courseware
+    module_pat = re.compile(
+        r'(?im)^(module\s*(\d+)[:\.\s\-]*(.*?))$',
+    )
+    unit_pat = re.compile(
+        r'(?im)^(unit\s*(\d+)[:\.\s\-]*(.*?))$',
+    )
+
+    lines = text.split('\n')
+    modules = []
+    current_mod = None
+    current_unit = None
+    buf = []
+
+    def flush_unit():
+        nonlocal current_unit, buf
+        if current_unit is not None:
+            body = '\n'.join(buf).strip()
+            current_unit['body'] = body
+            current_mod['units'].append(current_unit)
+            current_unit = None
+            buf = []
+
+    def flush_mod():
+        nonlocal current_mod, buf
+        flush_unit()
+        if current_mod is not None:
+            if buf:
+                current_mod['body'] = (current_mod.get('body') or '') + '\n' + '\n'.join(buf)
+            modules.append(current_mod)
+            current_mod = None
+            buf = []
+
+    for line in lines:
+        raw = line.strip()
+        if not raw:
+            buf.append('')
+            continue
+        mm = module_pat.match(raw)
+        if mm:
+            flush_mod()
+            current_mod = {
+                'label': f"Module {mm.group(2)}",
+                'title': (mm.group(3) or '').strip() or f"Module {mm.group(2)}",
+                'units': [],
+                'body': '',
+            }
+            buf = []
+            continue
+        um = unit_pat.match(raw)
+        if um and current_mod is not None:
+            flush_unit()
+            current_unit = {
+                'label': f"Unit {um.group(2)}",
+                'title': (um.group(3) or '').strip(),
+                'body': '',
+            }
+            buf = []
+            continue
+        buf.append(raw)
+
+    flush_mod()
+    return modules
+
+
+def _summarize_block(text, max_points=5, max_chars=900):
+    """Extractive summary: pick informative sentences."""
+    if not text:
+        return '', []
+    # Clean
+    text = re.sub(r'\s+', ' ', text).strip()
+    # Sentence split
+    parts = re.split(r'(?<=[\.\!\?])\s+', text)
+    sentences = []
+    for s in parts:
+        s = s.strip()
+        if len(s) < 40 or len(s) > 320:
+            continue
+        # Prefer definition / importance style
+        score = 0
+        low = s.lower()
+        for kw in ('is ', 'are ', 'means', 'refers', 'important', 'defined', 'purpose',
+                   'objective', 'aims', 'includes', 'consists', 'therefore', 'in conclusion'):
+            if kw in low:
+                score += 1
+        if re.search(r'\d', s):
+            score += 0.5
+        sentences.append((score, s))
+    sentences.sort(key=lambda x: (-x[0], -len(x[1])))
+    picked = []
+    seen = set()
+    for _, s in sentences:
+        key = s[:60].lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        picked.append(s)
+        if len(picked) >= max_points:
+            break
+    summary = ' '.join(picked[:3])[:max_chars]
+    return summary, picked
+
+
+@app.route('/materials/summarize/<course_code>')
+@login_required
+def summarize_material(course_code):
+    """Auto module/unit summarizer for a course PDF."""
+    code, course_title, local_path, urls = _resolve_material(course_code)
+    path = local_path or _fetch_and_cache_pdf(code, urls)
+    if not path:
+        return render_template('materials/summary.html',
+                               course_code=code, course_title=course_title,
+                               error='Could not download the course PDF to summarize. Try opening the full material first.',
+                               modules=[], overview='', highlights=[], page_count=0)
+
+    pages, err = _extract_pdf_text(path, max_pages=100)
+    if err:
+        return render_template('materials/summary.html',
+                               course_code=code, course_title=course_title,
+                               error=err, modules=[], overview='', highlights=[], page_count=0)
+
+    full_text = '\n'.join(pages)
+    if len(full_text.strip()) < 200:
+        return render_template('materials/summary.html',
+                               course_code=code, course_title=course_title,
+                               error='This PDF has little extractable text (it may be scanned images). Use the full PDF viewer.',
+                               modules=[], overview='', highlights=[], page_count=len(pages))
+
+    raw_modules = _split_modules_units(full_text)
+    modules = []
+    for m in raw_modules[:12]:
+        body = m.get('body') or ''
+        # If body empty, use unit bodies
+        if len(body) < 80:
+            body = '\n'.join(u.get('body') or '' for u in m.get('units') or [])
+        m_sum, m_pts = _summarize_block(body, max_points=6)
+        units_out = []
+        for u in (m.get('units') or [])[:10]:
+            u_sum, u_pts = _summarize_block(u.get('body') or '', max_points=4)
+            units_out.append({
+                'label': u.get('label'),
+                'title': u.get('title'),
+                'summary': u_sum,
+                'key_points': u_pts[:4],
+            })
+        modules.append({
+            'label': m.get('label'),
+            'title': m.get('title'),
+            'summary': m_sum,
+            'key_points': m_pts[:5],
+            'units': units_out,
+        })
+
+    overview, highlights = _summarize_block(full_text[:12000], max_points=8, max_chars=700)
+    # If no modules detected, still show highlights
+    return render_template('materials/summary.html',
+                           course_code=code,
+                           course_title=course_title,
+                           error=None,
+                           modules=modules,
+                           overview=overview,
+                           highlights=highlights[:10],
+                           page_count=len(pages))
+
 
 
 # ==================== STUDENT ROUTES ====================
