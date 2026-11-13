@@ -47,11 +47,11 @@
             <h5 class="fw-bold">Course Material PDF Not Available for {{ course_code }}</h5>
             <p class="text-light-50 small mx-auto" style="max-width: 500px;">
                 This material is not currently in the local cache or could not be loaded from the external university server.
-                You can search NOUN Update or check back later.
+                You can search for another course material or check back later.
             </p>
             <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
                 <a href="{{ url_for('search_nounupdate', q=course_code) }}" class="btn btn-warning btn-sm text-dark fw-semibold">
-                    <i class="bi bi-search me-1"></i>Search NOUN Update
+                    <i class="bi bi-search me-1"></i>Search Course Materials
                 </a>
                 <a href="{{ url_for('summarize_material', course_code=course_code) }}" class="btn btn-outline-light btn-sm">
                     <i class="bi bi-stars me-1"></i>Try Auto Summarize

@@ -1,0 +1,707 @@
+{
+  "course_code": "CIT101",
+  "course_title": "CIT101",
+  "overview": "A computer’s spe ed called “clock speed” is measured in millions of cycles per second (megahertz or MHZ), which means that a computer with a clock speed of 66 MHz, for example an 80486DX 66MHz, is capable of executing 66 million operations each second. Introduction The aim and objective of Computers in Society as a course is computer literacy. A computer performs checks on groups of switches, increasing the number of operations it can recognize in each cycle, which means a computer checking two switches at one time, can execute one of four instructions at each cycles.",
+  "highlights": [
+    {
+      "concept": "A computer’s spe ed",
+      "explanation": "A computer’s spe ed called “clock speed” is measured in millions of cycles per second (megahertz or MHZ), which means that a computer with a clock speed of 66 MHz, for example an 80486DX 66MHz, is capable of executing 66 million operations each second."
+    },
+    {
+      "concept": "Introduction The aim and",
+      "explanation": "Introduction The aim and objective of Computers in Society as a course is computer literacy."
+    },
+    {
+      "concept": "A computer performs checks",
+      "explanation": "A computer performs checks on groups of switches, increasing the number of operations it can recognize in each cycle, which means a computer checking two switches at one time, can execute one of four instructions at each cycles."
+    },
+    {
+      "concept": "The Digital Computer 3.1.3",
+      "explanation": "The Digital Computer 3.1.3 History of the Digital Computer 3.1.4 Different Types of Computers 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION No previous computer experience is required to complete this introductory course."
+    },
+    {
+      "concept": "Unit 2 Element of a Computer",
+      "explanation": "Hardware Unit 3 Elements of a Computer: Software Unit 4 How to Work with a Computer: Switching On and Off the PC Unit 5 Using a Mouse UNIT 1 WHAT IS COMPUTER?"
+    },
+    {
+      "concept": "This course has been",
+      "explanation": "This course has been divided into 6 Modules, which are made up as follows."
+    }
+  ],
+  "modules": [
+    {
+      "label": "Module 1",
+      "title": "Module 1",
+      "summary": "A computer’s spe ed called “clock speed” is measured in millions of cycles per second (megahertz or MHZ), which means that a computer with a clock speed of 66 MHz, for example an 80486DX 66MHz, is capable of executing 66 million operations each second. CONCLUSION A typical computer system consists of five functional units: Input, Output, Control, Arithmetic/Logic Unit (Central Processing Units) and the Main Memory Units. The first of these functions is to perform arithmetic and logical calculation, while the second function is to time and control the operations of the other elements of your computer.",
+      "key_points": [
+        {
+          "concept": "A computer’s spe ed",
+          "explanation": "A computer’s spe ed called “clock speed” is measured in millions of cycles per second (megahertz or MHZ), which means that a computer with a clock speed of 66 MHz, for example an 80486DX 66MHz, is capable of executing 66 million operations each second."
+        },
+        {
+          "concept": "CONCLUSION A typical computer",
+          "explanation": "CONCLUSION A typical computer system consists of five functional units: Input, Output, Control, Arithmetic/Logic Unit (Central Processing Units) and the Main Memory Units."
+        },
+        {
+          "concept": "The first of these functions",
+          "explanation": "The first of these functions is to perform arithmetic and logical calculation, while the second function is to time and control the operations of the other elements of your computer."
+        },
+        {
+          "concept": "The standard default dialogue box lists the following choices",
+          "explanation": "Figure 1.6: The Shut Down Windows dialog box The options listed in Figure 1.6 above are in the form of “radio” buttons, which means only one option can be selected at a time."
+        },
+        {
+          "concept": "Position the mouse on",
+          "explanation": "Position the mouse on the top line of the rectangle that you The objective of this step is to position the mouse pointer have drawn so that the pixel indicator reads 200, 100 approximately one third along the top line of the rectangle."
+        },
+        {
+          "concept": "A computer performs checks",
+          "explanation": "A computer performs checks on groups of switches, increasing the number of operations it can recognize in each cycle, which means a computer checking two switches at one time, can execute one of four instructions at each cycles."
+        }
+      ],
+      "key_terms": [
+        {
+          "term": "Software",
+          "definition": "computer programs that run on a computer."
+        },
+        {
+          "term": "The software of a computer",
+          "definition": "the computer programs that are used on a computer."
+        }
+      ],
+      "units": [
+        {
+          "label": "Unit 1",
+          "title": "WHAT IS COMPUTER?",
+          "summary": "A computer’s spe ed called “clock speed” is measured in millions of cycles per second (megahertz or MHZ), which means that a computer with a clock speed of 66 MHz, for example an 80486DX 66MHz, is capable of executing 66 million operations each second. A computer performs checks on groups of switches, increasing the number of operations it can recognize in each cycle, which means a computer checking two switches at one time, can execute one of four instructions at each cycles. CONCLUSION A computer is an electronic device that is designed to receive either a set of instructions from the operat",
+          "key_points": [
+            {
+              "concept": "A computer’s spe ed",
+              "explanation": "A computer’s spe ed called “clock speed” is measured in millions of cycles per second (megahertz or MHZ), which means that a computer with a clock speed of 66 MHz, for example an 80486DX 66MHz, is capable of executing 66 million operations each second."
+            },
+            {
+              "concept": "A computer performs checks",
+              "explanation": "A computer performs checks on groups of switches, increasing the number of operations it can recognize in each cycle, which means a computer checking two switches at one time, can execute one of four instructions at each cycles."
+            },
+            {
+              "concept": "CONCLUSION A computer",
+              "explanation": "CONCLUSION A computer is an electronic device that is designed to receive either a set of instructions from the operator or a program, and then carryout the required tasks by performing c alculations on numerical data or by compiling and correlating other forms of in formation which normally results to information."
+            },
+            {
+              "concept": "The Digital Computer 3.1.3",
+              "explanation": "The Digital Computer 3.1.3 History of the Digital Computer 3.1.4 Different Types of Computers 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION No previous computer experience is required to complete this introductory course."
+            },
+            {
+              "concept": "Different Types of Computers",
+              "explanation": "Different Types of Computers In the digital computer world there are currently di fferent types of categories, which are based on price and performance."
+            },
+            {
+              "concept": "A modern computer",
+              "explanation": "A modern computer is designed to receive either a set of instructions from the operator or a program, and then carry out the required tasks by performing calculations on numerical data or by compiling and correlating other forms of information."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 2",
+          "title": "ELEMENTS OF A COMPUTER: HARDWARE",
+          "summary": "CONCLUSION A typical computer system consists of five functional units: Input, Output, Control, Arithmetic/Logic Unit (Central Processing Units) and the Main Memory Units. The first of these functions is to perform arithmetic and logical calculation, while the second function is to time and control the operations of the other elements of your computer. The first type of memory is known either as RAM (Random Access Memory) or as DRAM (Dynamic Random Access Memory) while the second type is known as ROM (Read Only Memory).",
+          "key_points": [
+            {
+              "concept": "CONCLUSION A typical computer",
+              "explanation": "CONCLUSION A typical computer system consists of five functional units: Input, Output, Control, Arithmetic/Logic Unit (Central Processing Units) and the Main Memory Units."
+            },
+            {
+              "concept": "The first of these functions",
+              "explanation": "The first of these functions is to perform arithmetic and logical calculation, while the second function is to time and control the operations of the other elements of your computer."
+            },
+            {
+              "concept": "The first type of memory",
+              "explanation": "The first type of memory is known either as RAM (Random Access Memory) or as DRAM (Dynamic Random Access Memory) while the second type is known as ROM (Read Only Memory)."
+            },
+            {
+              "concept": "The process of copying",
+              "explanation": "The process of copying data from one type of storage device to another is known as “backing up”."
+            },
+            {
+              "concept": "The system may be",
+              "explanation": "The system may be divided into two main categories, namely, Hardware and Software."
+            },
+            {
+              "concept": "The most common removable",
+              "explanation": "The most common removable disk at present is known as a Stiffy Disk."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 3",
+          "title": "ELEMENT OF A COMPUTER: SOFTWARE",
+          "summary": "The software of a computer refers to the computer programs that are used on a computer. Software means computer programs that run on a computer. level Language The machine language consists of series of binary numbers (digit consisting of zero (0) one (1)) which is the languages the computer understands.",
+          "key_points": [
+            {
+              "concept": "The software of a computer",
+              "explanation": "The software of a computer refers to the computer programs that are used on a computer."
+            },
+            {
+              "concept": "Software",
+              "explanation": "Software means computer programs that run on a computer."
+            },
+            {
+              "concept": "High",
+              "explanation": "level Language The machine language consists of series of binary numbers (digit consisting of zero (0) one (1)) which is the languages the computer understands."
+            },
+            {
+              "concept": "Progr ams may be divided into two broad categories, n amely",
+              "explanation": "Operating Systems and Application Programs."
+            },
+            {
+              "concept": "(c) Third Generation",
+              "explanation": "This consists of the high level languages where programming is done in languages."
+            },
+            {
+              "concept": "CONTENTS 1.0 Introduction 2.0",
+              "explanation": "CONTENTS 1.0 Introduction 2.0 Objective 3.0 Main Content 3.1 Software 3.1.1 Operating Systems 3.1.2 Languages 3.1.3 Language Translators 3.1.4 Software Generations 3.1.5 Application Software 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION In unit 2, we discovered the component of a computer called the hardware."
+            }
+          ],
+          "key_terms": [
+            {
+              "term": "Software",
+              "definition": "computer programs that run on a computer."
+            },
+            {
+              "term": "The software of a computer",
+              "definition": "the computer programs that are used on a computer."
+            }
+          ]
+        },
+        {
+          "label": "Unit 4",
+          "title": "HOW TO WORK WITH A COMPUTER:  SWITCHING",
+          "summary": "Figure 1.6: The Shut Down Windows dialog box The options listed in Figure 1.6 above are in the form of “radio” buttons, which means only one option can be selected at a time. Press and hold down the <Alt> key Press and release the <F4> function The following Shut Down Windows dialog box is displayed The Shut down option is pre-selected 2. One of the methods of shutting down Windows ‘98 is accomplished by holding down the <Alt> key and pressing the <F4> function key at the same time.",
+          "key_points": [
+            {
+              "concept": "The standard default dialogue box lists the following choices",
+              "explanation": "Figure 1.6: The Shut Down Windows dialog box The options listed in Figure 1.6 above are in the form of “radio” buttons, which means only one option can be selected at a time."
+            },
+            {
+              "concept": "Press and hold down",
+              "explanation": "Press and hold down the <Alt> key Press and release the <F4> function The following Shut Down Windows dialog box is displayed The Shut down option is pre-selected 2."
+            },
+            {
+              "concept": "One of the methods",
+              "explanation": "One of the methods of shutting down Windows ‘98 is accomplished by holding down the <Alt> key and pressing the <F4> function key at the same time."
+            },
+            {
+              "concept": "The PC will perform",
+              "explanation": "The PC will perform some standard systems checks covering areas such as: Motherboard, Processor, Memory and, Disk Drives 2."
+            },
+            {
+              "concept": "Figure 1.5",
+              "explanation": "The Window 98 desktop Although the most current version of the Window o perating systems is Windows Millennium, the majority of copies of Windows currently in use, that is at the time of going to print, is Windows 98."
+            },
+            {
+              "concept": "Switch on your computer",
+              "explanation": "Switch on your computer system After a few moment, the system will perform the standard system check Next you will see: “Starting Window 98…” The screen will temporarily go black before displaying the Windows ’98 desktop 2."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 5",
+          "title": "USING A MOUSE",
+          "summary": "Position the mouse on the top line of the rectangle that you The objective of this step is to position the mouse pointer have drawn so that the pixel indicator reads 200, 100 approximately one third along the top line of the rectangle. The original rectangle has been divided into three equal boxes. The screen is divided into Invisible dots called “pixels”.",
+          "key_points": [
+            {
+              "concept": "Position the mouse on",
+              "explanation": "Position the mouse on the top line of the rectangle that you The objective of this step is to position the mouse pointer have drawn so that the pixel indicator reads 200, 100 approximately one third along the top line of the rectangle."
+            },
+            {
+              "concept": "The original rectangle has",
+              "explanation": "The original rectangle has been divided into three equal boxes."
+            },
+            {
+              "concept": "The screen",
+              "explanation": "The screen is divided into Invisible dots called “pixels”."
+            },
+            {
+              "concept": "Figure 1.10 Using the Mouse to Draw a Picture Objective",
+              "explanation": "To draw the picture illustrated in Figure 1."
+            },
+            {
+              "concept": "The basic features of",
+              "explanation": "The basic features of a mouse are a casing, which has a flat bottom and is gripped by one hand."
+            },
+            {
+              "concept": "Figure 1.7 Typical two",
+              "explanation": "Figure 1.7 Typical two button mouse By moving the mouse on a flat surface (such as a desk or mouse pad), the ball turns inside the mouse, moving two sets of rollers that control an on-screen cursor."
+            }
+          ],
+          "key_terms": []
+        }
+      ]
+    },
+    {
+      "label": "Module 2",
+      "title": "Module 2",
+      "summary": "Basic Windows Functions 3.2 Loading the Operating System Window 98 3.3 Windows 98 3.3.1 Elements of the Desktop 3.3.2 Windows Terminology 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION The Operating System provides facilities that enable other programs to use the hardware in a safe and controlled way. The Windows ’98 Desktop 3.3.1 Elements of the Desktop The desktop is fully customizable; however the basic desktop layout contains the following standard elements: Taskbar The Taskbar provides quick access to information and to applications which are active (opened). CONTENTS 1.0 Introduction 2.0 Objective 3.0 Main Content 3.1 Examining the Start Menu 3.2 Windows Elements 3.3 Moving and Sizing a Window 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 I",
+      "key_points": [
+        {
+          "concept": "Basic Windows Functions 3.2",
+          "explanation": "Basic Windows Functions 3.2 Loading the Operating System Window 98 3.3 Windows 98 3.3.1 Elements of the Desktop 3.3.2 Windows Terminology 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION The Operating System provides facilities that enable other programs to use the hardware in a safe and controlled way."
+        },
+        {
+          "concept": "The Windows ’98 Desktop",
+          "explanation": "The Windows ’98 Desktop 3.3.1 Elements of the Desktop The desktop is fully customizable; however the basic desktop layout contains the following standard elements: Taskbar The Taskbar provides quick access to information and to applications which are active (opened)."
+        },
+        {
+          "concept": "CONTENTS 1.0 Introduction 2.0",
+          "explanation": "CONTENTS 1.0 Introduction 2.0 Objective 3.0 Main Content 3.1 Examining the Start Menu 3.2 Windows Elements 3.3 Moving and Sizing a Window 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION Windows consist of sets of standard operations which can be used by the higher level software to interact with graphical user interface (GUI)."
+        },
+        {
+          "concept": "Exploring a Window Before you begin",
+          "explanation": "Ensure that the Windows 98 desktop is displayed Objective: To launch an application call ed WordPad and experiment with some of its window elements."
+        },
+        {
+          "concept": "The desktop",
+          "explanation": "The desktop is the main working area where you will perform the majority of functions when using Windows ’98."
+        },
+        {
+          "concept": "CONCLUSION Word processing has",
+          "explanation": "CONCLUSION Word processing has many advantages over using a typewriter."
+        }
+      ],
+      "key_terms": [],
+      "units": [
+        {
+          "label": "Unit 1",
+          "title": "OPERATING SYSTEM",
+          "summary": "Basic Windows Functions 3.2 Loading the Operating System Window 98 3.3 Windows 98 3.3.1 Elements of the Desktop 3.3.2 Windows Terminology 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION The Operating System provides facilities that enable other programs to use the hardware in a safe and controlled way. The Windows ’98 Desktop 3.3.1 Elements of the Desktop The desktop is fully customizable; however the basic desktop layout contains the following standard elements: Taskbar The Taskbar provides quick access to information and to applications which are active (opened). T",
+          "key_points": [
+            {
+              "concept": "Basic Windows Functions 3.2",
+              "explanation": "Basic Windows Functions 3.2 Loading the Operating System Window 98 3.3 Windows 98 3.3.1 Elements of the Desktop 3.3.2 Windows Terminology 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION The Operating System provides facilities that enable other programs to use the hardware in a safe and controlled way."
+            },
+            {
+              "concept": "The Windows ’98 Desktop",
+              "explanation": "The Windows ’98 Desktop 3.3.1 Elements of the Desktop The desktop is fully customizable; however the basic desktop layout contains the following standard elements: Taskbar The Taskbar provides quick access to information and to applications which are active (opened)."
+            },
+            {
+              "concept": "The desktop",
+              "explanation": "The desktop is the main working area where you will perform the majority of functions when using Windows ’98."
+            },
+            {
+              "concept": "Give a brief explanation",
+              "explanation": "Give a brief explanation of the functions associated with the windows operating system."
+            },
+            {
+              "concept": "To recap, the startup sequence of events is as follows",
+              "explanation": "The PC will perform some standard system checks covering areas such as: Motherboard, Processor, Memory and, Disk Drives, Next the message “Starting Windows 98…” will be displayed on your monitor, followed by the Windows ’98 logo."
+            },
+            {
+              "concept": "My Computer This utility",
+              "explanation": "My Computer This utility provides quick and easy access to information related to your computer, such as drives, files and folders."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 2",
+          "title": "WINDOWS 98",
+          "summary": "CONTENTS 1.0 Introduction 2.0 Objective 3.0 Main Content 3.1 Examining the Start Menu 3.2 Windows Elements 3.3 Moving and Sizing a Window 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION Windows consist of sets of standard operations which can be used by the higher level software to interact with graphical user interface (GUI). Ensure that the Windows 98 desktop is displayed Objective: To launch an application call ed WordPad and experiment with some of its window elements. Discuss main characteristics of Windows 98.",
+          "key_points": [
+            {
+              "concept": "CONTENTS 1.0 Introduction 2.0",
+              "explanation": "CONTENTS 1.0 Introduction 2.0 Objective 3.0 Main Content 3.1 Examining the Start Menu 3.2 Windows Elements 3.3 Moving and Sizing a Window 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION Windows consist of sets of standard operations which can be used by the higher level software to interact with graphical user interface (GUI)."
+            },
+            {
+              "concept": "Exploring a Window Before you begin",
+              "explanation": "Ensure that the Windows 98 desktop is displayed Objective: To launch an application call ed WordPad and experiment with some of its window elements."
+            },
+            {
+              "concept": "Discuss main characteristics of",
+              "explanation": "Discuss main characteristics of Windows 98."
+            },
+            {
+              "concept": "Format bar This bar",
+              "explanation": "Format bar This bar also displays shortcut buttons as well as various boxes for performing formatting operations, such as text alignment, changing the font and font size."
+            },
+            {
+              "concept": "Toolbar This bar displays",
+              "explanation": "Toolbar This bar displays shortcut button for performing common operations, such as saving a file and copying data."
+            },
+            {
+              "concept": "Run The Run option",
+              "explanation": "Run The Run option allows you to run a particular application, such as a setup program, from the command line."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 3",
+          "title": "FILES",
+          "summary": "CONTENTS 1.0 Introduction 2.0 Objective 3.0 Main Content 3.1 File Handling 3.2 Creating a New Folder 3.3 Shutting Down Window ’98 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION Each document is stored in a computer individually by name in what is called a file. Ensure that Shut Down is selected and press <Enter> After a few moments, a message appears on your monitor, informing you that is safe to turn off your 4.0 CONCLUSION Many document files take the form of a formatted sequence of characters. SUMMARY Document files that take form of formatted sequence of charact",
+          "key_points": [
+            {
+              "concept": "CONTENTS 1.0 Introduction 2.0",
+              "explanation": "CONTENTS 1.0 Introduction 2.0 Objective 3.0 Main Content 3.1 File Handling 3.2 Creating a New Folder 3.3 Shutting Down Window ’98 4.0 Conclusion 5.0 Summary 7.0 References/Further Reading 1.0 INTRODUCTION Each document is stored in a computer individually by name in what is called a file."
+            },
+            {
+              "concept": "Ensure that Shut Down",
+              "explanation": "Ensure that Shut Down is selected and press <Enter> After a few moments, a message appears on your monitor, informing you that is safe to turn off your 4.0 CONCLUSION Many document files take the form of a formatted sequence of characters."
+            },
+            {
+              "concept": "SUMMARY Document files that",
+              "explanation": "SUMMARY Document files that take form of formatted sequence of characters are called text files because they consist of printable characters organised into lines of text."
+            },
+            {
+              "concept": "In many ways, Window",
+              "explanation": "In many ways, Window 98 folder can be compared to a paper folder in that both are used to store and organise information in one location."
+            },
+            {
+              "concept": "MAIN CONTENT 3.1 File",
+              "explanation": "MAIN CONTENT 3.1 File Handling All information found in a computer that is both data and programs, are stored in files."
+            },
+            {
+              "concept": "Shutting Down Window ’98",
+              "explanation": "Shutting Down Window ’98 In Module 1 you learned the importance of shutting d own Windows correctly."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 4",
+          "title": "WORD PROCESSING",
+          "summary": "For example, you can change margins, add and delete text, move paragraphs, and correct spelling errors. Nonprinting Characters Word can display a number of special symbols on the screen that indicate each time you have pressed <Enter>, <Spacebar>, and <Tab>, among others. MAIN CONTENT 3.1 Introduction to Word Processing Word processing is the use of computers to create, revise, and save documents for printing and future retrieval.",
+          "key_points": [
+            {
+              "concept": "For example, you can",
+              "explanation": "For example, you can change margins, add and delete text, move paragraphs, and correct spelling errors."
+            },
+            {
+              "concept": "Nonprinting Characters Word can",
+              "explanation": "Nonprinting Characters Word can display a number of special symbols on the screen that indicate each time you have pressed <Enter>, <Spacebar>, and <Tab>, among others."
+            },
+            {
+              "concept": "MAIN CONTENT 3.1 Introduction",
+              "explanation": "MAIN CONTENT 3.1 Introduction to Word Processing Word processing is the use of computers to create, revise, and save documents for printing and future retrieval."
+            },
+            {
+              "concept": "CONCLUSION A word processing",
+              "explanation": "CONCLUSION A word processing program provides facilities to edit documents and define their layout and enable them to be printed."
+            },
+            {
+              "concept": "Creating a New Blank",
+              "explanation": "Creating a New Blank Document and the Basics of Entering Text Word is a WYSIWYG (what-you-see-is-what-you-get) word processor."
+            },
+            {
+              "concept": "Show/Hide button Creating a",
+              "explanation": "Show/Hide button Creating a New Documents, Entering Text, and Identifying Nonprinting Characters What you do Comments/Prompts 1."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 5",
+          "title": "FURTHER  WORD  PROCESSING  PROGRAM",
+          "summary": "CONCLUSION Word processing has many advantages over using a typewriter. wrap Feature while Entering Text Before you begin: The insertion point should be at the end of the “To:” line. This feature is called AutoComplete.",
+          "key_points": [
+            {
+              "concept": "CONCLUSION Word processing has",
+              "explanation": "CONCLUSION Word processing has many advantages over using a typewriter."
+            },
+            {
+              "concept": "Using Tab, Autocomplete, Backspace, and the Word",
+              "explanation": "wrap Feature while Entering Text Before you begin: The insertion point should be at the end of the “To:” line."
+            },
+            {
+              "concept": "This feature",
+              "explanation": "This feature is called AutoComplete."
+            },
+            {
+              "concept": "For permanent storage, a",
+              "explanation": "For permanent storage, a document must be saved to some location, such as a hard drive or a floppy disk."
+            },
+            {
+              "concept": "For example, a file cannot be A",
+              "explanation": "Drive."
+            },
+            {
+              "concept": "(These constraints are determined",
+              "explanation": "(These constraints are determined by the Windows operating system.) 3.4.3 The Save as Dialog Box The Save As dialog box displays five folders on the left side of the dialog box: History, My Documents, Desktop, Favorites, and Web Folders."
+            }
+          ],
+          "key_terms": []
+        }
+      ]
+    },
+    {
+      "label": "Module 3",
+      "title": "Module 3",
+      "summary": "To discover some of the features and limitations of a paper spreadsheet. The Workbook Environment The Excel worksheet consists of various elements. The spelling checker also checks for such common typing mistakes as repeated words such as (“the the”) and, in conjuncti on with the AutoCorrect feature, it checks for such error as irregular capitalization (“the”).",
+      "key_points": [
+        {
+          "concept": "Examine a Paper Spreadsheet Objective",
+          "explanation": "To discover some of the features and limitations of a paper spreadsheet."
+        },
+        {
+          "concept": "The Workbook Environment The",
+          "explanation": "The Workbook Environment The Excel worksheet consists of various elements."
+        },
+        {
+          "concept": "The spelling checker also",
+          "explanation": "The spelling checker also checks for such common typing mistakes as repeated words such as (“the the”) and, in conjuncti on with the AutoCorrect feature, it checks for such error as irregular capitalization (“the”)."
+        },
+        {
+          "concept": "You may use Excel",
+          "explanation": "You may use Excel for purposes such as the setting up of profit and loss statements, cash flow forecasts, sales reports, product lists inventories, b udgeting, project planning etc."
+        },
+        {
+          "concept": "A Spreadsheet",
+          "explanation": "A Spreadsheet consists of information wr itten in tabular form; a other words, rows and/or columns of figures and/or text."
+        },
+        {
+          "concept": "The primary objective for",
+          "explanation": "The primary objective for example of a spreadsheet is to keep a record of numerical information."
+        }
+      ],
+      "key_terms": [],
+      "units": [
+        {
+          "label": "Unit 1",
+          "title": "WORD PROCESSING CONTINUED",
+          "summary": "Jss 3 Class List (14) Name (14) Surname House Peter (12) Appleby Red Robbert Archer Blue Simon Bester Blue Arnie Cook Green Jason De Winter Blue Scott Heard Red Anash Naidoo Red David Munroe Green Lucas Marosho Red 7.0 REFERENCES/FURTHER READING French, C.S. End punctuation and trailing spaces are automatically selected along with the sentence 3.4 Deleting Text, To delete the character immediately to the right of the insertion point, press the <Delete> key. However, it is necessary to comply with the following specifications: The name of the school should appear in capital letters in font Time",
+          "key_points": [
+            {
+              "concept": "Jss 3 Class List",
+              "explanation": "Jss 3 Class List (14) Name (14) Surname House Peter (12) Appleby Red Robbert Archer Blue Simon Bester Blue Arnie Cook Green Jason De Winter Blue Scott Heard Red Anash Naidoo Red David Munroe Green Lucas Marosho Red 7.0 REFERENCES/FURTHER READING French, C.S."
+            },
+            {
+              "concept": "End punctuation and trailing",
+              "explanation": "End punctuation and trailing spaces are automatically selected along with the sentence 3.4 Deleting Text, To delete the character immediately to the right of the insertion point, press the <Delete> key."
+            },
+            {
+              "concept": "However, it is necessary",
+              "explanation": "However, it is necessary to comply with the following specifications: The name of the school should appear in capital letters in font Times New Roman, size 14, centered at the top of the page."
+            },
+            {
+              "concept": "Type",
+              "explanation": "property To replace “house” with “property” 3.6Moving and Copying Text After you have edited text, you might want to move or copy that text to another part of the document."
+            },
+            {
+              "concept": "MAIN CONTENT 3.1 Opening",
+              "explanation": "MAIN CONTENT 3.1 Opening and Editing a Document 3.1.1 The File, Open Command The File, Open command places a copy of a file on disk into an active document window."
+            },
+            {
+              "concept": "Replacing Text There may",
+              "explanation": "Replacing Text There may be times you want to replace existing text with new text, when it is just more efficient or retype text than it is to edit it."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 2",
+          "title": "COPYING A TEXT, SAVING CHANGES TO A",
+          "summary": "Some Formatting features, such as the Font and Font size options, are not toggling buttons. Some Formatting buttons are toggles, that is, the same button is used to turn a formatting feature “on” and “off”. These features require that some selection always be made.",
+          "key_points": [
+            {
+              "concept": "Some Formatting features, such",
+              "explanation": "Some Formatting features, such as the Font and Font size options, are not toggling buttons."
+            },
+            {
+              "concept": "Some Formatting buttons are",
+              "explanation": "Some Formatting buttons are toggles, that is, the same button is used to turn a formatting feature “on” and “off”."
+            },
+            {
+              "concept": "These features require that",
+              "explanation": "These features require that some selection always be made."
+            },
+            {
+              "concept": "Character Formatting Character formats",
+              "explanation": "such as bold, italics, underlining, font face and font size — can be used to emphasize a text in a document."
+            },
+            {
+              "concept": "The Formatting toolbar, shown",
+              "explanation": "The Formatting toolbar, shown in Figure 1 below, has been designed specifically for formatting."
+            },
+            {
+              "concept": "On this course you",
+              "explanation": "On this course you will be introduced briefly to two kinds of formatting namely, character and paragraph."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 3",
+          "title": "PARAGRAPH FORMATTING: THE SPELLING",
+          "summary": "The spelling checker also checks for such common typing mistakes as repeated words such as (“the the”) and, in conjuncti on with the AutoCorrect feature, it checks for such error as irregular capitalization (“the”). Click on OK To close the message box that reads, “The spelling check is complete.” 3.3 Introduction to Printing a Document The final step in the production of a document is printing. Please ensure that the following checkboxes have been deselected (turned off) Check spelling as you type Check grammar as you type Check grammar with spelling not want these features activated automati",
+          "key_points": [
+            {
+              "concept": "The spelling checker also",
+              "explanation": "The spelling checker also checks for such common typing mistakes as repeated words such as (“the the”) and, in conjuncti on with the AutoCorrect feature, it checks for such error as irregular capitalization (“the”)."
+            },
+            {
+              "concept": "Click on OK To",
+              "explanation": "Click on OK To close the message box that reads, “The spelling check is complete.” 3.3 Introduction to Printing a Document The final step in the production of a document is printing."
+            },
+            {
+              "concept": "Please ensure that the",
+              "explanation": "Please ensure that the following checkboxes have been deselected (turned off) Check spelling as you type Check grammar as you type Check grammar with spelling not want these features activated automatically."
+            },
+            {
+              "concept": "Although a spelling checker",
+              "explanation": "Although a spelling checker is not a substitute for proofreading, you can use this feature to help you create and edit your documents."
+            },
+            {
+              "concept": "The Automatic Spell Check",
+              "explanation": "The Automatic Spell Check feature informs you of spelling errors as you type."
+            },
+            {
+              "concept": "We will therefore concentrate",
+              "explanation": "We will therefore concentrate on the basic principles of printing only."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 4",
+          "title": "SPREADSHEET",
+          "summary": "To discover some of the features and limitations of a paper spreadsheet. The Workbook Environment The Excel worksheet consists of various elements. You may use Excel for purposes such as the setting up of profit and loss statements, cash flow forecasts, sales reports, product lists inventories, b udgeting, project planning etc.",
+          "key_points": [
+            {
+              "concept": "Examine a Paper Spreadsheet Objective",
+              "explanation": "To discover some of the features and limitations of a paper spreadsheet."
+            },
+            {
+              "concept": "The Workbook Environment The",
+              "explanation": "The Workbook Environment The Excel worksheet consists of various elements."
+            },
+            {
+              "concept": "You may use Excel",
+              "explanation": "You may use Excel for purposes such as the setting up of profit and loss statements, cash flow forecasts, sales reports, product lists inventories, b udgeting, project planning etc."
+            },
+            {
+              "concept": "A Spreadsheet",
+              "explanation": "A Spreadsheet consists of information wr itten in tabular form; a other words, rows and/or columns of figures and/or text."
+            },
+            {
+              "concept": "The primary objective for",
+              "explanation": "The primary objective for example of a spreadsheet is to keep a record of numerical information."
+            },
+            {
+              "concept": "examine the various elements",
+              "explanation": "examine the various elements of the paper spreadsheet."
+            }
+          ],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 5",
+          "title": "Entering and Correcting Data",
+          "summary": "",
+          "key_points": [],
+          "key_terms": []
+        }
+      ]
+    },
+    {
+      "label": "Module 5",
+      "title": "is devoted to the subject of charting and presentations.  Here",
+      "summary": "Finally in module 6, you will have an opportunity to learn more about Networking, the Internet and using Electronic mail (E-mail). you will use Microsoft Excel 200 as the simple program for charting and Microsoft Power Point 2000 for presentations.",
+      "key_points": [
+        {
+          "concept": "Finally in module 6",
+          "explanation": "Finally in module 6, you will have an opportunity to learn more about Networking, the Internet and using Electronic mail (E-mail)."
+        },
+        {
+          "concept": "you will use Microsoft",
+          "explanation": "you will use Microsoft Excel 200 as the simple program for charting and Microsoft Power Point 2000 for presentations."
+        }
+      ],
+      "key_terms": [],
+      "units": []
+    },
+    {
+      "label": "Module 6",
+      "title": "………………………………………………………. 172",
+      "summary": "This course has been divided into 6 Modules, which are made up as follows. In module 1, you will be introduced to the Principles of Computer Hardware and Software. Module 3 introduces you to what the functions are of a word processing program.",
+      "key_points": [
+        {
+          "concept": "This course has been",
+          "explanation": "This course has been divided into 6 Modules, which are made up as follows."
+        },
+        {
+          "concept": "In module 1, you",
+          "explanation": "In module 1, you will be introduced to the Principles of Computer Hardware and Software."
+        },
+        {
+          "concept": "Module 3 introduces you",
+          "explanation": "Module 3 introduces you to what the functions are of a word processing program."
+        },
+        {
+          "concept": "The aim of the course",
+          "explanation": "The aim of the course is to teach you the fundamentals of Computer Science and its applications."
+        },
+        {
+          "concept": "Questionnaire …………………………………………………… 209 INTRODUCTION",
+          "explanation": "Questionnaire …………………………………………………… 209 INTRODUCTION Computer education is the dissemination of computer knowledge into the learners."
+        },
+        {
+          "concept": "In module 2, you",
+          "explanation": "In module 2, you will be taught the basics of what is meant by the term “Operating System”."
+        }
+      ],
+      "key_terms": [],
+      "units": [
+        {
+          "label": "Unit 1",
+          "title": "Networking, Internet and E-mail………………… 172",
+          "summary": "",
+          "key_points": [],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 2",
+          "title": "Internet……………………………………………. 179",
+          "summary": "",
+          "key_points": [],
+          "key_terms": []
+        },
+        {
+          "label": "Unit 4",
+          "title": "Electronic Mail…………………………………… 193",
+          "summary": "This course has been divided into 6 Modules, which are made up as follows. In module 1, you will be introduced to the Principles of Computer Hardware and Software. Module 3 introduces you to what the functions are of a word processing program.",
+          "key_points": [
+            {
+              "concept": "This course has been",
+              "explanation": "This course has been divided into 6 Modules, which are made up as follows."
+            },
+            {
+              "concept": "In module 1, you",
+              "explanation": "In module 1, you will be introduced to the Principles of Computer Hardware and Software."
+            },
+            {
+              "concept": "Module 3 introduces you",
+              "explanation": "Module 3 introduces you to what the functions are of a word processing program."
+            },
+            {
+              "concept": "The aim of the course",
+              "explanation": "The aim of the course is to teach you the fundamentals of Computer Science and its applications."
+            },
+            {
+              "concept": "Questionnaire …………………………………………………… 209 INTRODUCTION",
+              "explanation": "Questionnaire …………………………………………………… 209 INTRODUCTION Computer education is the dissemination of computer knowledge into the learners."
+            },
+            {
+              "concept": "In module 2, you",
+              "explanation": "In module 2, you will be taught the basics of what is meant by the term “Operating System”."
+            }
+          ],
+          "key_terms": []
+        }
+      ]
+    }
+  ],
+  "page_count": 100,
+  "ai_generated": false
+}

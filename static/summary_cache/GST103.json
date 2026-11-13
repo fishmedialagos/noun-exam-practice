@@ -1,0 +1,111 @@
+{
+  "course_code": "GST103",
+  "course_title": "Computer Fundamentals",
+  "overview": "Computer Users Computer users are the different categories of personnel that operates the computer. The evolution of digital computing is often divided into generations. Below are further attributes of a computer which makes it to be an indispensable tool for human being: 3.2 Characteristics of a Computer Characteristics of Computer 1.",
+  "highlights": [
+    {
+      "concept": "Computer Users Computer users",
+      "explanation": "Computer Users Computer users are the different categories of personnel that operates the computer."
+    },
+    {
+      "concept": "The evolution of digital computing",
+      "explanation": "The evolution of digital computing is often divided into generations."
+    },
+    {
+      "concept": "Below are further attributes",
+      "explanation": "Below are further attributes of a computer which makes it to be an indispensable tool for human being: 3.2 Characteristics of a Computer Characteristics of Computer 1."
+    },
+    {
+      "concept": "In principle the electronic",
+      "explanation": "In principle the electronic switches were more reliable, since they would have no moving parts that would wear out, but technology was still new at that time and the tubes were comparable to relays in reliability."
+    },
+    {
+      "concept": "Its use transcends all",
+      "explanation": "Its use transcends all areas of human endeavour owing to the advantages of computer method of data processing over the manual and mechanical methods of data processing."
+    },
+    {
+      "concept": "Modern computers can be",
+      "explanation": "Modern computers can be used to perform a variety of functions like on -line processing, multi-programming, real time processing etc."
+    }
+  ],
+  "modules": [
+    {
+      "label": "Module 1",
+      "title": "INTRODUCTION TO COMPUTERS",
+      "summary": "Categories of Computers Although there are no industry standards, computers are generally classified in the following ways: 3.1 Classification Based On Signal Type There are basically three types of electronic computers. CPL was, according to its authors, an attempt to capture only the important features of the complicated and sophisticated ALGOL. The notion of using numbers to represent functions was a key step used by Goedel in his incompleteness theorem in 1937, work which Von Neumann, as a logician, was quite familiar with.",
+      "key_points": [
+        {
+          "concept": "Categories of Computers Although",
+          "explanation": "Categories of Computers Although there are no industry standards, computers are generally classified in the following ways: 3.1 Classification Based On Signal Type There are basically three types of electronic computers."
+        },
+        {
+          "concept": "CPL was, according to",
+          "explanation": "CPL was, according to its authors, an attempt to capture only the important features of the complicated and sophisticated ALGOL."
+        },
+        {
+          "concept": "The notion of using",
+          "explanation": "The notion of using numbers to represent functions was a key step used by Goedel in his incompleteness theorem in 1937, work which Von Neumann, as a logician, was quite familiar with."
+        },
+        {
+          "concept": "Computer designers began to",
+          "explanation": "Computer designers began to take advantage of parallelism by using multiple functional units, overlapping CPU and I/O operations, and pipelining (internal parallelism) in both the instruction stream and the data stream."
+        },
+        {
+          "concept": "Theoretically, a general",
+          "explanation": "purpose computer can be adequate by means of some easily alterable instructions to handle any problems that can be solved by computation."
+        },
+        {
+          "concept": "Some viruses have the",
+          "explanation": "Some viruses have the capability of modifying their code which means one virus could have various amounts of similar variants."
+        }
+      ],
+      "key_terms": [
+        {
+          "term": "This",
+          "definition": "that you received an email with an attached file and opened the file."
+        }
+      ],
+      "units": []
+    },
+    {
+      "label": "Module 2",
+      "title": "COMPUTER HARDWARE AND SOFTWARE",
+      "summary": "Protection refers to a mechanism for controlling the access of programs, processes, or users to the resources defined by a computer controls to be imposed, together with some means of enforcement. ( the different categories of keys o n the keyboard and their functions). System Software This is refers to the suits of programs that facilitates the optimal use of the hardware systems and/or provide a suitable environment for the writing, editing, debugging, testing and running of User Programs.",
+      "key_points": [
+        {
+          "concept": "Protection",
+          "explanation": "Protection refers to a mechanism for controlling the access of programs, processes, or users to the resources defined by a computer controls to be imposed, together with some means of enforcement."
+        },
+        {
+          "concept": "Input unit which comprises (a) the keyboard",
+          "explanation": "( the different categories of keys o n the keyboard and their functions)."
+        },
+        {
+          "concept": "System Software This",
+          "explanation": "System Software This is refers to the suits of programs that facilitates the optimal use of the hardware systems and/or provide a suitable environment for the writing, editing, debugging, testing and running of User Programs."
+        },
+        {
+          "concept": "Classification of Computer Software",
+          "explanation": "Classification of Computer Software The computer software could be divided into two major groups namely System Software (Programs) and Application Software (Programs)."
+        },
+        {
+          "concept": "In addition to the",
+          "explanation": "In addition to the four types of keys, there are some special or important keys such as the following: (a) Return or Enter key (b) Escape key denoted by ESC (c) Control key denoted by CTRL (d) Alternate key denoted by ALT (e) Delete key denoted by DEL (f) Insert key denoted by INS (g) Backspace key (h) Shift key."
+        },
+        {
+          "concept": "A computer keyboard",
+          "explanation": "A computer keyboard is considered too be intelligent if, in addition to performing the routine functions characteristic of a typewriter keyboard, it can initiate a series of actions for a computer to carry out by mere pressing a key or combination of two or more keys."
+        }
+      ],
+      "key_terms": [
+        {
+          "term": "Protection",
+          "definition": "a mechanism for controlling the access of programs, processes, or users to the resources defined by a computer controls to be imposed, together with some means of enforcement."
+        }
+      ],
+      "units": []
+    }
+  ],
+  "page_count": 100,
+  "ai_generated": false
+}

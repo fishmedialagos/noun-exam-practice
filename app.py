@@ -1006,7 +1006,7 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
                 'response_format': {'type': 'json_object'},
             }
 
-        r = http_requests.post(url, headers=headers, json=payload, timeout=25)
+        r = http_requests.post(url, headers=headers, json=payload, timeout=(3.0, 5.5))
         if r.status_code != 200:
             app.logger.warning('AI summarize HTTP %s: %s', r.status_code, r.text[:300])
             return None
@@ -1020,9 +1020,7 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
 
 @app.route('/materials/summarize/<course_code>')
 def summarize_material(course_code):
-    """Extended module/unit auto-summarizer with caching and unit-by-unit exam keypoints."""
-    from concurrent.futures import ThreadPoolExecutor
-
+    """Fast, resilient module/unit auto-summarizer with instant caching and exam keypoints."""
     code, course_title, local_path, urls = _resolve_material(course_code)
     if course_title == code:
         _, nu_title = _discover_nounupdate_pdf(code)
@@ -1054,7 +1052,7 @@ def summarize_material(course_code):
                                error='Could not download the course PDF to summarize. Open the full material first, then try again.',
                                modules=[], overview='', highlights=[], ai_generated=False, page_count=0)
 
-    pages, err = _extract_pdf_text(path, max_pages=220)
+    pages, err = _extract_pdf_text(path, max_pages=110)
     if err:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
@@ -1068,93 +1066,63 @@ def summarize_material(course_code):
                                modules=[], overview='', highlights=[], ai_generated=False, page_count=len(pages))
 
     raw_modules = _split_modules_units(full_text)
-    ai_enabled = bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
-    ai_results = {}
 
-    # Run AI summarization concurrently for fast response times
-    if ai_enabled:
-        futures = {}
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            if len(full_text.strip()) > 300:
-                futures['overview'] = executor.submit(
-                    _ai_summarize_content, full_text[:14000], code, 'course_overview', 'Course Overview', course_title
-                )
-            for m_idx, m in enumerate(raw_modules[:12]):
-                body = m.get('body') or ''
-                if len(body) < 100:
-                    body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
-                if len(body) > 200:
-                    futures[f'mod_{m_idx}'] = executor.submit(
-                        _ai_summarize_content, body, code, 'module', m.get('label') or f'Module {m_idx+1}', m.get('title') or ''
-                    )
-                for u_idx, u in enumerate((m.get('units') or [])[:12]):
-                    u_body = u.get('body') or ''
-                    if len(u_body) > 180:
-                        futures[f'unit_{m_idx}_{u_idx}'] = executor.submit(
-                            _ai_summarize_content, u_body, code, 'unit', u.get('label') or f'Unit {u_idx+1}', u.get('title') or ''
-                        )
-
-        for key, fut in futures.items():
-            try:
-                res = fut.result(timeout=25)
-                if res:
-                    ai_results[key] = res
-            except Exception as e:
-                app.logger.warning('AI summary task failed for %s: %s', key, e)
-
+    # Fast extractive breakdown for all modules and units (takes < 0.05s)
     modules = []
     for m_idx, m in enumerate(raw_modules[:12]):
         body = m.get('body') or ''
         if len(body) < 100:
             body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
-        ext_sum, ext_pts, ext_terms = _summarize_block(body, max_points=7, max_chars=1200)
-
-        ai_m = ai_results.get(f'mod_{m_idx}')
-        if ai_m:
-            m_sum = ai_m.get('summary') or ext_sum
-            m_pts = ai_m.get('key_points') or ext_pts
-            m_terms = ai_m.get('key_terms') or ext_terms
-        else:
-            m_sum, m_pts, m_terms = ext_sum, ext_pts, ext_terms
+        ext_sum, ext_pts, ext_terms = _summarize_block(body, max_points=6, max_chars=800)
 
         units_out = []
         for u_idx, u in enumerate((m.get('units') or [])[:12]):
             u_body = u.get('body') or ''
-            u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u_body, max_points=6, max_chars=900)
-
-            ai_u = ai_results.get(f'unit_{m_idx}_{u_idx}')
-            if ai_u:
-                u_sum = ai_u.get('summary') or u_ext_sum
-                u_pts = ai_u.get('key_points') or u_ext_pts
-                u_terms = ai_u.get('key_terms') or u_ext_terms
-            else:
-                u_sum, u_pts, u_terms = u_ext_sum, u_ext_pts, u_ext_terms
+            u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u_body, max_points=6, max_chars=600)
 
             units_out.append({
                 'label': u.get('label'),
                 'title': u.get('title'),
-                'summary': u_sum,
-                'key_points': u_pts,
-                'key_terms': u_terms,
+                'summary': u_ext_sum,
+                'key_points': u_ext_pts,
+                'key_terms': u_ext_terms,
             })
 
         modules.append({
             'label': m.get('label'),
             'title': m.get('title'),
-            'summary': m_sum,
-            'key_points': m_pts,
-            'key_terms': m_terms,
+            'summary': ext_sum,
+            'key_points': ext_pts,
+            'key_terms': ext_terms,
             'units': units_out,
         })
 
-    ext_overview, ext_highlights, _ = _summarize_block(full_text[:20000], max_points=10, max_chars=1000)
-    ai_ov = ai_results.get('overview')
-    if ai_ov:
-        overview = ai_ov.get('summary') or ext_overview
-        highlights = ai_ov.get('key_points') or ext_highlights
-    else:
-        overview = ext_overview
-        highlights = ext_highlights
+    ext_overview, ext_highlights, _ = _summarize_block(full_text[:14000], max_points=7, max_chars=1200)
+    overview = ext_overview
+    highlights = ext_highlights
+    ai_generated = False
+
+    # Targeted fast AI enhancement for Course Overview (capped with 5-second timeout)
+    ai_enabled = bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
+    if ai_enabled and len(full_text.strip()) > 300:
+        try:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                ai_fut = executor.submit(
+                    _ai_summarize_content, full_text[:12000], code, 'course_overview', 'Course Overview', course_title
+                )
+                try:
+                    res = ai_fut.result(timeout=5.0)
+                    if res:
+                        if res.get('summary'):
+                            overview = res.get('summary')
+                        if res.get('key_points'):
+                            highlights = res.get('key_points')
+                        ai_generated = True
+                except Exception as e:
+                    app.logger.warning('AI overview timeout/error for %s: %s (falling back to extractive)', code, e)
+        except Exception as e:
+            app.logger.warning('AI executor error: %s', e)
 
     # Cache result
     try:
@@ -1165,7 +1133,7 @@ def summarize_material(course_code):
                 'modules': modules,
                 'overview': overview,
                 'highlights': highlights[:12],
-                'ai_generated': bool(ai_results),
+                'ai_generated': ai_generated,
                 'page_count': len(pages),
             }, f, ensure_ascii=False)
     except Exception:
@@ -1178,7 +1146,7 @@ def summarize_material(course_code):
                            modules=modules,
                            overview=overview,
                            highlights=highlights[:12],
-                           ai_generated=bool(ai_results),
+                           ai_generated=ai_generated,
                            page_count=len(pages))
 
 
