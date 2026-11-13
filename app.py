@@ -777,7 +777,42 @@ def upload_questions_csv(exam_id):
                 if not text:
                     continue
                 
-                if qtype == 'fill':
+                if qtype in ['tf', 'true_false', 'true/false', 'boolean', 'yes_no', 'yes/no']:
+                    raw_correct = (row.get('correct') or '').strip().lower()
+                    opt_a = (row.get('option_a') or '').strip()
+                    opt_b = (row.get('option_b') or '').strip()
+                    
+                    # If options are not specified, default to True / False or Yes / No based on format
+                    is_yes_no = ('yes' in raw_correct or 'no' in raw_correct or 
+                                 opt_a.lower() in ['yes', 'no'] or opt_b.lower() in ['yes', 'no'] or
+                                 'yes' in qtype)
+                    
+                    if not opt_a:
+                        opt_a = 'Yes' if is_yes_no else 'True'
+                    if not opt_b:
+                        opt_b = 'No' if is_yes_no else 'False'
+                    
+                    # Determine whether the correct answer maps to A or B
+                    if raw_correct in ['a', 'true', 't', 'yes', 'y', '1'] or raw_correct == opt_a.lower():
+                        correct = 'A'
+                    elif raw_correct in ['b', 'false', 'f', 'no', 'n', '0'] or raw_correct == opt_b.lower():
+                        correct = 'B'
+                    else:
+                        continue
+                        
+                    q = Question(
+                        exam_id=exam_id,
+                        question_text=text,
+                        question_type='mcq',
+                        option_a=opt_a,
+                        option_b=opt_b,
+                        option_c='',
+                        option_d='',
+                        correct_answer=correct,
+                        explanation=(row.get('explanation') or '').strip(),
+                        order=max_order + added + 1
+                    )
+                elif qtype == 'fill':
                     correct = (row.get('correct') or '').strip()
                     if not correct:
                         continue
@@ -790,17 +825,35 @@ def upload_questions_csv(exam_id):
                         order=max_order + added + 1
                     )
                 else:
-                    correct = (row.get('correct') or '').strip().upper()
-                    if correct not in ['A', 'B', 'C', 'D']:
+                    raw_correct = (row.get('correct') or '').strip()
+                    upper_correct = raw_correct.upper()
+                    
+                    # If marked as MCQ but options or correct are True/False or Yes/No, auto-handle as True/False
+                    opt_a = (row.get('option_a') or '').strip()
+                    opt_b = (row.get('option_b') or '').strip()
+                    opt_c = (row.get('option_c') or '').strip()
+                    opt_d = (row.get('option_d') or '').strip()
+                    
+                    if raw_correct.lower() in ['true', 'false', 'yes', 'no']:
+                        is_yes_no = raw_correct.lower() in ['yes', 'no'] or opt_a.lower() in ['yes', 'no']
+                        if not opt_a:
+                            opt_a = 'Yes' if is_yes_no else 'True'
+                        if not opt_b:
+                            opt_b = 'No' if is_yes_no else 'False'
+                        correct = 'A' if raw_correct.lower() in ['true', 'yes'] else 'B'
+                    elif upper_correct in ['A', 'B', 'C', 'D']:
+                        correct = upper_correct
+                    else:
                         continue
+                        
                     q = Question(
                         exam_id=exam_id,
                         question_text=text,
                         question_type='mcq',
-                        option_a=(row.get('option_a') or '').strip(),
-                        option_b=(row.get('option_b') or '').strip(),
-                        option_c=(row.get('option_c') or '').strip(),
-                        option_d=(row.get('option_d') or '').strip(),
+                        option_a=opt_a,
+                        option_b=opt_b,
+                        option_c=opt_c,
+                        option_d=opt_d,
                         correct_answer=correct,
                         explanation=(row.get('explanation') or '').strip(),
                         order=max_order + added + 1
@@ -837,7 +890,9 @@ def download_sample_csv():
     
     sample = """type,question,option_a,option_b,option_c,option_d,correct,explanation
 mcq,What does SQL stand for?,Structured Query Language,Simple Query Language,Standard Question Language,Sequential Query Logic,A,SQL means Structured Query Language
-mcq,Which is a primary key characteristic?,It can contain NULL values,It uniquely identifies each record,It can have duplicate values,It is optional,B,Primary key uniquely identifies each record
+tf,Operating systems manage computer hardware and software resources.,True,False,,,True,OS manages hardware and software
+tf,Python is a compiled machine code language only.,True,False,,,False,Python is an interpreted language
+tf,Is RAM volatile memory?,Yes,No,,,Yes,RAM loses its content when power is turned off
 fill,The full meaning of FIFO is __________.,,,,First In First Out,FIFO stands for First In First Out
 fill,A __________ is a program in execution.,,,,process,A process is a program in execution
 mcq,Which scheduling algorithm can cause starvation?,Round Robin,First Come First Served,Shortest Job First,None of the above,C,SJF can cause starvation of long processes

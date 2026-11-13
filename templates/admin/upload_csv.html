@@ -19,17 +19,20 @@
                 <p>Upload a CSV file to add many questions at once to <strong>{{ exam.title }}</strong>.</p>
                 
                 <div class="alert alert-info">
-                    <strong>CSV Format Required:</strong>
+                    <strong>CSV Format Supported:</strong>
                     <pre class="mb-0 mt-2 small">type,question,option_a,option_b,option_c,option_d,correct,explanation
 mcq,What is the capital of Nigeria?,Lagos,Abuja,Kano,Port Harcourt,B,Abuja is the capital.
+tf,The earth revolves around the sun.,True,False,,,True,Basic astronomy fact.
+tf,Is HTML a programming language?,Yes,No,,,No,HTML is a markup language.
 fill,The full meaning of CPU is __________.,,,,Central Processing Unit,CPU means Central Processing Unit</pre>
                 </div>
 
                 <ul class="small">
-                    <li><code>type</code> = <code>mcq</code> or <code>fill</code></li>
-                    <li>For <strong>mcq</strong>: fill option_a to option_d and put A/B/C/D in <code>correct</code></li>
-                    <li>For <strong>fill</strong>: leave options empty and put the answer text in <code>correct</code></li>
-                    <li><code>explanation</code> is optional</li>
+                    <li><strong>MCQ</strong>: <code>type</code> = <code>mcq</code>. Fill option_a to option_d and put <code>A</code>, <code>B</code>, <code>C</code>, or <code>D</code> in <code>correct</code>.</li>
+                    <li><strong>True / False & Yes / No</strong>: <code>type</code> = <code>tf</code> (or <code>true_false</code>). 
+                        Optionally fill <code>option_a</code> / <code>option_b</code> with True/False or Yes/No (defaults automatically if left blank). In <code>correct</code>, you can write <strong>True</strong>, <strong>False</strong>, <strong>Yes</strong>, <strong>No</strong>, or <strong>A</strong>/<strong>B</strong>.</li>
+                    <li><strong>Fill-in-the-blank</strong>: <code>type</code> = <code>fill</code>. Leave options empty and put the answer phrase in <code>correct</code>.</li>
+                    <li><code>explanation</code> is optional.</li>
                 </ul>
 
                 <form method="POST" enctype="multipart/form-data" class="mt-4">
