@@ -261,6 +261,7 @@ def staff_login():
 @app.route('/logout')
 @login_required
 def logout():
+    session.clear()
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))

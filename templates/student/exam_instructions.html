@@ -11,10 +11,12 @@
             </div>
             <div class="card-body p-4">
                 <h5 class="text-success">{{ exam.title }}</h5>
+                {% if exam.course_code %}
                 <p class="text-muted mb-4">
-                    {% if exam.course_code %}<span class="badge bg-secondary me-2">{{ exam.course_code }}</span>{% endif %}
-                    {{ exam.total_questions }} Questions &nbsp;|&nbsp; {{ exam.duration_minutes }} Minutes
+                    <span class="badge bg-secondary me-2">{{ exam.course_code }}</span>
+                    {% if exam.faculty %}<span class="badge bg-light text-dark border">{{ exam.faculty }}</span>{% endif %}
                 </p>
+                {% endif %}
 
                 <div class="alert alert-warning">
                     <strong><i class="bi bi-exclamation-triangle me-2"></i>Please read carefully before you start</strong>
@@ -22,31 +24,12 @@
 
                 <ol class="mb-4">
                     <li class="mb-2">This is a <strong>timed mock examination</strong>. The timer starts immediately when you click <strong>Start Exam</strong>.</li>
-                    <li class="mb-2">The exam contains a mixture of <strong>Multiple Choice</strong> and <strong>Fill-in-the-Gap</strong> questions (similar to real NOUN exams).</li>
                     <li class="mb-2">You must answer all questions before the time expires. The system will <strong>auto-submit</strong> when time is up.</li>
                     <li class="mb-2">For Fill-in-the-Gap questions, type your answer carefully. Answers are marked case-insensitively.</li>
-                    <li class="mb-2">Do not refresh the page or close the browser during the exam.</li>
+                    <li class="mb-2">Do not close the browser during the exam.</li>
                     <li class="mb-2">You can review your answers and see explanations after submission.</li>
                     <li class="mb-2">This is for practice purposes. Treat it seriously to get the best preparation.</li>
                 </ol>
-
-                <div class="bg-light p-3 rounded mb-4">
-                    <h6 class="mb-2">Exam Summary</h6>
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <div class="fw-bold fs-4">{{ exam.total_questions }}</div>
-                            <small class="text-muted">Questions</small>
-                        </div>
-                        <div class="col-4">
-                            <div class="fw-bold fs-4">{{ exam.duration_minutes }}</div>
-                            <small class="text-muted">Minutes</small>
-                        </div>
-                        <div class="col-4">
-                            <div class="fw-bold fs-4">Mixed</div>
-                            <small class="text-muted">MCQ + Fill-in</small>
-                        </div>
-                    </div>
-                </div>
 
                 <form method="POST" action="{{ url_for('start_exam', exam_id=exam.id) }}">
                     <div class="form-check mb-4">
