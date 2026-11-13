@@ -850,6 +850,70 @@ def _summarize_block(text, max_points=7, max_chars=1200):
     return summary, picked, key_terms
 
 
+def _extract_decimal_keypoints(body, max_points=12):
+    """Extract decimal (e.g. 3.1) or multilevel (e.g. 3.1.1) numbered sections and brief segment explanations."""
+    if not body:
+        return []
+
+    pat = re.compile(r'(?im)^(?:\s*)((?:[1-9]\d?\.\d+(?:\.\d+)?)\s*[:\-–—.]?\s+[A-Za-z][^\n]{2,80})')
+    matches = list(pat.finditer(body))
+    real_matches = []
+    for idx, m in enumerate(matches):
+        next_start = matches[idx+1].start() if idx + 1 < len(matches) else len(body)
+        if (next_start - m.end()) > 45:
+            real_matches.append((m, next_start))
+
+    points = []
+    for m, next_start in real_matches:
+        heading = re.sub(r'\s+', ' ', m.group(1)).strip()
+        num_m = re.match(r'^(\d+\.\d+(?:\.\d+)?)\s*[:\-–—.]?\s*(.+)$', heading)
+        if not num_m:
+            continue
+        num, title = num_m.group(1), num_m.group(2).strip()
+
+        # Skip outer unit skeleton numbers or generic assignments
+        if num in ('1.0', '2.0', '3.0', '4.0', '5.0', '6.0', '7.0', '8.0'):
+            continue
+        if re.search(r'(?i)\b(tutor-marked|assignment|reference|further reading|introduction|objective)\b', title):
+            continue
+
+        seg_text = body[m.end():next_start].strip()
+        lines = [l.strip() for l in seg_text.split('\n') if l.strip()]
+        lines = [l for l in lines if not re.match(r'^(?:[A-Z]{2,4}\s*\d{2,3})\b', l, re.IGNORECASE)]
+        lines = [l for l in lines if not re.match(r'^\d{1,4}$', l)]
+        lines = [l for l in lines if not re.search(r'(?i)\b(self-assessment|exercise|tma|activity|fig\.?|table|tutor-marked|copyright)\b', l)]
+        cleaned = re.sub(r'\s+', ' ', ' '.join(lines)).strip()
+        sentences = [s.strip() for s in re.split(r'(?<=[\.\!\?])\s+', cleaned) if len(s.strip()) > 20 and len(s.strip()) < 350]
+
+        explanation = ''
+        for s in sentences:
+            if re.search(r'(?i)\b(is defined as|refers to|means|is known as|is a concept|is an act|consists of|classified into|types of|divided into|essential for|purpose of)\b', s):
+                explanation = s
+                break
+        if not explanation:
+            for s in sentences:
+                if re.search(r'(?i)\b(principle|characteristic|function|importance|objective|feature|process|stage|technique)\b', s):
+                    explanation = s
+                    break
+        if not explanation:
+            for s in sentences:
+                if not re.search(r'(?i)\b(turn to|look at|in this section|let us|write down|as mentioned|above|below|dear student)\b', s):
+                    explanation = s
+                    break
+        if not explanation and sentences:
+            explanation = sentences[0]
+
+        if explanation:
+            points.append({
+                'concept': f'{num} {title}',
+                'explanation': explanation[:320].strip()
+            })
+            if len(points) >= max_points:
+                break
+
+    return points
+
+
 def _summary_cache_path(code):
     d = os.path.join(app.root_path, 'static', 'summary_cache')
     os.makedirs(d, exist_ok=True)
@@ -1079,21 +1143,26 @@ def summarize_material(course_code):
         units_out = []
         for u_idx, u in enumerate((m.get('units') or [])[:12]):
             u_body = u.get('body') or ''
+            dec_pts = _extract_decimal_keypoints(u_body)
             u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u_body, max_points=6, max_chars=600)
+            final_pts = dec_pts if len(dec_pts) >= 1 else u_ext_pts
 
             units_out.append({
                 'label': u.get('label'),
                 'title': u.get('title'),
                 'summary': u_ext_sum,
-                'key_points': u_ext_pts,
+                'key_points': final_pts,
                 'key_terms': u_ext_terms,
             })
+
+        m_dec_pts = _extract_decimal_keypoints(body)
+        final_m_pts = m_dec_pts if len(m_dec_pts) >= 2 else ext_pts
 
         modules.append({
             'label': m.get('label'),
             'title': m.get('title'),
             'summary': ext_sum,
-            'key_points': ext_pts,
+            'key_points': final_m_pts,
             'key_terms': ext_terms,
             'units': units_out,
         })
@@ -1947,19 +2016,22 @@ def admin_upload_material():
                     ext_sum, ext_pts, ext_terms = _summarize_block(m_body, max_points=6, max_chars=800)
                     units_out = []
                     for u in (m.get('units') or [])[:12]:
-                        u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u.get('body') or '', max_points=6, max_chars=600)
+                        u_body = u.get('body') or ''
+                        u_dec_pts = _extract_decimal_keypoints(u_body)
+                        u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u_body, max_points=6, max_chars=600)
                         units_out.append({
                             'label': u.get('label'),
                             'title': u.get('title'),
                             'summary': u_ext_sum,
-                            'key_points': u_ext_pts,
+                            'key_points': u_dec_pts if len(u_dec_pts) >= 1 else u_ext_pts,
                             'key_terms': u_ext_terms,
                         })
+                    m_dec_pts = _extract_decimal_keypoints(m_body)
                     mods_out.append({
                         'label': m.get('label'),
                         'title': m.get('title'),
                         'summary': ext_sum,
-                        'key_points': ext_pts,
+                        'key_points': m_dec_pts if len(m_dec_pts) >= 2 else ext_pts,
                         'key_terms': ext_terms,
                         'units': units_out,
                     })
