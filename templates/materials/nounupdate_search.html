@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Search NOUN Update Materials{% endblock %}
+{% block title %}Auto-Search Course Materials{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <div>
         <h3 class="mb-1 text-success fw-bold"><i class="bi bi-search me-2"></i>Search NOUN Course Materials</h3>
-        <p class="text-muted small mb-0">Auto-search from <a href="https://nounupdate.com/courses/" target="_blank" rel="noopener">nounupdate.com/courses</a> and open inside this platform.</p>
+        <p class="text-muted small mb-0">Search by course code or title and open the material inside this platform.</p>
     </div>
     <a href="{{ url_for('course_materials') }}" class="btn btn-outline-secondary btn-sm">Back to Library</a>
 </div>
@@ -67,6 +67,6 @@
 {% endif %}
 
 <div class="alert alert-light border mt-4 small text-muted">
-    Materials discovered from NOUN Update are fetched into your platform cache and opened with the in-page viewer.
+    Found materials are fetched into your platform cache and opened with the in-page viewer.
 </div>
 {% endblock %}

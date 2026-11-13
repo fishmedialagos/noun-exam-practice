@@ -5,6 +5,7 @@ import json
 import os
 import csv
 import io
+import re
 
 from config import Config
 from models import db, User, Exam, Question, Attempt
@@ -646,6 +647,69 @@ def _summary_cache_path(code):
     return os.path.join(d, f'{code}.json')
 
 
+
+
+def _ai_summarize_text(text, course_code, section_title=''):
+    """Optional AI summary via Groq or OpenAI. Returns text or None."""
+    text = (text or '').strip()
+    if len(text) < 120:
+        return None
+    # Truncate to keep tokens reasonable
+    text = text[:12000]
+    api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
+    if not api_key:
+        return None
+    use_groq = bool(os.environ.get('GROQ_API_KEY'))
+    try:
+        import requests as http_requests
+        prompt = (
+            f"You are an academic tutor for Nigerian Open University (NOUN) students.\\n"
+            f"Summarize the following course material clearly for exam revision.\\n"
+            f"Course: {course_code}. Section: {section_title or 'General'}.\\n"
+            f"Return:\\n"
+            f"1) A short paragraph summary (4-7 sentences)\\n"
+            f"2) 5-8 bullet key points\\n"
+            f"Use simple English. Do not invent facts not in the text.\\n\\n"
+            f"MATERIAL:\\n{text}"
+        )
+        if use_groq:
+            url = 'https://api.groq.com/openai/v1/chat/completions'
+            model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
+            headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+            payload = {
+                'model': model,
+                'messages': [
+                    {'role': 'system', 'content': 'You summarize university course materials accurately.'},
+                    {'role': 'user', 'content': prompt},
+                ],
+                'temperature': 0.3,
+                'max_tokens': 900,
+            }
+        else:
+            url = 'https://api.openai.com/v1/chat/completions'
+            model = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+            headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+            payload = {
+                'model': model,
+                'messages': [
+                    {'role': 'system', 'content': 'You summarize university course materials accurately.'},
+                    {'role': 'user', 'content': prompt},
+                ],
+                'temperature': 0.3,
+                'max_tokens': 900,
+            }
+        r = http_requests.post(url, headers=headers, json=payload, timeout=60)
+        if r.status_code != 200:
+            app.logger.warning('AI summarize HTTP %s: %s', r.status_code, r.text[:300])
+            return None
+        data = r.json()
+        return data['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        app.logger.warning('AI summarize failed: %s', e)
+        return None
+
+
+
 @app.route('/materials/summarize/<course_code>')
 @login_required
 def summarize_material(course_code):
@@ -695,14 +759,26 @@ def summarize_material(course_code):
 
     raw_modules = _split_modules_units(full_text)
     modules = []
+    ai_enabled = bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
+
     for m in raw_modules[:16]:
         body = m.get('body') or ''
         if len(body) < 100:
             body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
         m_sum, m_pts = _summarize_block(body, max_points=8, max_chars=1400)
+        if ai_enabled and len(body) > 200:
+            ai_text = _ai_summarize_text(body, code, f"{m.get('label')} {m.get('title')}")
+            if ai_text:
+                # Prefer AI paragraph; keep extractive bullets as backup key points
+                m_sum = ai_text
         units_out = []
         for u in (m.get('units') or [])[:12]:
-            u_sum, u_pts = _summarize_block(u.get('body') or '', max_points=5, max_chars=900)
+            u_body = u.get('body') or ''
+            u_sum, u_pts = _summarize_block(u_body, max_points=5, max_chars=900)
+            if ai_enabled and len(u_body) > 250:
+                ai_u = _ai_summarize_text(u_body, code, f"{u.get('label')} {u.get('title')}")
+                if ai_u:
+                    u_sum = ai_u
             units_out.append({
                 'label': u.get('label'),
                 'title': u.get('title'),
@@ -718,6 +794,10 @@ def summarize_material(course_code):
         })
 
     overview, highlights = _summarize_block(full_text[:20000], max_points=10, max_chars=900)
+    if ai_enabled:
+        ai_overview = _ai_summarize_text(full_text[:14000], code, 'Course Overview')
+        if ai_overview:
+            overview = ai_overview
 
     # Cache result
     try:
@@ -746,7 +826,7 @@ def summarize_material(course_code):
 @app.route('/materials/search-nounupdate')
 @login_required
 def search_nounupdate():
-    """Search nounupdate.com course index for a code/title and list matches."""
+    """Search external course material sources for a code/title and list matches."""
     import requests as http_requests
     q = (request.args.get('q') or '').strip()
     results = []
