@@ -1019,6 +1019,7 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
 
 
 @app.route('/materials/summarize/<course_code>')
+@login_required
 def summarize_material(course_code):
     """Fast, resilient module/unit auto-summarizer with instant caching and exam keypoints."""
     code, course_title, local_path, urls = _resolve_material(course_code)
@@ -1862,6 +1863,125 @@ def shuffle_questions(exam_id):
     db.session.commit()
     flash('Questions have been randomly intermixed (MCQ + Fill-in mixed).', 'success')
     return redirect(url_for('manage_questions', exam_id=exam_id))
+
+
+@app.route('/admin/materials/upload', methods=['GET', 'POST'])
+@login_required
+def admin_upload_material():
+    """Allow Admin/Teachers to upload course material PDFs and make them available to all students."""
+    if not current_user.is_teacher():
+        flash('Access denied. Teachers/Admins only.', 'danger')
+        return redirect(url_for('student_dashboard'))
+
+    json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'timetable_courses.json')
+    courses = []
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                courses = json.load(f)
+        except Exception:
+            courses = []
+
+    faculties = sorted(list(set(c.get('faculty') for c in courses if c.get('faculty'))))
+
+    if request.method == 'POST':
+        code = request.form.get('course_code', '').strip().replace(' ', '').upper()
+        title = request.form.get('title', '').strip()
+        faculty = request.form.get('faculty', '').strip()
+        pdf_file = request.files.get('pdf_file')
+
+        if not code:
+            flash('Course Code is required (e.g. GST101, LAW101).', 'danger')
+            return redirect(url_for('admin_upload_material'))
+
+        if not pdf_file or not pdf_file.filename:
+            flash('Please select a PDF file to upload.', 'danger')
+            return redirect(url_for('admin_upload_material'))
+
+        if not pdf_file.filename.lower().endswith('.pdf'):
+            flash('Only .pdf files are accepted.', 'danger')
+            return redirect(url_for('admin_upload_material'))
+
+        # Save to static/materials/{code}.pdf
+        upload_dir = os.path.join(app.root_path, 'static', 'materials')
+        os.makedirs(upload_dir, exist_ok=True)
+        target_path = os.path.join(upload_dir, f"{code}.pdf")
+        pdf_file.save(target_path)
+
+        # Update timetable_courses.json
+        updated = False
+        for c in courses:
+            if c.get('course_code', '').upper() == code:
+                if title:
+                    c['title'] = title
+                if faculty:
+                    c['faculty'] = faculty
+                c['is_verified'] = True
+                updated = True
+                break
+        if not updated:
+            courses.append({
+                'course_code': code,
+                'title': title or code,
+                'faculty': faculty or 'General',
+                'is_verified': True
+            })
+
+        try:
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(courses, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            app.logger.warning('Failed to update timetable_courses.json: %s', e)
+
+        # Automatically pre-cache summary for this course so it loads instantly for all students
+        try:
+            pages, err = _extract_pdf_text(target_path, max_pages=110)
+            if not err and pages:
+                full_text = '\n'.join(pages)
+                raw_modules = _split_modules_units(full_text)
+                mods_out = []
+                for m_idx, m in enumerate(raw_modules[:12]):
+                    m_body = m.get('body') or ''
+                    if len(m_body) < 100:
+                        m_body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
+                    ext_sum, ext_pts, ext_terms = _summarize_block(m_body, max_points=6, max_chars=800)
+                    units_out = []
+                    for u in (m.get('units') or [])[:12]:
+                        u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u.get('body') or '', max_points=6, max_chars=600)
+                        units_out.append({
+                            'label': u.get('label'),
+                            'title': u.get('title'),
+                            'summary': u_ext_sum,
+                            'key_points': u_ext_pts,
+                            'key_terms': u_ext_terms,
+                        })
+                    mods_out.append({
+                        'label': m.get('label'),
+                        'title': m.get('title'),
+                        'summary': ext_sum,
+                        'key_points': ext_pts,
+                        'key_terms': ext_terms,
+                        'units': units_out,
+                    })
+                ext_ov, ext_high, _ = _summarize_block(full_text[:14000], max_points=7, max_chars=1200)
+                cache_file = _summary_cache_path(code)
+                with open(cache_file, 'w', encoding='utf-8') as f:
+                    json.dump({
+                        'course_code': code,
+                        'course_title': title or code,
+                        'modules': mods_out,
+                        'overview': ext_ov,
+                        'highlights': ext_high[:12],
+                        'ai_generated': False,
+                        'page_count': len(pages),
+                    }, f, ensure_ascii=False)
+        except Exception as e:
+            app.logger.warning('Pre-cache summary failed for %s: %s', code, e)
+
+        flash(f'Course material for {code} uploaded successfully! It is now live for all students to read and summarize.', 'success')
+        return redirect(url_for('course_materials', search=code))
+
+    return render_template('admin/upload_material.html', faculties=faculties)
 
 
 # ==================== INITIALIZE DATABASE ====================

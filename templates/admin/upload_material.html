@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Course Material PDF - Admin{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('course_materials') }}">Course Materials</a></li>
+        <li class="breadcrumb-item active">Upload PDF Material</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white py-3">
+                <h5 class="mb-0 fw-semibold"><i class="bi bi-cloud-arrow-up me-2"></i>Upload Course Material (PDF)</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-secondary mb-3">
+                    Upload official NOUN courseware or custom study material. Once uploaded, it is <strong>instantly made available to all students</strong> for in-browser reading, downloading, and auto-summarizing.
+                </p>
+
+                <div class="alert alert-info border-0 bg-info-subtle text-info-emphasis small mb-4">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    <strong>Tip:</strong> Use the standard course code (e.g. <code>GST101</code>, <code>CIT204</code>, <code>MTH101</code>). If the course is already in the timetable, it will be marked as <strong>Verified PDF</strong> with local instant access.
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Course Code <span class="text-danger">*</span></label>
+                            <input type="text" name="course_code" class="form-control text-uppercase" placeholder="e.g. GST101" required>
+                            <div class="form-text small">Standard NOUN course code</div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Course Title <span class="text-muted">(Optional)</span></label>
+                            <input type="text" name="title" class="form-control" placeholder="e.g. Use of English and Communication Skills I">
+                            <div class="form-text small">Full descriptive course title</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Faculty / Category</label>
+                        <input type="text" name="faculty" class="form-control" list="facultyList" placeholder="Select or type faculty (e.g. Sciences, Arts, Management Sciences)">
+                        <datalist id="facultyList">
+                            {% for fac in faculties %}
+                            <option value="{{ fac }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Course PDF File <span class="text-danger">*</span></label>
+                        <input type="file" name="pdf_file" class="form-control" accept=".pdf" required>
+                        <div class="form-text small">Accepts <code>.pdf</code> courseware documents.</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-upload me-1"></i>Upload & Publish Material
+                        </button>
+                        <a href="{{ url_for('course_materials') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

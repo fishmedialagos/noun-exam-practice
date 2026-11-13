@@ -12,10 +12,15 @@
             Access, view, and study official National Open University of Nigeria (NOUN) courseware and study guides directly on this platform.
         </p>
     </div>
-    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+    <div class="col-md-4 text-md-end mt-3 mt-md-0 d-flex flex-column align-items-md-end gap-2">
         <span class="badge bg-success fs-6 px-3 py-2 shadow-sm">
             <i class="bi bi-mortarboard me-1"></i>{{ total_count }} Verified Courses
         </span>
+        {% if current_user.is_authenticated and current_user.is_teacher() %}
+        <a href="{{ url_for('admin_upload_material') }}" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-cloud-arrow-up me-1"></i>Upload Material (Admin)
+        </a>
+        {% endif %}
     </div>
 </div>
 
