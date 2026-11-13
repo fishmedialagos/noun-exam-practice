@@ -3,6 +3,9 @@
 
 {% block content %}
 <style>
+.print-only {
+    display: none;
+}
 .unit-card {
     border-left: 4px solid #198754 !important;
     background-color: #fcfdfc;
@@ -22,27 +25,168 @@
     padding: 6px 10px;
     font-size: 0.88rem;
 }
+@page {
+    size: A4 portrait;
+    margin: 8mm 8mm 12mm 8mm;
+}
 @media print {
-    nav, .btn, .no-print, header, footer, .alert-light {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body {
+        font-size: 9.2pt !important;
+        line-height: 1.35 !important;
+        color: #111 !important;
+        background: #fff !important;
+        padding-bottom: 10mm !important;
+    }
+    nav, .btn, .no-print, header, footer, .alert-light, #toggleAllBtn, .breadcrumb {
         display: none !important;
     }
+    .print-only {
+        display: block !important;
+    }
+    /* Running footer advert on every page */
+    .print-page-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 7.5mm;
+        border-top: 1.5px solid #198754;
+        background: #ffffff;
+        font-size: 7.2pt;
+        color: #333;
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 3mm;
+        z-index: 9999;
+    }
+    /* Expand all accordions naturally */
     .accordion-collapse {
         display: block !important;
         height: auto !important;
+        visibility: visible !important;
     }
+    /* Clean module headers in print */
     .accordion-button {
+        display: flex !important;
+        background: #f1f8f4 !important;
+        border: 1px solid #198754 !important;
+        border-radius: 4px !important;
+        padding: 4px 8px !important;
+        color: #0f5132 !important;
+        pointer-events: none !important;
+        box-shadow: none !important;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+    .accordion-button::after {
         display: none !important;
     }
     .accordion-item {
         border: none !important;
-        page-break-after: always;
+        margin-bottom: 8px !important;
+        box-shadow: none !important;
+        page-break-after: auto !important;
+    }
+    .print-module-header {
+        display: block !important;
+        font-size: 11pt !important;
+        font-weight: 700 !important;
+        color: #0f5132 !important;
+        border-bottom: 1.5px solid #198754;
+        padding-bottom: 2px;
+        margin-top: 8px;
+        margin-bottom: 6px;
+        page-break-after: avoid;
+    }
+    /* A4-optimized compact layout */
+    .card {
+        border: 1px solid #d1d5db !important;
+        box-shadow: none !important;
+        margin-bottom: 8px !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    .card-header {
+        padding: 3px 8px !important;
+        font-size: 9.5pt !important;
+    }
+    .card-body {
+        padding: 6px 8px !important;
     }
     .unit-card {
+        border: 1px solid #d1d5db !important;
+        border-left: 3px solid #198754 !important;
+        margin-bottom: 6px !important;
+        padding: 4px 6px !important;
         page-break-inside: avoid;
-        margin-bottom: 20px !important;
+        break-inside: avoid;
+        background: #fff !important;
+    }
+    .study-point-card {
+        padding: 3px 6px !important;
+        margin-bottom: 3px !important;
+        background: #f8faf9 !important;
+        border-left: 2.5px solid #198754 !important;
+        font-size: 8.5pt !important;
+        line-height: 1.32 !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    .key-term-badge {
+        display: inline-block !important;
+        padding: 2px 5px !important;
+        margin: 1px 2px !important;
+        font-size: 7.8pt !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #f8fafc !important;
+        break-inside: avoid;
     }
 }
 </style>
+
+<!-- Running Footer Advert on Every Page (Print Only) -->
+<div class="print-only print-page-footer">
+    <div class="d-flex justify-content-between align-items-center w-100">
+        <div>
+            <strong class="text-success">ACADEMIC SUPPORT SERVICES</strong> • Call/WhatsApp: <strong>+2348109213232</strong> • Portal: <strong>{{ request.host }}</strong>
+        </div>
+        <div class="text-muted">
+            Student Help Centre • Unauthorized copying, sale, or distribution prohibited © {{ course_code }}
+        </div>
+    </div>
+</div>
+
+<!-- Advert & Anti-Theft Watermark Banner on First Page Header (Print Only) -->
+<div class="print-only mb-3">
+    <div class="p-2 border border-2 border-success rounded bg-light">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1">
+            <div>
+                <h4 class="text-success fw-bold mb-0" style="font-size: 13pt; letter-spacing: 0.5px;">
+                    <i class="bi bi-mortarboard-fill me-1"></i>ACADEMIC SUPPORT SERVICES
+                </h4>
+                <div class="fw-semibold text-dark" style="font-size: 9.5pt;">STUDENT HELP CENTRE</div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-success text-white px-2 py-1" style="font-size: 7.5pt;">STUDENT EXAM COPY</span>
+                <div class="small fw-bold text-dark mt-1" style="font-size: 8.5pt;">{{ course_code }}: {{ course_title }}</div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center" style="font-size: 8.5pt;">
+            <div>
+                <span class="text-dark">For your registrations, clarifications, questions and any assistance:</span>
+                <strong class="text-success ms-1">Call/WhatsApp: +2348109213232</strong>
+            </div>
+            <div class="text-danger fw-bold text-nowrap ms-2" style="font-size: 7.2pt;">
+                Anti-Theft Protected • Personal Use Only
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2 no-print">
     <div>
@@ -332,5 +476,11 @@ function toggleAllAccordions() {
         btnIcon.className = 'bi bi-arrows-expand me-1';
     }
 }
+
+// Auto-expand all modules right before printing so everything renders completely
+window.addEventListener('beforeprint', function() {
+    const collapses = document.querySelectorAll('#moduleAccordion .accordion-collapse');
+    collapses.forEach(c => c.classList.add('show'));
+});
 </script>
 {% endblock %}
