@@ -9,12 +9,12 @@
             <i class="bi bi-book-half me-2"></i>NOUN Course Materials Library
         </h2>
         <p class="text-muted mb-0">
-            Access, view, and download official National Open University of Nigeria (NOUN) course study guides and materials directly on this platform.
+            Access, view, and study official National Open University of Nigeria (NOUN) courseware and study guides directly on this platform.
         </p>
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
         <span class="badge bg-success fs-6 px-3 py-2 shadow-sm">
-            <i class="bi bi-mortarboard me-1"></i>{{ total_count }} Courses Cataloged
+            <i class="bi bi-mortarboard me-1"></i>{{ total_count }} Verified Courses
         </span>
     </div>
 </div>
@@ -57,8 +57,8 @@
                 <tr>
                     <th style="width: 15%;">Course Code</th>
                     <th style="width: 45%;">Course Title</th>
-                    <th style="width: 25%;">Faculty</th>
-                    <th style="width: 15%;" class="text-end">Study / Download</th>
+                    <th style="width: 20%;">Faculty</th>
+                    <th style="width: 20%;" class="text-end">Study / Download</th>
                 </tr>
             </thead>
             <tbody>
@@ -71,6 +71,11 @@
                     </td>
                     <td>
                         <span class="fw-semibold text-dark">{{ c.title }}</span>
+                        {% if c.is_verified %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle small ms-1" title="Direct NOUN e-Courseware verified">
+                            <i class="bi bi-check-circle-fill me-1"></i>Verified PDF
+                        </span>
+                        {% endif %}
                     </td>
                     <td>
                         <span class="badge bg-light text-secondary border">
@@ -78,9 +83,14 @@
                         </span>
                     </td>
                     <td class="text-end">
-                        <a href="{{ url_for('download_material', course_code=c.course_code) }}" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-book me-1"></i>Open / Download
-                        </a>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('download_material', course_code=c.course_code) }}" class="btn btn-outline-success">
+                                <i class="bi bi-eye me-1"></i>Study
+                            </a>
+                            <a href="{{ url_for('download_material', course_code=c.course_code, action='download') }}" target="_blank" class="btn btn-outline-secondary" title="Direct PDF Download">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -107,6 +117,6 @@
 <!-- Educational Disclaimer Notice -->
 <div class="alert alert-light border mt-4 small text-muted">
     <i class="bi bi-info-circle me-1 text-primary"></i>
-    <strong>Educational Purpose:</strong> All course titles and syllabus guides are aggregated from the National Open University of Nigeria (NOUN) open curriculum timetable and public Open Educational Resources (OER) repositories strictly for academic study and revision purposes.
+    <strong>Educational Purpose:</strong> All course titles and syllabus guides are aggregated from the National Open University of Nigeria (NOUN) open curriculum and e-Courseware repositories strictly for academic revision and student preparation.
 </div>
 {% endblock %}

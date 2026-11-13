@@ -307,23 +307,44 @@ def course_materials():
 
 @app.route('/materials/download/<course_code>')
 def download_material(course_code):
-    """Serve official NOUN course material or redirect with educational viewer."""
+    """Serve official NOUN course material or view online."""
     code = course_code.replace(' ', '').upper()
+    action = request.args.get('action', 'view') # 'view' or 'download'
     
-    # Check if a custom uploaded PDF exists in uploads/materials
+    # 1. Check if a custom uploaded PDF exists in static/materials
     upload_dir = os.path.join(app.root_path, 'static', 'materials')
     local_pdf = os.path.join(upload_dir, f"{code}.pdf")
     if os.path.exists(local_pdf):
         from flask import send_from_directory
-        return send_from_directory(upload_dir, f"{code}.pdf", as_attachment=True)
+        return send_from_directory(upload_dir, f"{code}.pdf", as_attachment=(action == 'download'))
     
-    # Direct official OER repository download fallback
-    official_oer_url = f"https://oer.nou.edu.ng/sites/default/files/2025-10/{code}.pdf"
+    # 2. Look up matched URL from timetable_courses.json
+    json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'timetable_courses.json')
+    matched_url = None
+    course_title = code
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                c_list = json.load(f)
+                for item in c_list:
+                    if item.get('course_code') == code:
+                        matched_url = item.get('pdf_url')
+                        course_title = item.get('title', code)
+                        break
+        except Exception:
+            pass
+            
+    if not matched_url:
+        matched_url = f"https://nou.edu.ng/coursewarecontent/{code}.pdf"
+        
+    if action == 'download':
+        return redirect(matched_url)
     
-    # Alternatively provide embedded in-site PDF reader page
+    # Render in-platform viewer page
     return render_template('materials/reader.html', 
                            course_code=code, 
-                           oer_url=official_oer_url)
+                           course_title=course_title,
+                           pdf_url=matched_url)
 
 
 # ==================== STUDENT ROUTES ====================
