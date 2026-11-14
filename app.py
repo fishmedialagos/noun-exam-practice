@@ -508,8 +508,8 @@ def download_material(course_code):
                            pdf_url=urls[0] if urls else '')
 
 
-def _extract_pdf_text(path, max_pages=200):
-    """Extract text page by page (extended coverage)."""
+def _extract_pdf_text(path, max_pages=None):
+    """Extract text page by page (extracts all pages when max_pages is None)."""
     try:
         from pypdf import PdfReader
     except ImportError:
@@ -517,7 +517,8 @@ def _extract_pdf_text(path, max_pages=200):
     try:
         reader = PdfReader(path)
         pages = []
-        n = min(len(reader.pages), max_pages)
+        total_p = len(reader.pages)
+        n = total_p if (max_pages is None or max_pages <= 0) else min(total_p, max_pages)
         for i in range(n):
             try:
                 t = reader.pages[i].extract_text() or ''
@@ -601,9 +602,20 @@ def _split_modules_units(full_text):
 
         clean = re.sub(r'^[\d\W]+', '', raw).strip() or raw
 
+        def is_valid_header_title(t_str):
+            if not t_str:
+                return True
+            if re.match(r'^\s*[\),\.]', t_str):
+                return False
+            if re.search(r'(?i)\b(which|that|treat|discuss|refer|refers|see|learnt|studied|below|above|is defined|refers to)\b', t_str):
+                return False
+            if len(t_str) > 85:
+                return False
+            return True
+
         # Check Module
         mm = module_pat.match(raw) or module_pat.match(clean)
-        if mm:
+        if mm and is_valid_header_title((mm.group(2) or '').strip()):
             raw_num = mm.group(1).lower()
             num = word_to_num.get(raw_num, mm.group(1))
             title = (mm.group(2) or '').strip()
@@ -625,7 +637,7 @@ def _split_modules_units(full_text):
 
         # Check Unit
         um = unit_pat.match(raw) or unit_pat.match(clean)
-        if um:
+        if um and is_valid_header_title((um.group(2) or '').strip()):
             raw_num = um.group(1).lower()
             num = word_to_num.get(raw_num, um.group(1))
             title = (um.group(2) or '').strip()
@@ -845,6 +857,18 @@ def _summarize_block(text, max_points=7, max_chars=1200):
         picked.append(_clean_sentence_for_point(s))
         if len(picked) >= max_points:
             break
+
+    # Substantive fallback if keyword scoring found nothing (ensures no unit is left blank)
+    if not picked and parts:
+        for s in parts:
+            s = s.strip()
+            if len(s) >= 28 and len(s) <= 320 and not re.search(r'_{2,}', s):
+                key = s[:45].lower()
+                if key not in seen:
+                    seen.add(key)
+                    picked.append(_clean_sentence_for_point(s))
+                    if len(picked) >= max_points:
+                        break
 
     summary = ' '.join(p['explanation'] for p in picked[:3])[:max_chars] if picked else ''
     return summary, picked, key_terms
@@ -1117,7 +1141,7 @@ def summarize_material(course_code):
                                error='Could not download the course PDF to summarize. Open the full material first, then try again.',
                                modules=[], overview='', highlights=[], ai_generated=False, page_count=0)
 
-    pages, err = _extract_pdf_text(path, max_pages=110)
+    pages, err = _extract_pdf_text(path, max_pages=None)
     if err:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
@@ -1134,18 +1158,20 @@ def summarize_material(course_code):
 
     # Fast extractive breakdown for all modules and units (takes < 0.05s)
     modules = []
-    for m_idx, m in enumerate(raw_modules[:12]):
+    for m_idx, m in enumerate(raw_modules[:30]):
         body = m.get('body') or ''
         if len(body) < 100:
             body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
         ext_sum, ext_pts, ext_terms = _summarize_block(body, max_points=6, max_chars=800)
 
         units_out = []
-        for u_idx, u in enumerate((m.get('units') or [])[:12]):
+        for u_idx, u in enumerate((m.get('units') or [])[:30]):
             u_body = u.get('body') or ''
             dec_pts = _extract_decimal_keypoints(u_body)
             u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u_body, max_points=6, max_chars=600)
             final_pts = dec_pts if len(dec_pts) >= 1 else u_ext_pts
+            if not u_ext_sum and final_pts:
+                u_ext_sum = ' '.join(p.get('explanation', '') for p in final_pts[:2])
 
             units_out.append({
                 'label': u.get('label'),
@@ -1157,6 +1183,8 @@ def summarize_material(course_code):
 
         m_dec_pts = _extract_decimal_keypoints(body)
         final_m_pts = m_dec_pts if len(m_dec_pts) >= 2 else ext_pts
+        if not ext_sum and final_m_pts:
+            ext_sum = ' '.join(p.get('explanation', '') for p in final_m_pts[:2])
 
         modules.append({
             'label': m.get('label'),
@@ -2004,34 +2032,42 @@ def admin_upload_material():
 
         # Automatically pre-cache summary for this course so it loads instantly for all students
         try:
-            pages, err = _extract_pdf_text(target_path, max_pages=110)
+            pages, err = _extract_pdf_text(target_path, max_pages=None)
             if not err and pages:
                 full_text = '\n'.join(pages)
                 raw_modules = _split_modules_units(full_text)
                 mods_out = []
-                for m_idx, m in enumerate(raw_modules[:12]):
+                for m_idx, m in enumerate(raw_modules[:30]):
                     m_body = m.get('body') or ''
                     if len(m_body) < 100:
                         m_body = '\n'.join((u.get('body') or '') for u in m.get('units') or [])
                     ext_sum, ext_pts, ext_terms = _summarize_block(m_body, max_points=6, max_chars=800)
                     units_out = []
-                    for u in (m.get('units') or [])[:12]:
+                    for u in (m.get('units') or [])[:30]:
                         u_body = u.get('body') or ''
                         u_dec_pts = _extract_decimal_keypoints(u_body)
                         u_ext_sum, u_ext_pts, u_ext_terms = _summarize_block(u_body, max_points=6, max_chars=600)
+                        u_final_pts = u_dec_pts if len(u_dec_pts) >= 1 else u_ext_pts
+                        if not u_ext_sum and u_final_pts:
+                            u_ext_sum = ' '.join(p.get('explanation', '') for p in u_final_pts[:2])
+
                         units_out.append({
                             'label': u.get('label'),
                             'title': u.get('title'),
                             'summary': u_ext_sum,
-                            'key_points': u_dec_pts if len(u_dec_pts) >= 1 else u_ext_pts,
+                            'key_points': u_final_pts,
                             'key_terms': u_ext_terms,
                         })
                     m_dec_pts = _extract_decimal_keypoints(m_body)
+                    final_m_pts = m_dec_pts if len(m_dec_pts) >= 2 else ext_pts
+                    if not ext_sum and final_m_pts:
+                        ext_sum = ' '.join(p.get('explanation', '') for p in final_m_pts[:2])
+
                     mods_out.append({
                         'label': m.get('label'),
                         'title': m.get('title'),
                         'summary': ext_sum,
-                        'key_points': m_dec_pts if len(m_dec_pts) >= 2 else ext_pts,
+                        'key_points': final_m_pts,
                         'key_terms': ext_terms,
                         'units': units_out,
                     })
