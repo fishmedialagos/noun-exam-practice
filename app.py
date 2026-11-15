@@ -17,6 +17,7 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+login_manager.login_message = 'Please register or log in to your student account to access the Course Summarizer and Mock Exams.'
 login_manager.login_message_category = 'warning'
 
 
@@ -1302,6 +1303,147 @@ def search_nounupdate():
         except Exception as e:
             error = f'Search failed: {e}'
     return render_template('materials/nounupdate_search.html', q=q, results=results, error=error)
+
+
+def _get_or_create_course_mock_exam(course_code, current_user_id=None):
+    """
+    Find or auto-generate a comprehensive CBT mock exam directly from course materials.
+    Scales to:
+    - Minimum 70 questions for 2-unit courses
+    - Up to 100 questions for 3-unit courses
+    """
+    code = (course_code or '').strip().upper()
+    if not code:
+        return None, False
+
+    # Check for existing exam with at least 20 questions
+    existing = Exam.query.filter(
+        (db.func.upper(Exam.course_code) == code) & 
+        (Exam.total_questions >= 20)
+    ).order_by(Exam.total_questions.desc()).first()
+
+    if existing:
+        return existing, False
+
+    # Determine credit units, title, and faculty
+    credit_units = 2
+    exam_title = f"{code} Comprehensive Mock Examination"
+    faculty = 'General Studies / NOUN'
+
+    # Check timetable_courses.json
+    try:
+        json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'timetable_courses.json')
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                tc = json.load(f)
+                for item in tc:
+                    if item.get('course_code', '').upper() == code:
+                        if item.get('title'):
+                            exam_title = f"{code} - {item.get('title')}"
+                        if item.get('faculty'):
+                            faculty = item.get('faculty')
+                        break
+    except Exception:
+        pass
+
+    # Check courses_data.json
+    try:
+        cd_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'courses_data.json')
+        if os.path.exists(cd_path):
+            with open(cd_path, 'r', encoding='utf-8') as f:
+                cd = json.load(f)
+                for ex in cd.get('exams', []):
+                    if ex.get('course_code', '').upper() == code:
+                        if ex.get('credit_units'):
+                            credit_units = int(ex.get('credit_units'))
+                        if ex.get('title'):
+                            exam_title = ex.get('title')
+                        if ex.get('faculty'):
+                            faculty = ex.get('faculty')
+                        break
+    except Exception:
+        pass
+
+    target_questions = 70 if credit_units <= 2 else 100
+    duration_minutes = 60 if credit_units <= 2 else 90
+
+    # Load and parse material
+    c_code, c_title, local_path, urls = _resolve_material(code)
+    path = local_path or _fetch_and_cache_pdf(code, urls)
+    if not path or not os.path.exists(path):
+        return None, False
+
+    pages, err = _extract_pdf_text(path, max_pages=None)
+    if err or not pages:
+        return None, False
+
+    raw_modules = _split_modules_units('\n'.join(pages))
+    if not raw_modules:
+        return None, False
+
+    from question_generator import generate_mock_exam_questions
+    gen_questions = generate_mock_exam_questions(
+        raw_modules,
+        course_code=code,
+        course_title=c_title or exam_title,
+        target_count=target_questions
+    )
+
+    if not gen_questions:
+        return None, False
+
+    creator = User.query.filter_by(role='admin').first() or User.query.first()
+    creator_id = creator.id if creator else current_user_id
+
+    new_exam = Exam(
+        title=exam_title,
+        description=f"Auto-generated computer-based mock examination for {code} ({credit_units} Credit Units). Generated directly from official NOUN course material modules and units.",
+        course_code=code,
+        faculty=faculty,
+        credit_units=credit_units,
+        duration_minutes=duration_minutes,
+        total_questions=len(gen_questions),
+        is_published=True,
+        created_by=creator_id
+    )
+    db.session.add(new_exam)
+    db.session.flush()
+
+    for idx, q_data in enumerate(gen_questions):
+        q_obj = Question(
+            exam_id=new_exam.id,
+            question_text=q_data['question_text'],
+            question_type=q_data['question_type'],
+            option_a=q_data.get('option_a'),
+            option_b=q_data.get('option_b'),
+            option_c=q_data.get('option_c'),
+            option_d=q_data.get('option_d'),
+            correct_answer=q_data['correct_answer'],
+            explanation=q_data.get('explanation'),
+            order=idx + 1
+        )
+        db.session.add(q_obj)
+
+    db.session.commit()
+    return new_exam, True
+
+
+@app.route('/materials/<course_code>/mock')
+@login_required
+def launch_course_mock_exam(course_code):
+    """
+    On-demand entry point to start a mock CBT exam directly from a course material.
+    Requires student registration / login.
+    """
+    exam, created = _get_or_create_course_mock_exam(course_code, current_user.id)
+    if not exam:
+        flash(f'Unable to generate mock exam for {course_code.upper()}. The course material could not be downloaded or parsed.', 'danger')
+        return redirect(url_for('view_material', course_code=course_code))
+
+    if created:
+        flash(f'Success! Generated {exam.total_questions} questions for {exam.course_code} ({exam.credit_units} credit units). You can now begin your mock exam.', 'success')
+    return redirect(url_for('exam_instructions', exam_id=exam.id))
+
 
 
 
