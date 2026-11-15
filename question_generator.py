@@ -219,7 +219,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
     return questions
 
 
-def professional_paper_prompt(source):
+def professional_paper_prompt(source, topic_title=''):
     """Turn a material statement into an exam-style theory prompt."""
     source = re.sub(r'\s+', ' ', source or '').strip()
     source = re.sub(r'^\d+(?:\.\d+){0,3}\s+(?:summary|introduction|conclusion|objectives?)\s*', '', source, flags=re.I)
@@ -237,9 +237,11 @@ def professional_paper_prompt(source):
             if 1 <= len(candidate.split()) <= 12:
                 subject = candidate
                 break
-    topic = subject or 'the main concept presented in this section'
+    topic = subject or re.sub(r'^(?:unit\s*\d+[\s:.-]*)', '', topic_title or '', flags=re.I).strip(' .:-')
+    if not topic or re.search(r'(?i)^(?:summary|introduction|conclusion|unit\s*\d+)$', topic):
+        return ''
     if any(word in lower for word in ('classified', 'divided', 'grouped', 'categorized')):
-        return f"Discuss the classification of {topic}. State and explain the main bases or categories used."
+            return f"Discuss the classification of {topic}. State and explain the main bases or categories used."
     if any(word in lower for word in ('steps', 'stages', 'process', 'procedure', 'phases')):
         return f"Describe the major steps or stages involved in {topic}. Explain the importance of each stage."
     if any(word in lower for word in ('purpose', 'aim', 'objective', 'function', 'importance', 'role')):
@@ -248,7 +250,7 @@ def professional_paper_prompt(source):
         return f"Define {topic} and explain its meaning, scope, and relevance to the course."
     if 'following:' in lower or 'such as' in lower or 'include' in lower:
         return f"Discuss {topic}. Identify and explain the major elements or factors involved."
-    return f"Explain and discuss {topic}, including its key characteristics and practical relevance."
+        return f"Discuss {topic}. Explain its key characteristics, major elements, and relevance to the course."
 
 
 def generate_paper_exam_questions(modules, course_code, course_title, target_count=10):
@@ -271,7 +273,7 @@ def generate_paper_exam_questions(modules, course_code, course_title, target_cou
                     return subject
         return ''
 
-    def professional_prompt(source, question_no):
+    def professional_prompt(source, question_no, topic_title):
         lower = source.lower()
         subject = subject_before(source, [
             r'\b(?:is|are)\s+(?:classified|divided|grouped|categorized)',
@@ -280,6 +282,7 @@ def generate_paper_exam_questions(modules, course_code, course_title, target_cou
             r'\b(?:refers to|means|consists of|comprises|includes|involves)',
             r'\b(?:has|have)\s+(?:the following|several|different)',
         ])
+        fallback_topic = re.sub(r'^(?:unit\s*\d+[\s:.-]*)', '', topic_title or '', flags=re.I).strip(' .:-')
         if 'classified' in lower or 'divided' in lower or 'grouped' in lower or 'categorized' in lower:
             return f"Discuss the classification of {subject or 'the concept described in the course material'}. State and explain the main bases or categories used."
         if any(word in lower for word in ('steps', 'stages', 'process', 'procedure', 'phases')):
@@ -292,7 +295,7 @@ def generate_paper_exam_questions(modules, course_code, course_title, target_cou
             return f"Differentiate the related concepts discussed in this section and state at least two important differences."
         if 'following:' in lower or 'such as' in lower or 'include' in lower:
             return f"Discuss {subject or 'the topic discussed in this section'}. Identify and explain the major elements or factors involved."
-        return f"Explain and discuss {subject or 'the main concept presented in this section'}, including its key characteristics and practical relevance."
+        return f"Discuss {subject or fallback_topic}. Explain its key characteristics, major elements, and relevance to the course." if (subject or fallback_topic) else ''
 
     for module in modules or []:
         for unit in module.get('units') or []:
@@ -319,7 +322,9 @@ def generate_paper_exam_questions(modules, course_code, course_title, target_cou
                     if len(keywords) >= 6:
                         break
                 if len(keywords) >= 2:
-                    candidates.append((unit_title, sentence, keywords, professional_prompt(sentence, len(candidates) + 1)))
+                    prompt = professional_prompt(sentence, len(candidates) + 1, unit_title)
+                    if prompt and not re.search(r'(?i)\b(main concept|concept presented in this section|topic discussed|section)\b', prompt):
+                        candidates.append((unit_title, sentence, keywords, prompt))
     random.seed(911 + len(course_code))
     random.shuffle(candidates)
     questions = []

@@ -1399,7 +1399,13 @@ def _ensure_schema_columns():
     for question in legacy_paper_questions:
         if ('From the ' in (question.question_text or '') or
                 (question.question_text or '').startswith('Explain and discuss the following:')):
-            question.question_text = professional_paper_prompt(question.correct_answer or '')
+            source_title = ''
+            title_match = re.search(r'\(([^()]+)\)', question.explanation or '')
+            if title_match:
+                source_title = title_match.group(1).strip()
+            prompt = professional_paper_prompt(question.correct_answer or '', source_title)
+            if prompt:
+                question.question_text = prompt
     for exam in Exam.query.filter(Exam.course_code.isnot(None)).all():
         exam.faculty = _infer_faculty(exam.course_code, exam.faculty or '')
         old_description = exam.description or ''
@@ -1524,7 +1530,7 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     else:
         gen_questions = generate_mock_exam_questions(raw_modules, code, c_title or exam_title, target_questions)
 
-    if not gen_questions:
+    if not gen_questions or (mode == 'paper' and len(gen_questions) < 5):
         return None, False
 
     creator = User.query.filter_by(role='admin').first() or User.query.first()
