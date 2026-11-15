@@ -1357,6 +1357,15 @@ def _ensure_schema_columns():
         for name, definition in columns:
             if name not in existing:
                 db.session.execute(db.text(f'ALTER TABLE {table} ADD COLUMN {name} {definition}'))
+    # Existing Render deployments may still have correct_answer VARCHAR(200), while
+    # paper answer guides are full sentences from the course material.
+    question_columns = {col['name']: col for col in inspector.get_columns('questions')}
+    correct_answer = question_columns.get('correct_answer')
+    if correct_answer and str(correct_answer.get('type', '')).upper().startswith('VARCHAR'):
+        if db.engine.dialect.name == 'postgresql':
+            db.session.execute(db.text(
+                'ALTER TABLE questions ALTER COLUMN correct_answer TYPE TEXT'
+            ))
     db.session.execute(db.text("UPDATE exams SET exam_mode = 'cbt' WHERE exam_mode IS NULL"))
     db.session.commit()
 

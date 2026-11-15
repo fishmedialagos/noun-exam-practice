@@ -71,7 +71,8 @@ class Question(db.Model):
     option_b = db.Column(db.String(500))
     option_c = db.Column(db.String(500))
     option_d = db.Column(db.String(500))
-    correct_answer = db.Column(db.String(200), nullable=False)
+    # Written-answer guides can be full material sentences, so they must not be capped at 200 characters.
+    correct_answer = db.Column(db.Text, nullable=False)
     explanation = db.Column(db.Text)
     marks = db.Column(db.Float, default=1.0)
     answer_keywords = db.Column(db.Text)  # JSON list used for paper-practice marking
