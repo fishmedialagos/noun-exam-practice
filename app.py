@@ -1320,28 +1320,55 @@ def _is_paper_course(course_code):
     return _course_level(course_code) >= 3
 
 
+def _infer_faculty(course_code, current=''):
+    """Use timetable data first, then a conservative NOUN course-prefix map."""
+    if current and current.lower() not in {'general studies', 'general studies / noun', 'general studies/noun'}:
+        return current
+    prefix = re.match(r'([A-Z]+)', (course_code or '').upper())
+    prefix = prefix.group(1) if prefix else ''
+    groups = {
+        'General Studies': {'GST'},
+        'Faculty of Management Sciences': {'ACC', 'BUS', 'BFN', 'MAC', 'MKT', 'ENT', 'BAM', 'FIN'},
+        'Faculty of Computing': {'CIT', 'CSC', 'CMP', 'COS', 'IFT', 'INF'},
+        'Faculty of Sciences': {'BIO', 'CHM', 'PHY', 'MAT', 'STA', 'FSC', 'BOT', 'ZOO', 'MCB'},
+        'Faculty of Education': {'EDU', 'ECE', 'PDE'},
+        'Faculty of Arts': {'ENG', 'CRD', 'REL', 'PHI', 'LIT', 'HIS'},
+        'Faculty of Social Sciences': {'ECO', 'POL', 'SOC', 'PSY', 'PUB', 'CRD'},
+        'Faculty of Law': {'LAW'},
+        'Faculty of Agricultural Sciences': {'AGR', 'AEM', 'ANP', 'FST'},
+        'Faculty of Health Sciences': {'NUR', 'PHS', 'HCM', 'CHE'},
+    }
+    for faculty, prefixes in groups.items():
+        if prefix in prefixes:
+            return faculty
+    return current or 'Faculty of Social Sciences'
+
+
 def _material_brief(course_code, course_title, modules=None):
-    """Create a course description from the material instead of a generic label."""
+    """Create a short aim/overview from the course material."""
+    texts = []
     cache_file = _summary_cache_path(course_code)
     try:
         if os.path.exists(cache_file):
             with open(cache_file, 'r', encoding='utf-8') as f:
                 cached = json.load(f)
             if cached.get('overview'):
-                return str(cached['overview']).strip()[:900]
+                texts.append(str(cached['overview']).strip())
+            for point in cached.get('highlights') or []:
+                texts.append(str(point.get('explanation') or point.get('concept') or point) if isinstance(point, dict) else str(point))
     except Exception:
         pass
-    snippets = []
-    for module in (modules or [])[:4]:
-        if module.get('title') or module.get('label'):
-            snippets.append(str(module.get('title') or module.get('label')).strip())
-        for unit in (module.get('units') or [])[:2]:
+    for module in (modules or [])[:6]:
+        for unit in (module.get('units') or [])[:6]:
             body = re.sub(r'\s+', ' ', unit.get('body') or '').strip()
             if body:
-                snippets.append(body[:220])
-    if snippets:
-        return f"This practice set covers {course_title or course_code}, including: " + '; '.join(snippets[:6]) + '.'
-    return f"Practice questions based on the official NOUN course material for {course_title or course_code}."
+                texts.extend(re.split(r'(?<=[.!?])\s+', body))
+    aim_words = re.compile(r'(?i)\b(aim|objective|purpose|students? (?:will|should)|understanding|introduc)\b')
+    candidates = [re.sub(r'\s+', ' ', t).strip(' .') for t in texts if t and len(t.strip()) >= 45]
+    chosen = next((t for t in candidates if aim_words.search(t)), None) or (candidates[0] if candidates else '')
+    if chosen:
+        return chosen[:360].rstrip(' ,;:') + ('.' if not chosen.endswith(('.', '!', '?')) else '')
+    return f"Course aim and key concepts from the official {course_title or course_code} course material."
 
 
 def _ensure_schema_columns():
@@ -1367,6 +1394,19 @@ def _ensure_schema_columns():
                 'ALTER TABLE questions ALTER COLUMN correct_answer TYPE TEXT'
             ))
     db.session.execute(db.text("UPDATE exams SET exam_mode = 'cbt' WHERE exam_mode IS NULL"))
+    legacy_paper_questions = Question.query.join(Exam).filter(Exam.exam_mode == 'paper').all()
+    for question in legacy_paper_questions:
+        question.question_text = re.sub(
+            r'^From the .*? course material \(.*?\), explain and discuss the key idea in the following statement:\s*',
+            'Explain and discuss the following: ',
+            question.question_text or '',
+            flags=re.IGNORECASE
+        )
+    for exam in Exam.query.filter(Exam.course_code.isnot(None)).all():
+        exam.faculty = _infer_faculty(exam.course_code, exam.faculty or '')
+        old_description = exam.description or ''
+        if 'Auto-generated computer-based mock examination' in old_description or 'This practice set covers' in old_description:
+            exam.description = _material_brief(exam.course_code, exam.title)
     db.session.commit()
 
 
@@ -1447,6 +1487,7 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     except Exception:
         pass
 
+    faculty = _infer_faculty(code, faculty)
     target_questions = 10 if mode == 'paper' else (70 if credit_units <= 2 else 100)
     duration_minutes = 90 if mode == 'paper' else (60 if credit_units <= 2 else 90)
 

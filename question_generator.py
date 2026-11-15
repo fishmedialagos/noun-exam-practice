@@ -252,7 +252,7 @@ def generate_paper_exam_questions(modules, course_code, course_title, target_cou
     for idx, (unit_title, sentence, keywords) in enumerate(candidates[:target_count]):
         marks = 5 if idx % 3 else 10
         questions.append({
-            'question_text': f"From the {course_code} course material ({unit_title}), explain and discuss the key idea in the following statement: {sentence}",
+            'question_text': f"Explain and discuss the following: {sentence}",
             'question_type': 'essay',
             'correct_answer': sentence,
             'answer_keywords': keywords,

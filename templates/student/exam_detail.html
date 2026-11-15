@@ -23,7 +23,7 @@
                 {% endif %}
                 
                 {% if exam.description %}
-                <p class="mt-3 text-muted">{{ exam.description }}</p>
+                <p class="mt-3 text-muted small">{{ exam.description[:360] }}{% if exam.description|length > 360 %}…{% endif %}</p>
                 {% endif %}
                 
                 <hr>

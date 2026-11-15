@@ -80,7 +80,7 @@
     <div class="card-body">
         <h6>
             <span class="badge {% if is_correct %}bg-success{% else %}bg-danger{% endif %} me-2">
-                Q{{ loop.index }}
+                {% if exam.exam_mode == 'paper' %}{{ ((loop.index0 // 2) + 1) }}{{ 'a' if loop.index0 % 2 == 0 else 'b' }}{% else %}Q{{ loop.index }}{% endif %}
             </span>
             {{ q.question_text }}
         </h6>
