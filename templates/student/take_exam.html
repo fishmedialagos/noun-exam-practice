@@ -87,6 +87,21 @@
     .question-panel.visible {
         display: block;
     }
+    .paper-answer {
+        min-height: 150px;
+        border: 1px dashed #7a8b83;
+        background: repeating-linear-gradient(to bottom, #fff 0, #fff 28px, #dce7e1 29px);
+        line-height: 28px;
+    }
+    .print-only { display: none; }
+    @media print {
+        nav, .no-print, .palette-area, #timer, .batch-nav, button[type="submit"], footer { display: none !important; }
+        body { background: #fff !important; }
+        .container { max-width: 100% !important; }
+        .question-panel { display: block !important; page-break-inside: avoid; }
+        .paper-answer { min-height: 110px; }
+        .print-only { display: block !important; }
+    }
     @media (max-width: 768px) {
         .exam-layout {
             flex-direction: column;
@@ -111,6 +126,14 @@
     </div>
 </div>
 
+<div class="alert alert-success text-center py-2">
+    <strong>ACADEMIC SUPPORT SERVICES — STUDENT HELP CENTRE</strong><br>
+    <small>Call / WhatsApp +2348109213232 for registrations, clarifications, questions and assistance</small>
+</div>
+<div class="d-flex justify-content-end mb-3 no-print">
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print / Save Questions</button>
+</div>
+
 <form method="POST" action="{{ url_for('submit_exam', exam_id=exam.id) }}" id="examForm">
 <div class="exam-layout">
     <!-- Main Question Area -->
@@ -120,7 +143,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between mb-2">
                     <span class="badge bg-success">Question {{ loop.index }} of {{ questions|length }}</span>
-                    {% if q.question_type == 'fill' %}
+                    {% if exam.exam_mode == 'paper' or q.question_type == 'essay' %}
+                <div class="mb-2"><span class="badge bg-warning text-dark">{{ q.marks|round|int }} marks</span></div>
+                <textarea name="q_{{ q.id }}" class="form-control paper-answer answer-input" data-qindex="{{ loop.index }}" placeholder="Type your answer here..." oninput="markAnswered({{ loop.index }})"></textarea>
+                    {% elif q.question_type == 'fill' %}
                         <span class="badge bg-info">Fill in the Gap</span>
                     {% else %}
                         <span class="badge bg-primary">Multiple Choice</span>
@@ -211,6 +237,9 @@
     </div>
 </div>
 </form>
+<div class="print-only text-center border-top border-success mt-4 pt-2 small">
+    <strong>ACADEMIC SUPPORT SERVICES — STUDENT HELP CENTRE</strong> · Call / WhatsApp +2348109213232
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -308,7 +337,7 @@
     document.querySelectorAll('.answer-input').forEach(input => {
         const idx = parseInt(input.dataset.qindex);
         if (input.type === 'radio' && input.checked) markAnswered(idx);
-        if (input.type === 'text' && input.value.trim() !== '') markAnswered(idx);
+        if ((input.type === 'text' || input.tagName === 'TEXTAREA') && input.value.trim() !== '') markAnswered(idx);
     });
 
     // Timer

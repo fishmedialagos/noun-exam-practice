@@ -77,3 +77,17 @@ ngrok http 5000
 
 - Just testing with friends → use **ngrok**
 - Want a permanent link for NOUN students → use **Render.com**
+
+
+## Optional: AI Summaries (Groq or OpenAI)
+
+On Render → Environment, add one of:
+
+- `GROQ_API_KEY` = your Groq key (recommended, free tier available)
+- or `OPENAI_API_KEY` = your OpenAI key
+
+Optional:
+- `GROQ_MODEL` (default `llama-3.3-70b-versatile`)
+- `OPENAI_MODEL` (default `gpt-4o-mini`)
+
+Without a key, the platform still summarizes using extractive module/unit text analysis.

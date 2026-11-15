@@ -38,7 +38,7 @@
                         <small class="text-muted">Minutes</small>
                     </div>
                     <div class="col-4">
-                        <h4 class="mb-0">MCQ</h4>
+                        <h4 class="mb-0">{{ 'Written / Paper' if exam.exam_mode == 'paper' else 'MCQ' }}</h4>
                         <small class="text-muted">Format</small>
                     </div>
                 </div>
@@ -72,7 +72,7 @@
                         <div class="d-flex justify-content-between">
                             <small>{{ attempt.completed_at.strftime('%d %b %Y') if attempt.completed_at else '' }}</small>
                             <span class="badge {% if attempt.percentage >= 70 %}bg-success{% elif attempt.percentage >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                                {{ attempt.score }}/{{ attempt.total_questions }} ({{ attempt.percentage }}%)
+                                {% if exam.exam_mode == 'paper' %}{{ attempt.earned_marks }}/{{ attempt.total_marks }} marks{% else %}{{ attempt.score }}/{{ attempt.total_questions }}{% endif %} ({{ attempt.percentage }}%)
                             </span>
                         </div>
                     </a>

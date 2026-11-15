@@ -48,6 +48,7 @@ class Exam(db.Model):
     credit_units = db.Column(db.Integer, default=2)  # 2 or 3 credit units
     duration_minutes = db.Column(db.Integer, default=60)
     total_questions = db.Column(db.Integer, default=0)
+    exam_mode = db.Column(db.String(20), default='cbt')  # cbt or paper
     is_published = db.Column(db.Boolean, default=True)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -72,6 +73,8 @@ class Question(db.Model):
     option_d = db.Column(db.String(500))
     correct_answer = db.Column(db.String(200), nullable=False)
     explanation = db.Column(db.Text)
+    marks = db.Column(db.Float, default=1.0)
+    answer_keywords = db.Column(db.Text)  # JSON list used for paper-practice marking
     order = db.Column(db.Integer, default=0)
     
     def __repr__(self):
@@ -84,8 +87,10 @@ class Attempt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     exam_id = db.Column(db.Integer, db.ForeignKey('exams.id'), nullable=False)
-    score = db.Column(db.Integer, default=0)
+    score = db.Column(db.Float, default=0)
     total_questions = db.Column(db.Integer, default=0)
+    earned_marks = db.Column(db.Float, default=0)
+    total_marks = db.Column(db.Float, default=0)
     percentage = db.Column(db.Float, default=0.0)
     answers = db.Column(db.Text)
     started_at = db.Column(db.DateTime, default=datetime.utcnow)

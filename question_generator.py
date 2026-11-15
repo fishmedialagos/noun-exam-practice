@@ -217,3 +217,46 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
             })
 
     return questions
+
+
+def generate_paper_exam_questions(modules, course_code, course_title, target_count=10):
+    """Create written-answer practice questions from strong material sentences."""
+    candidates, seen = [], set()
+    for module in modules or []:
+        for unit in module.get('units') or []:
+            unit_title = (unit.get('title') or course_title).strip()
+            body = re.sub(r'\s+', ' ', unit.get('body') or '')
+            for sentence in re.split(r'(?<=[.!?])\s+', body):
+                sentence = sentence.strip(' -•')
+                if not (55 <= len(sentence) <= 280):
+                    continue
+                if re.search(r'(?i)\b(self-assessment|exercise|tma|copyright|dear student|turn to)\b', sentence):
+                    continue
+                signature = re.sub(r'[^a-z0-9]', '', sentence.lower())
+                if signature in seen:
+                    continue
+                seen.add(signature)
+                words = re.findall(r'[A-Za-z][A-Za-z-]{4,}', sentence)
+                stop = {'which', 'there', 'their', 'these', 'those', 'because', 'should', 'where', 'about', 'course', 'material'}
+                keywords = []
+                for word in words:
+                    if word.lower() not in stop and word.lower() not in {x.lower() for x in keywords}:
+                        keywords.append(word)
+                    if len(keywords) >= 6:
+                        break
+                if len(keywords) >= 2:
+                    candidates.append((unit_title, sentence, keywords))
+    random.seed(911 + len(course_code))
+    random.shuffle(candidates)
+    questions = []
+    for idx, (unit_title, sentence, keywords) in enumerate(candidates[:target_count]):
+        marks = 5 if idx % 3 else 10
+        questions.append({
+            'question_text': f"From the {course_code} course material ({unit_title}), explain and discuss the key idea in the following statement: {sentence}",
+            'question_type': 'essay',
+            'correct_answer': sentence,
+            'answer_keywords': keywords,
+            'marks': marks,
+            'explanation': f"Answer guide from the official course material ({unit_title}): {sentence}"
+        })
+    return questions

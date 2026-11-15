@@ -6,6 +6,7 @@ import os
 import csv
 import io
 import re
+from sqlalchemy import inspect as sqlalchemy_inspect
 
 from config import Config
 from models import db, User, Exam, Question, Attempt
@@ -1131,7 +1132,8 @@ def summarize_material(course_code):
                                    overview=cached.get('overview') or '',
                                    highlights=cached.get('highlights') or [],
                                    ai_generated=cached.get('ai_generated', False),
-                                   page_count=cached.get('page_count') or 0)
+                                   page_count=cached.get('page_count') or 0,
+                                   paper_mode=_is_paper_course(code))
         except Exception:
             pass
 
@@ -1140,20 +1142,23 @@ def summarize_material(course_code):
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
                                error='Could not download the course PDF to summarize. Open the full material first, then try again.',
-                               modules=[], overview='', highlights=[], ai_generated=False, page_count=0)
+                               modules=[], overview='', highlights=[], ai_generated=False, page_count=0,
+                               paper_mode=_is_paper_course(code))
 
     pages, err = _extract_pdf_text(path, max_pages=None)
     if err:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
-                               error=err, modules=[], overview='', highlights=[], ai_generated=False, page_count=0)
+                               error=err, modules=[], overview='', highlights=[], ai_generated=False, page_count=0,
+                               paper_mode=_is_paper_course(code))
 
     full_text = '\n'.join(pages)
     if len(full_text.strip()) < 200:
         return render_template('materials/summary.html',
                                course_code=code, course_title=course_title,
                                error='This PDF has little extractable text (likely scanned images). The on-page PDF viewer still works; summary needs a text-based PDF.',
-                               modules=[], overview='', highlights=[], ai_generated=False, page_count=len(pages))
+                               modules=[], overview='', highlights=[], ai_generated=False, page_count=len(pages),
+                               paper_mode=_is_paper_course(code))
 
     raw_modules = _split_modules_units(full_text)
 
@@ -1246,7 +1251,8 @@ def summarize_material(course_code):
                            overview=overview,
                            highlights=highlights[:12],
                            ai_generated=ai_generated,
-                           page_count=len(pages))
+                           page_count=len(pages),
+                           paper_mode=_is_paper_course(code))
 
 
 @app.route('/materials/search-nounupdate')
@@ -1305,6 +1311,56 @@ def search_nounupdate():
     return render_template('materials/nounupdate_search.html', q=q, results=results, error=error)
 
 
+def _course_level(course_code):
+    match = re.search(r'(\d)', (course_code or '').upper())
+    return int(match.group(1)) if match else 1
+
+
+def _is_paper_course(course_code):
+    return _course_level(course_code) >= 3
+
+
+def _material_brief(course_code, course_title, modules=None):
+    """Create a course description from the material instead of a generic label."""
+    cache_file = _summary_cache_path(course_code)
+    try:
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                cached = json.load(f)
+            if cached.get('overview'):
+                return str(cached['overview']).strip()[:900]
+    except Exception:
+        pass
+    snippets = []
+    for module in (modules or [])[:4]:
+        if module.get('title') or module.get('label'):
+            snippets.append(str(module.get('title') or module.get('label')).strip())
+        for unit in (module.get('units') or [])[:2]:
+            body = re.sub(r'\s+', ' ', unit.get('body') or '').strip()
+            if body:
+                snippets.append(body[:220])
+    if snippets:
+        return f"This practice set covers {course_title or course_code}, including: " + '; '.join(snippets[:6]) + '.'
+    return f"Practice questions based on the official NOUN course material for {course_title or course_code}."
+
+
+def _ensure_schema_columns():
+    """Lightweight compatibility migration for databases created before paper mode."""
+    inspector = sqlalchemy_inspect(db.engine)
+    additions = {
+        'exams': [('exam_mode', "VARCHAR(20) DEFAULT 'cbt'")],
+        'questions': [('marks', 'FLOAT DEFAULT 1'), ('answer_keywords', 'TEXT')],
+        'attempts': [('earned_marks', 'FLOAT DEFAULT 0'), ('total_marks', 'FLOAT DEFAULT 0')],
+    }
+    for table, columns in additions.items():
+        existing = {col['name'] for col in inspector.get_columns(table)}
+        for name, definition in columns:
+            if name not in existing:
+                db.session.execute(db.text(f'ALTER TABLE {table} ADD COLUMN {name} {definition}'))
+    db.session.execute(db.text("UPDATE exams SET exam_mode = 'cbt' WHERE exam_mode IS NULL"))
+    db.session.commit()
+
+
 def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     """
     Find or auto-generate a comprehensive CBT mock exam directly from course materials.
@@ -1316,14 +1372,32 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     if not code:
         return None, False
 
-    # Check for existing exam with at least 20 questions
+    mode = 'paper' if _is_paper_course(code) else 'cbt'
+    course_attempts = 0
+    if current_user_id:
+        course_attempts = Attempt.query.join(Exam, Attempt.exam_id == Exam.id).filter(
+            Attempt.user_id == current_user_id,
+            db.func.upper(Exam.course_code) == code,
+            Exam.exam_mode == mode
+        ).count()
+    # Keep separate practice sets for CBT (100/200L) and paper (300L+).
     existing = Exam.query.filter(
         (db.func.upper(Exam.course_code) == code) & 
-        (Exam.total_questions >= 20)
+        (Exam.total_questions >= (5 if mode == 'paper' else 20)) &
+        (Exam.exam_mode == mode)
     ).order_by(Exam.total_questions.desc()).first()
 
-    if existing:
+    if existing and course_attempts < 3:
         return existing, False
+    if existing and course_attempts >= 3:
+        unused_variant = Exam.query.filter(
+            (db.func.upper(Exam.course_code) == code) &
+            (Exam.exam_mode == mode) &
+            (Exam.total_questions >= (5 if mode == 'paper' else 20))
+        ).order_by(Exam.created_at.desc()).all()
+        for variant in unused_variant:
+            if not Attempt.query.filter_by(user_id=current_user_id, exam_id=variant.id).first():
+                return variant, False
 
     # Determine credit units, title, and faculty
     credit_units = 2
@@ -1364,30 +1438,43 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     except Exception:
         pass
 
-    target_questions = 70 if credit_units <= 2 else 100
-    duration_minutes = 60 if credit_units <= 2 else 90
+    target_questions = 10 if mode == 'paper' else (70 if credit_units <= 2 else 100)
+    duration_minutes = 90 if mode == 'paper' else (60 if credit_units <= 2 else 90)
 
     # Load and parse material
     c_code, c_title, local_path, urls = _resolve_material(code)
     path = local_path or _fetch_and_cache_pdf(code, urls)
     if not path or not os.path.exists(path):
-        return None, False
-
-    pages, err = _extract_pdf_text(path, max_pages=None)
-    if err or not pages:
-        return None, False
-
-    raw_modules = _split_modules_units('\n'.join(pages))
+        # A previously generated summary is still official-material-derived content.
+        cache_file = _summary_cache_path(code)
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                cached = json.load(f)
+            raw_modules = cached.get('modules') or []
+            for module in raw_modules:
+                for unit in module.get('units') or []:
+                    points = unit.get('key_points') or []
+                    unit['body'] = ' '.join(
+                        str(p.get('explanation') or p.get('concept') or p) if isinstance(p, dict) else str(p)
+                        for p in points
+                    )
+            if not raw_modules:
+                return None, False
+        except Exception:
+            return None, False
+    else:
+        pages, err = _extract_pdf_text(path, max_pages=None)
+        if err or not pages:
+            return None, False
+        raw_modules = _split_modules_units('\n'.join(pages))
     if not raw_modules:
         return None, False
 
-    from question_generator import generate_mock_exam_questions
-    gen_questions = generate_mock_exam_questions(
-        raw_modules,
-        course_code=code,
-        course_title=c_title or exam_title,
-        target_count=target_questions
-    )
+    from question_generator import generate_mock_exam_questions, generate_paper_exam_questions
+    if mode == 'paper':
+        gen_questions = generate_paper_exam_questions(raw_modules, code, c_title or exam_title, target_questions)
+    else:
+        gen_questions = generate_mock_exam_questions(raw_modules, code, c_title or exam_title, target_questions)
 
     if not gen_questions:
         return None, False
@@ -1397,12 +1484,13 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
 
     new_exam = Exam(
         title=exam_title,
-        description=f"Auto-generated computer-based mock examination for {code} ({credit_units} Credit Units). Generated directly from official NOUN course material modules and units.",
+        description=_material_brief(code, c_title or exam_title, raw_modules),
         course_code=code,
         faculty=faculty,
         credit_units=credit_units,
         duration_minutes=duration_minutes,
         total_questions=len(gen_questions),
+        exam_mode=mode,
         is_published=True,
         created_by=creator_id
     )
@@ -1420,6 +1508,8 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
             option_d=q_data.get('option_d'),
             correct_answer=q_data['correct_answer'],
             explanation=q_data.get('explanation'),
+            marks=q_data.get('marks', 1),
+            answer_keywords=json.dumps(q_data.get('answer_keywords', [])),
             order=idx + 1
         )
         db.session.add(q_obj)
@@ -1438,7 +1528,7 @@ def launch_course_mock_exam(course_code):
     exam, created = _get_or_create_course_mock_exam(course_code, current_user.id)
     if not exam:
         flash(f'Unable to generate mock exam for {course_code.upper()}. The course material could not be downloaded or parsed.', 'danger')
-        return redirect(url_for('view_material', course_code=course_code))
+        return redirect(url_for('course_materials', search=course_code))
 
     if created:
         flash(f'Success! Generated {exam.total_questions} questions for {exam.course_code} ({exam.credit_units} credit units). You can now begin your mock exam.', 'success')
@@ -1611,14 +1701,26 @@ def submit_exam(exam_id):
     exam_start = session.pop('exam_start', None)
     
     answers = {}
-    score = 0
+    score = 0.0
+    total_marks = 0.0
     
     for q in questions:
         selected = request.form.get(f'q_{q.id}', '').strip()
         answers[str(q.id)] = selected
         
+        marks = float(q.marks or 1)
+        total_marks += marks
         if selected:
-            if q.question_type == 'fill':
+            if exam.exam_mode == 'paper' or q.question_type == 'essay':
+                try:
+                    keywords = json.loads(q.answer_keywords or '[]')
+                except (TypeError, ValueError):
+                    keywords = []
+                answer_lower = selected.lower()
+                hits = sum(1 for keyword in keywords if str(keyword).lower() in answer_lower)
+                coverage = (hits / len(keywords)) if keywords else 0
+                score += marks if coverage >= 0.75 else (marks * 0.5 if coverage >= 0.35 else 0)
+            elif q.question_type == 'fill':
                 # Case-insensitive, strip spaces for fill-in-the-gap
                 if selected.lower().strip() == q.correct_answer.lower().strip():
                     score += 1
@@ -1628,7 +1730,7 @@ def submit_exam(exam_id):
                     score += 1
     
     total = len(questions)
-    percentage = (score / total * 100) if total > 0 else 0
+    percentage = (score / total_marks * 100) if total_marks > 0 else 0
     
     # Calculate time taken
     time_taken = None
@@ -1639,8 +1741,10 @@ def submit_exam(exam_id):
     attempt = Attempt(
         user_id=current_user.id,
         exam_id=exam_id,
-        score=score,
+        score=round(score, 2),
         total_questions=total,
+        earned_marks=round(score, 2),
+        total_marks=round(total_marks, 2),
         percentage=round(percentage, 1),
         answers=json.dumps(answers),
         completed_at=datetime.utcnow(),
@@ -1649,7 +1753,7 @@ def submit_exam(exam_id):
     db.session.add(attempt)
     db.session.commit()
     
-    flash(f'Exam submitted! You scored {score}/{total} ({percentage:.1f}%)', 'success')
+    flash(f'Exam submitted! You scored {score:g}/{total_marks:g} marks ({percentage:.1f}%)', 'success')
     return redirect(url_for('view_result', attempt_id=attempt.id))
 
 
@@ -2547,6 +2651,7 @@ def create_sample_data():
 
 with app.app_context():
     init_db()
+    _ensure_schema_columns()
 
 
 if __name__ == '__main__':
