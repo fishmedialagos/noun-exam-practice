@@ -1395,13 +1395,11 @@ def _ensure_schema_columns():
             ))
     db.session.execute(db.text("UPDATE exams SET exam_mode = 'cbt' WHERE exam_mode IS NULL"))
     legacy_paper_questions = Question.query.join(Exam).filter(Exam.exam_mode == 'paper').all()
+    from question_generator import professional_paper_prompt
     for question in legacy_paper_questions:
-        question.question_text = re.sub(
-            r'^From the .*? course material \(.*?\), explain and discuss the key idea in the following statement:\s*',
-            'Explain and discuss the following: ',
-            question.question_text or '',
-            flags=re.IGNORECASE
-        )
+        if ('From the ' in (question.question_text or '') or
+                (question.question_text or '').startswith('Explain and discuss the following:')):
+            question.question_text = professional_paper_prompt(question.correct_answer or '')
     for exam in Exam.query.filter(Exam.course_code.isnot(None)).all():
         exam.faculty = _infer_faculty(exam.course_code, exam.faculty or '')
         old_description = exam.description or ''
