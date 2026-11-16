@@ -296,10 +296,6 @@ def course_materials():
                 courses = json.load(f)
         except Exception:
             courses = []
-
-    # Keep the catalog display consistent with the authoritative course-prefix map.
-    for course in courses:
-        course['faculty'] = _infer_faculty(course.get('course_code', ''), course.get('faculty', ''))
             
     # Filter
     filtered = []
@@ -1112,103 +1108,6 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
         return None
 
 
-def _ai_generate_cbt_questions(modules, course_code, course_title, target_count):
-    """Draft material-grounded CBT questions, then reject unsupported output.
-
-    Used only for 100L/200L CBT courses. Paper courses use the separate
-    assessment-only generator and never enter this function.
-    """
-    api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
-    if app.config.get('TESTING') or not api_key or not modules or target_count <= 0:
-        return []
-    try:
-        import requests as http_requests
-        source_parts = []
-        for module in modules:
-            for unit in module.get('units') or []:
-                title = unit.get('title') or module.get('title') or 'Course unit'
-                body = re.sub(r'\s+', ' ', unit.get('body') or '').strip()
-                if body:
-                    source_parts.append(f'[{title}] {body[:5000]}')
-        source = '\n\n'.join(source_parts)[:24000]
-        if len(source) < 400:
-            return []
-        generated, seen = [], set()
-        batch_size = min(25, target_count)
-        batches = min(4, (target_count + batch_size - 1) // batch_size)
-        for _ in range(batches):
-            needed = min(batch_size, target_count - len(generated))
-            if needed <= 0:
-                break
-            prompt = f"""Create {needed} standard university CBT questions for NOUN course {course_code} ({course_title}).
-Use ONLY facts explicitly supported by the supplied course material. Do not ask about section numbers or where a statement appears.
-Do not use these phrases: Which study section discusses, According to {course_code}, Complete the following statement, the main concept presented, the topic discussed.
-Use a mixture of clear definition, classification, function, process, comparison, and application questions. Prefer four-option MCQs. A small number may be fill-in questions only when the missing term is unambiguous.
-Every item must stand alone as an examination question and be answerable by a student who studied the course.
-Return ONLY JSON: {{"questions":[{{"question_text":"...","question_type":"mcq","options":["...","...","...","..."],"correct_answer":"A","explanation":"...","source_quote":"verbatim short supporting phrase from the material","answer_keywords":["term"]}}]}}
-Do not repeat a question. Do not invent names, dates, classifications, or examples not present in the material.
-
-COURSE MATERIAL:
-{source}"""
-            use_groq = bool(os.environ.get('GROQ_API_KEY'))
-            if use_groq:
-                url = 'https://api.groq.com/openai/v1/chat/completions'
-                model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
-            else:
-                url = 'https://api.openai.com/v1/chat/completions'
-                model = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
-            payload = {
-                'model': model,
-                'messages': [
-                    {'role': 'system', 'content': 'You are a careful university examination setter. Output valid JSON only and never add facts outside the supplied text.'},
-                    {'role': 'user', 'content': prompt},
-                ],
-                'temperature': 0.15,
-                'max_tokens': 5000,
-                'response_format': {'type': 'json_object'},
-            }
-            response = http_requests.post(url, headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}, json=payload, timeout=(5.0, 30.0))
-            if response.status_code != 200:
-                app.logger.warning('AI CBT generation HTTP %s: %s', response.status_code, response.text[:300])
-                continue
-            raw = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
-            data = json.loads(raw)
-            for item in data.get('questions', []):
-                text = re.sub(r'\s+', ' ', str(item.get('question_text') or '')).strip()
-                quote = re.sub(r'\s+', ' ', str(item.get('source_quote') or '')).strip()
-                lower = text.lower()
-                banned = ('which study section discusses', 'according to ' + course_code.lower(), 'complete the following statement', 'main concept presented', 'topic discussed', 'section discussed')
-                signature = re.sub(r'[^a-z0-9]', '', lower)
-                if not (25 <= len(text) <= 500) or signature in seen or any(x in lower for x in banned):
-                    continue
-                if not quote or quote.lower() not in source.lower():
-                    continue
-                qtype = str(item.get('question_type') or 'mcq').lower()
-                options = [re.sub(r'\s+', ' ', str(x)).strip() for x in (item.get('options') or [])]
-                if qtype == 'mcq':
-                    if len(options) != 4 or len({x.lower() for x in options}) != 4:
-                        continue
-                    correct = str(item.get('correct_answer') or '').strip().upper()
-                    if correct not in {'A', 'B', 'C', 'D'}:
-                        continue
-                else:
-                    correct = str(item.get('correct_answer') or '').strip()
-                    if not correct or options:
-                        continue
-                    qtype = 'fill'
-                explanation = re.sub(r'\s+', ' ', str(item.get('explanation') or '')).strip()
-                if not explanation:
-                    continue
-                seen.add(signature)
-                generated.append({'question_text': text, 'question_type': qtype, 'option_a': options[0] if qtype == 'mcq' else None, 'option_b': options[1] if qtype == 'mcq' else None, 'option_c': options[2] if qtype == 'mcq' else None, 'option_d': options[3] if qtype == 'mcq' else None, 'correct_answer': correct, 'answer_keywords': item.get('answer_keywords') or [correct], 'marks': 1, 'explanation': f'{explanation} Source: {quote}'})
-                if len(generated) >= target_count:
-                    break
-        return generated[:target_count]
-    except Exception as e:
-        app.logger.warning('AI CBT generation failed: %s', e)
-        return []
-
-
 @app.route('/materials/summarize/<course_code>')
 @login_required
 def summarize_material(course_code):
@@ -1423,16 +1322,13 @@ def _is_paper_course(course_code):
 
 def _infer_faculty(course_code, current=''):
     """Use timetable data first, then a conservative NOUN course-prefix map."""
-    prefix_match = re.match(r'([A-Z]+)', (course_code or '').upper())
-    prefix = prefix_match.group(1) if prefix_match else ''
-    # MAC (Mass Communication) belongs to the Faculty of Sciences for this platform.
-    if prefix == 'MAC':
-        return 'Faculty of Sciences'
     if current and current.lower() not in {'general studies', 'general studies / noun', 'general studies/noun'}:
         return current
+    prefix = re.match(r'([A-Z]+)', (course_code or '').upper())
+    prefix = prefix.group(1) if prefix else ''
     groups = {
         'General Studies': {'GST'},
-        'Faculty of Management Sciences': {'ACC', 'BUS', 'BFN', 'MKT', 'ENT', 'BAM', 'FIN'},
+        'Faculty of Management Sciences': {'ACC', 'BUS', 'BFN', 'MAC', 'MKT', 'ENT', 'BAM', 'FIN'},
         'Faculty of Computing': {'CIT', 'CSC', 'CMP', 'COS', 'IFT', 'INF'},
         'Faculty of Sciences': {'BIO', 'CHM', 'PHY', 'MAT', 'STA', 'FSC', 'BOT', 'ZOO', 'MCB'},
         'Faculty of Education': {'EDU', 'ECE', 'PDE'},
@@ -1510,32 +1406,8 @@ def _ensure_schema_columns():
             prompt = professional_paper_prompt(question.correct_answer or '', source_title)
             if prompt:
                 question.question_text = prompt
-    # Course identity is already visible in the exam heading. Remove redundant
-    # prefixes from CBT questions generated by older versions as well.
-    for question in Question.query.all():
-        text = question.question_text or ''
-        cleaned = re.sub(
-            r'(?i)^According to\s+[A-Z]{2,}\d{3}\s*\([^)]*\),?\s*which study section discusses:\s*',
-            'Which study section discusses the following statement? ', text
-        )
-        cleaned = re.sub(
-            r'(?i)^In\s+[A-Z]{2,}\d{3}\s*\([^)]*\),?\s*complete the following statement:\s*',
-            'Complete the following statement: ', cleaned
-        )
-        cleaned = re.sub(
-            r'(?i)^Complete the statement from\s+[A-Z]{2,}\d{3}\s*\([^)]*\):\s*',
-            'Complete the following statement: ', cleaned
-        )
-        cleaned = re.sub(
-            r'(?i)^True or False:\s*In\s+[A-Z]{2,}\d{3}\s*\([^)]*\),?\s*',
-            'True or False: ', cleaned
-        )
-        if cleaned != text:
-            question.question_text = cleaned
     for exam in Exam.query.filter(Exam.course_code.isnot(None)).all():
         exam.faculty = _infer_faculty(exam.course_code, exam.faculty or '')
-        if '(TMA-based)' in (exam.title or ''):
-            exam.title = re.sub(r'\s*\(TMA-based\)', '', exam.title, flags=re.I).strip()
         old_description = exam.description or ''
         if 'Auto-generated computer-based mock examination' in old_description or 'This practice set covers' in old_description:
             exam.description = _material_brief(exam.course_code, exam.title)
@@ -1562,37 +1434,11 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
             Exam.exam_mode == mode
         ).count()
     # Keep separate practice sets for CBT (100/200L) and paper (300L+).
-    existing_candidates = Exam.query.filter(
-        (db.func.upper(Exam.course_code) == code) &
+    existing = Exam.query.filter(
+        (db.func.upper(Exam.course_code) == code) & 
         (Exam.total_questions >= (5 if mode == 'paper' else 20)) &
         (Exam.exam_mode == mode)
-    ).order_by(Exam.total_questions.desc()).all()
-    # Do not keep serving paper sets created by the retired sentence-to-question
-    # heuristic. New paper sets identify themselves through their assessment
-    # extraction explanation; legacy sets are left in the database but ignored.
-    if mode == 'paper':
-        existing_candidates = [
-            candidate for candidate in existing_candidates
-            if candidate.questions.count() > 0 and all(
-                'assessment question extracted from' in
-                (question.explanation or '').lower()
-                for question in candidate.questions.all()
-            )
-        ]
-    else:
-        retired_phrases = (
-            'which study section discusses',
-            'complete the following statement',
-            'according to ',
-        )
-        existing_candidates = [
-            candidate for candidate in existing_candidates
-            if candidate.questions.count() > 0 and not any(
-                any(phrase in (question.question_text or '').lower() for phrase in retired_phrases)
-                for question in candidate.questions.all()
-            )
-        ]
-    existing = existing_candidates[0] if existing_candidates else None
+    ).order_by(Exam.total_questions.desc()).first()
 
     if existing and course_attempts < 3:
         return existing, False
@@ -1603,14 +1449,6 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
             (Exam.total_questions >= (5 if mode == 'paper' else 20))
         ).order_by(Exam.created_at.desc()).all()
         for variant in unused_variant:
-            if mode == 'paper' and not (
-                variant.questions.count() > 0 and all(
-                    'assessment question extracted from' in
-                    (question.explanation or '').lower()
-                    for question in variant.questions.all()
-                )
-            ):
-                continue
             if not Attempt.query.filter_by(user_id=current_user_id, exam_id=variant.id).first():
                 return variant, False
 
@@ -1690,20 +1528,7 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     if mode == 'paper':
         gen_questions = generate_paper_exam_questions(raw_modules, code, c_title or exam_title, target_questions)
     else:
-        # Use the material-grounded AI drafter first. The deterministic generator
-        # is only a bounded fallback for environments without an API key or when
-        # the API returns too few validated questions.
-        gen_questions = _ai_generate_cbt_questions(raw_modules, code, c_title or exam_title, target_questions)
-        if len(gen_questions) < target_questions:
-            fallback = generate_mock_exam_questions(
-                raw_modules, code, c_title or exam_title, target_questions
-            )
-            seen_text = {q.get('question_text', '').lower() for q in gen_questions}
-            for item in fallback:
-                if item.get('question_text', '').lower() not in seen_text:
-                    gen_questions.append(item)
-                if len(gen_questions) >= target_questions:
-                    break
+        gen_questions = generate_mock_exam_questions(raw_modules, code, c_title or exam_title, target_questions)
 
     if not gen_questions or (mode == 'paper' and len(gen_questions) < 5):
         return None, False

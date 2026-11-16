@@ -144,7 +144,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
                 random.shuffle(opts)
                 correct_letter = chr(65 + opts.index(topic))
                 
-                q_text = f"Which concept is most directly associated with the following statement? \"{s}\""
+                q_text = f"According to {course_code} ({u_title}), which study section discusses: \"{s}\"?"
                 questions.append({
                     'question_text': q_text,
                     'question_type': 'mcq',
@@ -164,7 +164,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
             masked_s = pattern.sub('__________', s, count=1)
             if '__________' in masked_s:
                 questions.append({
-                    'question_text': f"Which term best completes the statement below? \"{masked_s}\"",
+                    'question_text': f"Complete the statement from {course_code} ({u_title}): \"{masked_s}\"",
                     'question_type': 'fill',
                     'option_a': None,
                     'option_b': None,
@@ -194,7 +194,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
             correct_letter = chr(65 + opts.index(target_word))
             
             questions.append({
-                'question_text': f"Which term best completes the statement below? \"{masked_s}\"",
+                'question_text': f"In {course_code} ({u_title}), complete the following statement: \"{masked_s}\"",
                 'question_type': 'mcq',
                 'option_a': opts[0],
                 'option_b': opts[1],
@@ -206,7 +206,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
         else:
             # 4. Factual True / False
             questions.append({
-                'question_text': f"True or False: \"{s}\"",
+                'question_text': f"True or False: In {course_code} ({u_title}), \"{s}\"",
                 'question_type': 'mcq',
                 'option_a': 'True',
                 'option_b': 'False',
@@ -253,278 +253,89 @@ def professional_paper_prompt(source, topic_title=''):
         return f"Discuss {topic}. Explain its key characteristics, major elements, and relevance to the course."
 
 
-def _assessment_blocks(modules):
-    """Yield likely assessment sections, retaining line breaks from PDF extraction."""
-    heading = re.compile(
-        r'(?i)\b(?:tutor[- ]marked\s+assignment|tma|self[- ]assessment|'
-        r'self[- ]test|review\s+questions?|revision\s+questions?|'
-        r'end[- ]of[- ]unit\s+(?:exercise|questions?)|practice\s+questions?)\b'
-    )
-    stop = re.compile(
-        r'(?i)^\s*(?:summary|conclusion|references?|further\s+reading|'
-        r'learning\s+objectives?|module\s+\d+|unit\s+\d+|'
-        r'(?:tutor[- ]marked\s+assignment|tma|self[- ]assessment|'
-        r'review\s+questions?|revision\s+questions?))\b'
-    )
+def generate_paper_exam_questions(modules, course_code, course_title, target_count=10):
+    """Create professional written-answer questions without copying source sentences."""
+    candidates, seen = [], set()
+
+    def clean_source(text):
+        text = re.sub(r'\s+', ' ', text or '').strip(' -•')
+        text = re.sub(r'^\d+(?:\.\d+){0,3}\s+(?:summary|introduction|conclusion|objectives?)\s*', '', text, flags=re.I)
+        text = re.sub(r'^(?:summary|introduction|conclusion)\s*[:.-]?\s*', '', text, flags=re.I)
+        return text.strip(' .')
+
+    def subject_before(text, patterns):
+        for pattern in patterns:
+            match = re.search(pattern, text, flags=re.I)
+            if match:
+                subject = text[:match.start()].strip(' ,:;-')
+                subject = re.sub(r'^(?:the|a|an)\s+', '', subject, flags=re.I)
+                if 1 <= len(subject.split()) <= 12:
+                    return subject
+        return ''
+
+    def professional_prompt(source, question_no, topic_title):
+        lower = source.lower()
+        subject = subject_before(source, [
+            r'\b(?:is|are)\s+(?:classified|divided|grouped|categorized)',
+            r'\b(?:is|are)\s+(?:defined|known|regarded)',
+            r'\b(?:is|are)\s+(?:the study|a form|an area|a branch|a process)',
+            r'\b(?:refers to|means|consists of|comprises|includes|involves)',
+            r'\b(?:has|have)\s+(?:the following|several|different)',
+        ])
+        fallback_topic = re.sub(r'^(?:unit\s*\d+[\s:.-]*)', '', topic_title or '', flags=re.I).strip(' .:-')
+        if 'classified' in lower or 'divided' in lower or 'grouped' in lower or 'categorized' in lower:
+            return f"Discuss the classification of {subject or 'the concept described in the course material'}. State and explain the main bases or categories used."
+        if any(word in lower for word in ('steps', 'stages', 'process', 'procedure', 'phases')):
+            return f"Describe the major steps or stages involved in {subject or 'the process discussed'}. Explain the importance of each stage."
+        if any(word in lower for word in ('purpose', 'aim', 'objective', 'function', 'importance', 'role')):
+            return f"State and explain the purpose, functions, or importance of {subject or 'the concept discussed in this unit'}."
+        if any(word in lower for word in ('defined as', 'refers to', 'means', 'is known as', 'is the study of', 'is a branch of')):
+            return f"Define {subject or 'the key concept discussed'} and explain its meaning, scope, and relevance to the course."
+        if any(word in lower for word in ('difference', 'differentiate', 'similarities', 'distinguish')):
+            return f"Differentiate the related concepts discussed in this section and state at least two important differences."
+        if 'following:' in lower or 'such as' in lower or 'include' in lower:
+            return f"Discuss {subject or 'the topic discussed in this section'}. Identify and explain the major elements or factors involved."
+        return f"Discuss {subject or fallback_topic}. Explain its key characteristics, major elements, and relevance to the course." if (subject or fallback_topic) else ''
+
     for module in modules or []:
         for unit in module.get('units') or []:
-            title = (unit.get('title') or module.get('title') or '').strip()
-            lines = (unit.get('body') or '').replace('\r', '').split('\n')
-            content_lines = []
-            active = False
-            block = []
-            for raw in lines:
-                line = re.sub(r'\s+', ' ', raw).strip()
-                if not line:
-                    if active:
-                        block.append('')
+            unit_title = (unit.get('title') or course_title).strip()
+            body = re.sub(r'\s+', ' ', unit.get('body') or '')
+            for sentence in re.split(r'(?<=[.!?])\s+', body):
+                sentence = clean_source(sentence)
+                if not (55 <= len(sentence) <= 280):
                     continue
-                if heading.search(line):
-                    if active and block:
-                        yield title, block, '\n'.join(content_lines)
-                    active = True
-                    block = []
+                if re.search(r'(?i)\b(self-assessment|exercise|tma|copyright|dear student|turn to|table of contents|learning objectives)\b', sentence):
                     continue
-                if active and stop.match(line) and not re.match(r'(?i)^\s*(?:question|q)\b', line):
-                    if block:
-                        yield title, block, '\n'.join(content_lines)
-                    active = False
-                    block = []
+                if re.match(r'(?i)^(?:summary|introduction|conclusion|references?)\b', sentence):
                     continue
-                if active:
-                    block.append(line)
-                else:
-                    content_lines.append(line)
-            if active and block:
-                yield title, block, '\n'.join(content_lines)
-
-
-def _parse_assessment_questions(lines):
-    """Parse numbered essay-style prompts and join wrapped PDF lines."""
-    starts = re.compile(r'^\s*(\d{1,2}(?:\s*[a-z])?|[a-z])\s*[\.)\-:]\s+(.*)$', re.I)
-    items = []
-    current = None
-    for line in lines:
-        line = re.sub(r'\s+', ' ', line).strip(' -•')
-        if not line:
-            continue
-        match = starts.match(line)
-        if match:
-            if current:
-                items.append(current)
-            current = [match.group(2).strip()]
-        elif current:
-            current.append(line)
-    if current:
-        items.append(current)
-    return [' '.join(item).strip() for item in items]
-
-
-def _assessment_keywords(text):
-    stop = {
-        'which', 'what', 'where', 'when', 'whose', 'would', 'could', 'should',
-        'explain', 'discuss', 'describe', 'state', 'define', 'identify',
-        'outline', 'account', 'course', 'material', 'following', 'briefly',
-        'using', 'with', 'from', 'this', 'that', 'their', 'there', 'about'
-    }
-    words = re.findall(r"[A-Za-z][A-Za-z-]{4,}", text)
-    result = []
-    for word in words:
-        if word.lower() not in stop and word.lower() not in {x.lower() for x in result}:
-            result.append(word)
-        if len(result) >= 8:
-            break
-    return result
-
-
-def _content_keywords(text, prompt):
-    """Return answer-key terms from the unit discussion, not from the question itself."""
-    prompt_words = {w.lower() for w in _assessment_keywords(prompt)}
-    stop = {
-        'which', 'what', 'where', 'when', 'whose', 'would', 'could', 'should',
-        'course', 'material', 'student', 'students', 'unit', 'module', 'lesson',
-        'there', 'their', 'these', 'those', 'because', 'through', 'about',
-        'chapter', 'following', 'discussion', 'important', 'different',
-    }
-    words = re.findall(r"[A-Za-z][A-Za-z-]{5,}", text or '')
-    result = []
-    for word in words:
-        low = word.lower()
-        if low in stop or low in prompt_words or low in {x.lower() for x in result}:
-            continue
-        result.append(word)
-        if len(result) >= 10:
-            break
-    return result
-
-
-def _material_answer_guide(context, prompt):
-    """Select a short, transparent answer guide from the preceding unit discussion."""
-    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', re.sub(r'\s+', ' ', context or '')) if s.strip()]
-    if not sentences:
-        return 'Refer to the relevant discussion in the official course material and address every part of the question.'
-    prompt_terms = set(_assessment_keywords(prompt))
-    scored = []
-    for index, sentence in enumerate(sentences):
-        words = set(_assessment_keywords(sentence))
-        overlap = len({w.lower() for w in words} & {w.lower() for w in prompt_terms})
-        scored.append((overlap, index, sentence))
-    selected = sorted(scored, key=lambda item: (-item[0], item[1]))[:3]
-    selected = sorted(selected, key=lambda item: item[1])
-    guide = ' '.join(item[2] for item in selected if item[0] > 0)
-    if not guide:
-        guide = ' '.join(sentences[:3])
-    return guide[:1600].strip()
-
-
-def _extract_tma_questions_from_text(text, unit_title=''):
-    """Extract only written assessment prompts printed in the course material."""
-    if not text or len(text) < 40:
-        return []
-
-    heading = re.compile(
-        r'(?i)\b(?:tutor[- ]?marked\s+assignment(?:s)?|tma\s*\d*|'
-        r'self[- ]?assessment(?:\s+(?:exercise|questions?|test))?|'
-        r'review\s+questions?|revision\s+questions?|'
-        r'end[- ]of[- ]unit\s+(?:exercise|questions?)|'
-        r'assignment\s+questions?)\b'
-    )
-    stop = re.compile(
-        r'(?i)^\s*(?:summary|conclusion|references?(?:/further\s+reading)?|'
-        r'further\s+reading|module\s+\d+|unit\s+\d+|'
-        r'\d+\.0\s+(?:introduction|objectives?|main\s+content|summary|'
-        r'conclusion|references?|further\s+reading))\b'
-    )
-    lines = (text or '').replace('\r', '').split('\n')
-    blocks = []
-    active = False
-    block = []
-    for raw_line in lines:
-        line = re.sub(r'\s+', ' ', raw_line).strip()
-        if not line:
-            if active:
-                block.append('')
-            continue
-        if heading.search(line):
-            if active and block:
-                blocks.append(block)
-            active = True
-            block = []
-            continue
-        if active and stop.match(line):
-            if block:
-                blocks.append(block)
-            active = False
-            block = []
-            continue
-        if active:
-            block.append(line)
-    if active and block:
-        blocks.append(block)
-
-    # Numbered prompt at the beginning of a line; supports Arabic and Roman numbering.
-    start = re.compile(
-        r'^\s*(?:question\s*)?(?:\d{1,2}|[ivxlcdm]+)\s*[\.)\-:]\s+(.*)$', re.I
-    )
+                signature = re.sub(r'[^a-z0-9]', '', sentence.lower())
+                if signature in seen:
+                    continue
+                seen.add(signature)
+                words = re.findall(r'[A-Za-z][A-Za-z-]{4,}', sentence)
+                stop = {'which', 'there', 'their', 'these', 'those', 'because', 'should', 'where', 'about', 'course', 'material'}
+                keywords = []
+                for word in words:
+                    if word.lower() not in stop and word.lower() not in {x.lower() for x in keywords}:
+                        keywords.append(word)
+                    if len(keywords) >= 6:
+                        break
+                if len(keywords) >= 2:
+                    prompt = professional_prompt(sentence, len(candidates) + 1, unit_title)
+                    if prompt and not re.search(r'(?i)\b(main concept|concept presented in this section|topic discussed|section)\b', prompt):
+                        candidates.append((unit_title, sentence, keywords, prompt))
+    random.seed(911 + len(course_code))
+    random.shuffle(candidates)
     questions = []
-    seen = set()
-    for block in blocks:
-        current = None
-        items = []
-        for line in block:
-            match = start.match(line)
-            if match:
-                if current:
-                    items.append(current)
-                current = [match.group(1).strip()]
-            elif current:
-                # A PDF often places ordinary prose immediately after the last
-                # assessment item. Do not attach that prose to the question once
-                # the item already ends with terminal punctuation.
-                if (current[-1].rstrip().endswith(('.', '?', ':')) and
-                        re.match(r'^[A-Z]', line) and
-                        not re.match(r'(?i)^(?:and|or|to|of|which|that|this|these|the following)\b', line)):
-                    items.append(current)
-                    current = None
-                else:
-                    current.append(line)
-        if current:
-            items.append(current)
-
-        for parts in items:
-            prompt = re.sub(r'\s+', ' ', ' '.join(parts)).strip(' .-–—')
-            if not (18 <= len(prompt) <= 700):
-                continue
-            if re.match(r'(?i)^(?:answer|attempt|submit|write|note|instruction)\b', prompt) and len(prompt) < 100:
-                continue
-            if re.search(r'(?i)\b(?:choose the correct|select the correct|multiple[- ]choice|tick|fill in the blank)\b', prompt):
-                continue
-            if not re.search(
-                r'(?i)\b(?:define|discuss|describe|explain|state|list|outline|'
-                r'differentiate|compare|distinguish|what\s+is|what\s+are|why|how|'
-                r'mention|identify|analyse|analyze|evaluate|assess|write\s+(?:short|brief|notes?)|'
-                r'give\s+(?:an?\s+)?account|critically)\b', prompt
-            ):
-                continue
-            if re.search(r'(?i)\b(?:copyright|all rights reserved|dear student|turn to page)\b', prompt):
-                continue
-            signature = re.sub(r'[^a-z0-9]', '', prompt.lower())
-            if signature in seen:
-                continue
-            seen.add(signature)
-            display = prompt if prompt.endswith(('?', '.', ':')) else prompt + '.'
-            words = re.findall(r'[A-Za-z][A-Za-z-]{4,}', prompt)
-            stop_words = {
-                'which', 'where', 'there', 'their', 'these', 'those', 'because',
-                'should', 'about', 'course', 'material', 'following', 'question',
-                'questions', 'answer', 'write', 'briefly', 'discuss', 'explain',
-                'describe', 'define', 'state', 'list'
-            }
-            keywords = []
-            for word in words:
-                if word.lower() not in stop_words and word.lower() not in {x.lower() for x in keywords}:
-                    keywords.append(word)
-                if len(keywords) >= 8:
-                    break
-            questions.append({
-                'question_text': display,
-                'question_type': 'essay',
-                'correct_answer': 'Use the relevant discussion in the official course material and answer every part of the question.',
-                'answer_keywords': keywords,
-                'marks': 10 if len(display) > 80 or re.search(r'(?i)\b(discuss|critically|analyse|evaluate)\b', display) else 5,
-                'explanation': 'Official assessment question extracted from the course material' + (f' ({unit_title})' if unit_title else '') + '.',
-                'source': 'tma'
-            })
+    for idx, (unit_title, sentence, keywords, prompt) in enumerate(candidates[:target_count]):
+        marks = 5 if idx % 3 else 10
+        questions.append({
+            'question_text': prompt,
+            'question_type': 'essay',
+            'correct_answer': sentence,
+            'answer_keywords': keywords,
+            'marks': marks,
+            'explanation': f"Answer guide from the official course material ({unit_title}): {sentence}"
+        })
     return questions
-
-
-def generate_paper_exam_questions(modules, course_code, course_title, target_count=10, variant_seed=0):
-    """Create 300L+ paper practice exclusively from official assessment prompts.
-
-    No question is invented from ordinary explanatory prose. If the material does
-    not contain enough usable assessment questions, the caller must refuse to
-    publish the paper set instead of filling the gap with synthetic wording.
-    """
-    questions = []
-    seen = set()
-    for module in modules or []:
-        units = module.get('units') or []
-        for unit in units:
-            unit_title = (unit.get('title') or module.get('title') or course_title or '').strip()
-            for question in _extract_tma_questions_from_text(unit.get('body') or '', unit_title):
-                signature = re.sub(r'[^a-z0-9]', '', question['question_text'].lower())
-                if signature not in seen:
-                    seen.add(signature)
-                    questions.append(question)
-        # Some PDFs store assessment text in the module body instead of a unit.
-        if not units and module.get('body'):
-            for question in _extract_tma_questions_from_text(module.get('body'), module.get('title') or course_title):
-                signature = re.sub(r'[^a-z0-9]', '', question['question_text'].lower())
-                if signature not in seen:
-                    seen.add(signature)
-                    questions.append(question)
-
-    if variant_seed and questions:
-        rng = random.Random(911 + len(course_code or '') + int(variant_seed) * 97)
-        rng.shuffle(questions)
-    return questions[:target_count]
