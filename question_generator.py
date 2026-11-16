@@ -144,7 +144,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
                 random.shuffle(opts)
                 correct_letter = chr(65 + opts.index(topic))
                 
-                q_text = f"Which study section discusses the following statement? \"{s}\""
+                q_text = f"Which concept is most directly associated with the following statement? \"{s}\""
                 questions.append({
                     'question_text': q_text,
                     'question_type': 'mcq',
@@ -164,7 +164,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
             masked_s = pattern.sub('__________', s, count=1)
             if '__________' in masked_s:
                 questions.append({
-                    'question_text': f"Complete the following statement: \"{masked_s}\"",
+                    'question_text': f"Which term best completes the statement below? \"{masked_s}\"",
                     'question_type': 'fill',
                     'option_a': None,
                     'option_b': None,
@@ -194,7 +194,7 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
             correct_letter = chr(65 + opts.index(target_word))
             
             questions.append({
-                'question_text': f"Complete the following statement: \"{masked_s}\"",
+                'question_text': f"Which term best completes the statement below? \"{masked_s}\"",
                 'question_type': 'mcq',
                 'option_a': opts[0],
                 'option_b': opts[1],
