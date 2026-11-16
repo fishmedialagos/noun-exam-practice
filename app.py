@@ -1426,35 +1426,45 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
         return None, False
 
     mode = 'paper' if _is_paper_course(code) else 'cbt'
-    course_attempts = 0
-    if current_user_id:
-        course_attempts = Attempt.query.join(Exam, Attempt.exam_id == Exam.id).filter(
-            Attempt.user_id == current_user_id,
-            db.func.upper(Exam.course_code) == code,
-            Exam.exam_mode == mode
-        ).count()
-    # Keep separate practice sets for CBT (100/200L) and paper (300L+).
-    existing = Exam.query.filter(
-        (db.func.upper(Exam.course_code) == code) & 
-        (Exam.total_questions >= (5 if mode == 'paper' else 20)) &
-        (Exam.exam_mode == mode)
-    ).order_by(Exam.total_questions.desc()).first()
+    min_qs = 5 if mode == 'paper' else 20
 
-    if existing and course_attempts < 3:
-        return existing, False
-    if existing and course_attempts >= 3:
-        unused_variant = Exam.query.filter(
-            (db.func.upper(Exam.course_code) == code) &
-            (Exam.exam_mode == mode) &
-            (Exam.total_questions >= (5 if mode == 'paper' else 20))
-        ).order_by(Exam.created_at.desc()).all()
-        for variant in unused_variant:
+    # All existing practice sets for this course + mode (newest first)
+    all_variants = Exam.query.filter(
+        (db.func.upper(Exam.course_code) == code) &
+        (Exam.exam_mode == mode) &
+        (Exam.total_questions >= min_qs)
+    ).order_by(Exam.created_at.desc()).all()
+
+    # Prefer a variant this student has not yet attempted
+    if current_user_id and all_variants:
+        for variant in all_variants:
             if not Attempt.query.filter_by(user_id=current_user_id, exam_id=variant.id).first():
-                return variant, False
+                # How many distinct students have already tried this variant?
+                distinct_students = db.session.query(db.func.count(db.func.distinct(Attempt.user_id))).filter(
+                    Attempt.exam_id == variant.id
+                ).scalar() or 0
+                # After 2 different students have taken it, rotate to a fresh set
+                if distinct_students < 2:
+                    return variant, False
+                # else: this variant is "used up" by 2 students — keep looking
+
+        # Student has already tried every existing variant → fall through and generate a new one
+
+    elif all_variants:
+        # Anonymous / no user id: reuse the latest if fewer than 2 students have tried it
+        latest = all_variants[0]
+        distinct_students = db.session.query(db.func.count(db.func.distinct(Attempt.user_id))).filter(
+            Attempt.exam_id == latest.id
+        ).scalar() or 0
+        if distinct_students < 2:
+            return latest, False
 
     # Determine credit units, title, and faculty
     credit_units = 2
-    exam_title = f"{code} Comprehensive Mock Examination"
+    if mode == 'paper':
+        exam_title = f"{code} Paper Practice (TMA-based)"
+    else:
+        exam_title = f"{code} Comprehensive Mock Examination"
     faculty = 'General Studies / NOUN'
 
     # Check timetable_courses.json
@@ -1492,7 +1502,9 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
         pass
 
     faculty = _infer_faculty(code, faculty)
-    target_questions = 10 if mode == 'paper' else (70 if credit_units <= 2 else 100)
+    # Paper mode (300L+): prioritise authentic TMAs from the material.
+    # CBT mode (100/200L): large MCQ banks scaled by credit units.
+    target_questions = 12 if mode == 'paper' else (70 if credit_units <= 2 else 100)
     duration_minutes = 90 if mode == 'paper' else (60 if credit_units <= 2 else 90)
 
     # Load and parse material
@@ -1524,11 +1536,24 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     if not raw_modules:
         return None, False
 
+    # variant_seed makes each newly generated set different from previous ones
+    try:
+        variant_seed = Exam.query.filter(
+            db.func.upper(Exam.course_code) == code,
+            Exam.exam_mode == mode
+        ).count()
+    except Exception:
+        variant_seed = 0
+
     from question_generator import generate_mock_exam_questions, generate_paper_exam_questions
     if mode == 'paper':
-        gen_questions = generate_paper_exam_questions(raw_modules, code, c_title or exam_title, target_questions)
+        gen_questions = generate_paper_exam_questions(
+            raw_modules, code, c_title or exam_title, target_questions, variant_seed=variant_seed
+        )
     else:
-        gen_questions = generate_mock_exam_questions(raw_modules, code, c_title or exam_title, target_questions)
+        gen_questions = generate_mock_exam_questions(
+            raw_modules, code, c_title or exam_title, target_questions, variant_seed=variant_seed
+        )
 
     if not gen_questions or (mode == 'paper' and len(gen_questions) < 5):
         return None, False
@@ -1585,7 +1610,18 @@ def launch_course_mock_exam(course_code):
         return redirect(url_for('course_materials', search=course_code))
 
     if created:
-        flash(f'Success! Generated {exam.total_questions} questions for {exam.course_code} ({exam.credit_units} credit units). You can now begin your mock exam.', 'success')
+        if exam.exam_mode == 'paper':
+            flash(
+                f'Success! Prepared {exam.total_questions} pen-and-paper practice questions for {exam.course_code} '
+                f'(drawn first from the official Tutor-Marked Assignments in the course material).',
+                'success'
+            )
+        else:
+            flash(
+                f'Success! Generated {exam.total_questions} questions for {exam.course_code} '
+                f'({exam.credit_units} credit units). You can now begin your mock exam.',
+                'success'
+            )
     return redirect(url_for('exam_instructions', exam_id=exam.id))
 
 

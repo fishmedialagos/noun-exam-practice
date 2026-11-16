@@ -24,9 +24,43 @@
     </div>
 </div>
 
-<!-- Search & Faculty Filter -->
+<!-- Auto-Search Materials (top) -->
+<div class="card border-0 shadow-sm mb-4 border-success">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h5 class="mb-1 text-success fw-bold">
+                    <i class="bi bi-search me-2"></i>Auto-Search Materials
+                </h5>
+                <p class="text-muted small mb-0">
+                    Search any NOUN course by code or title and open the material inside this platform.
+                </p>
+            </div>
+        </div>
+        <form method="get" action="{{ url_for('search_nounupdate') }}" class="row g-2 align-items-end">
+            <div class="col-md-9">
+                <label class="form-label small text-muted">Course code or title</label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-success"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0"
+                           placeholder="e.g. BIO316, GST101, Genetics, Marketing" required minlength="2">
+                </div>
+            </div>
+            <div class="col-md-3 d-grid">
+                <button class="btn btn-success btn-lg" type="submit">
+                    <i class="bi bi-search me-1"></i>Auto-Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Library Search & Faculty Filter (below) -->
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body p-4 bg-light rounded">
+        <div class="mb-2">
+            <span class="fw-semibold small text-muted">Browse the verified course library</span>
+        </div>
         <form method="GET" action="{{ url_for('course_materials') }}" class="row g-3">
             <div class="col-md-6">
                 <label class="form-label fw-semibold small text-muted">Search by Course Code or Title</label>
@@ -46,24 +80,10 @@
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-noun w-100">
-                    <i class="bi bi-funnel me-1"></i>Search
+                    <i class="bi bi-funnel me-1"></i>Search Library
                 </button>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- Courses Grid / Table -->
-
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div>
-            <div class="fw-semibold">Need a course not listed?</div>
-            <div class="small text-muted">Auto-search and open course materials inside this platform.</div>
-        </div>
-        <a href="{{ url_for('search_nounupdate') }}" class="btn btn-success">
-            <i class="bi bi-search me-1"></i>Auto-Search Materials
-        </a>
     </div>
 </div>
 {% if courses %}

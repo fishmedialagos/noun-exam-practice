@@ -25,7 +25,8 @@
                 <ol class="mb-4">
                     <li class="mb-2">This is a <strong>timed {{ 'pen-and-paper' if exam.exam_mode == 'paper' else 'computer-based' }} practice examination</strong>. The timer starts immediately when you click <strong>Start Exam</strong>.</li>
                     {% if exam.exam_mode == 'paper' %}
-                    <li class="mb-2"><strong>Answer all questions and sub-questions</strong> (1a, 1b, 2a, 2b, and so on) in the space provided.</li>
+                    <li class="mb-2">Questions are drawn <strong>first from the official Tutor-Marked Assignments (TMAs)</strong> in your course material, then supplemented with additional theory prompts where needed. This mirrors real NOUN pen-and-paper exams.</li>
+                    <li class="mb-2"><strong>Answer all questions</strong> in the space provided. Write as you would in a formal examination.</li>
                     <li class="mb-2">Full marks are awarded for a complete response; half marks may be awarded for a close, materially correct response.</li>
                     {% else %}
                     <li class="mb-2">You must answer all questions before the time expires. The system will <strong>auto-submit</strong> when time is up.</li>
