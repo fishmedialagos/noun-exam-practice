@@ -296,6 +296,10 @@ def course_materials():
                 courses = json.load(f)
         except Exception:
             courses = []
+
+    # Keep the catalog display consistent with the authoritative course-prefix map.
+    for course in courses:
+        course['faculty'] = _infer_faculty(course.get('course_code', ''), course.get('faculty', ''))
             
     # Filter
     filtered = []
@@ -1322,13 +1326,16 @@ def _is_paper_course(course_code):
 
 def _infer_faculty(course_code, current=''):
     """Use timetable data first, then a conservative NOUN course-prefix map."""
+    prefix_match = re.match(r'([A-Z]+)', (course_code or '').upper())
+    prefix = prefix_match.group(1) if prefix_match else ''
+    # MAC (Mass Communication) belongs to the Faculty of Sciences for this platform.
+    if prefix == 'MAC':
+        return 'Faculty of Sciences'
     if current and current.lower() not in {'general studies', 'general studies / noun', 'general studies/noun'}:
         return current
-    prefix = re.match(r'([A-Z]+)', (course_code or '').upper())
-    prefix = prefix.group(1) if prefix else ''
     groups = {
         'General Studies': {'GST'},
-        'Faculty of Management Sciences': {'ACC', 'BUS', 'BFN', 'MAC', 'MKT', 'ENT', 'BAM', 'FIN'},
+        'Faculty of Management Sciences': {'ACC', 'BUS', 'BFN', 'MKT', 'ENT', 'BAM', 'FIN'},
         'Faculty of Computing': {'CIT', 'CSC', 'CMP', 'COS', 'IFT', 'INF'},
         'Faculty of Sciences': {'BIO', 'CHM', 'PHY', 'MAT', 'STA', 'FSC', 'BOT', 'ZOO', 'MCB'},
         'Faculty of Education': {'EDU', 'ECE', 'PDE'},

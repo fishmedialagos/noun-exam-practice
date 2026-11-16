@@ -24,6 +24,22 @@
     </div>
 </div>
 
+<!-- Auto-search: keep this first so visitors can find a course immediately. -->
+<div class="card border-0 shadow-sm mb-4 border-start border-success border-4">
+    <div class="card-body p-4">
+        <h5 class="mb-1 text-success"><i class="bi bi-search me-2"></i>Auto-Search NOUN Course Materials</h5>
+        <div class="small text-muted mb-3">Search the wider course-material directory by course code or title.</div>
+        <form method="GET" action="{{ url_for('search_nounupdate') }}" class="row g-2">
+            <div class="col-md-10">
+                <input type="search" name="q" class="form-control form-control-lg" placeholder="Enter a course code or title, e.g. MAC312 or Human Health" aria-label="Search NOUN course materials">
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-search me-1"></i>Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Search & Faculty Filter -->
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body p-4 bg-light rounded">
@@ -55,17 +71,6 @@
 
 <!-- Courses Grid / Table -->
 
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div>
-            <div class="fw-semibold">Need a course not listed?</div>
-            <div class="small text-muted">Auto-search and open course materials inside this platform.</div>
-        </div>
-        <a href="{{ url_for('search_nounupdate') }}" class="btn btn-success">
-            <i class="bi bi-search me-1"></i>Auto-Search Materials
-        </a>
-    </div>
-</div>
 {% if courses %}
 <div class="card shadow-sm border-0">
     <div class="table-responsive">
