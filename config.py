@@ -3,10 +3,15 @@ import secrets
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Render provides DATABASE_URL starting with postgres://, which SQLAlchemy 1.4+ requires as postgresql://
+# Render provides DATABASE_URL starting with postgres:// or postgresql://
+# When given postgresql://, SQLAlchemy may try to load psycopg (psycopg v3).
+# Explicitly specifying postgresql+psycopg2:// ensures it uses psycopg2-binary.
 db_url = os.environ.get('DATABASE_URL')
-if db_url and db_url.startswith('postgres://'):
-    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+if db_url:
+    if db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+    elif db_url.startswith('postgresql://'):
+        db_url = db_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
 class Config:
     # Use environment secret key if provided, or generate a safe random token in development
