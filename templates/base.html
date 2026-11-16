@@ -94,6 +94,32 @@
             background: #f8d7da !important;
             border-color: #dc3545 !important;
         }
+        .student-help-widget {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 1050;
+            width: 216px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,.97);
+            border-radius: 12px;
+            box-shadow: 0 3px 16px rgba(0,0,0,.18);
+            text-align: center;
+            font-size: .88rem;
+        }
+        .student-help-widget .help-title { color: var(--noun-green); font-weight: 700; }
+        .student-help-widget .help-number {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 6px;
+            background: #198754;
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        @media (max-width: 575.98px) {
+            .student-help-widget { right: 10px; bottom: 10px; width: 195px; font-size: .82rem; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -193,6 +219,15 @@
             </div>
         </div>
     </nav>
+
+    <!-- Visible to logged-in students, staff, and visitors. -->
+    <aside class="student-help-widget" aria-label="Student Help Centre">
+        <div class="help-title">Need Help?</div>
+        <div class="text-dark mb-1">Student Help Centre</div>
+        <a class="help-number" href="https://wa.me/2348109213232" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp me-1"></i>+2348109213232
+        </a>
+    </aside>
 
     <main class="container my-4 flex-grow-1">
         {% with messages = get_flashed_messages(with_categories=true) %}
