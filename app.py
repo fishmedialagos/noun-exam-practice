@@ -1468,7 +1468,7 @@ def launch_course_mock_exam(course_code):
     exam, created = _get_or_create_course_mock_exam(course_code, current_user.id)
     if not exam:
         flash(f'We could not create a complete, quality-checked mock exam for {course_code.upper()}. Please ensure the course PDF contains selectable text and the AI question-generation API key (GROQ_API_KEY or OPENAI_API_KEY) is configured. No incomplete exam was published.', 'danger')
-        return redirect(url_for('view_material', course_code=course_code))
+        return redirect(url_for('download_material', course_code=course_code))
 
     if created:
         flash(f'Success! Generated {exam.total_questions} questions for {exam.course_code} ({exam.credit_units} credit units). You can now begin your mock exam.', 'success')
