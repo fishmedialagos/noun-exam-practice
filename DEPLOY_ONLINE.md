@@ -91,3 +91,16 @@ Optional:
 - `OPENAI_MODEL` (default `gpt-4o-mini`)
 
 Without a key, the platform still summarizes using extractive module/unit text analysis.
+
+## AI-Powered Mock Question Generation (Required)
+
+The upgraded mock-question generator uses a hybrid workflow: an AI model drafts questions from the course PDF, then Python validates question structure, answer keys, source support, duplicates, and the 50/50 MCQ/fill-in balance before publishing. The platform will **not** publish an incomplete exam or fall back to random sentence-cloze questions.
+
+Configure at least one key in Render → Environment:
+
+- `GROQ_API_KEY` (recommended; uses `llama-3.3-70b-versatile` by default), or
+- `OPENAI_API_KEY` (uses `gpt-4o-mini` by default; preferred automatically when both providers are configured).
+
+Optional model overrides: `GROQ_MODEL` or `OPENAI_MODEL`. Set `QUESTION_AI_PROVIDER=openai` to force OpenAI, or `QUESTION_AI_PROVIDER=groq` to force Groq. Keep API keys in Render environment variables or a local `.env` file; never commit them to Git.
+
+If neither key is configured, automatic mock-exam generation will stop with an explanatory message. Existing manually curated exams remain available. Legacy auto-generated exams are bypassed and retired from publication only after a complete validated replacement is created.

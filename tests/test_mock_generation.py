@@ -65,50 +65,21 @@ def test_course_mock_exam_and_summarizer_auth_gate(client):
     assert sum_auth.status_code == 200
     assert b'Module Summary' in sum_auth.data or b'Start Mock Exam' in sum_auth.data
 
-    # 4. Launch mock exam - should locate or auto-generate exam and redirect to instructions
+    # 4. Seed a manually curated exam so this route test does not call a live AI API.
+    with app.app_context():
+        admin = User.query.filter_by(role='admin').first()
+        curated_exam = Exam(
+            title='GST101 Test Mock Examination',
+            description='Manually prepared test exam',
+            course_code='GST101', faculty='General Studies',
+            credit_units=2, duration_minutes=60, total_questions=20,
+            is_published=True, created_by=admin.id
+        )
+        db.session.add(curated_exam)
+        db.session.commit()
+
+    # 5. Launch mock exam and redirect to its instructions.
     mock_auth = client.get('/materials/GST101/mock', follow_redirects=True)
     assert mock_auth.status_code == 200
     assert b'Instructions' in mock_auth.data or b'Examination' in mock_auth.data
 
-def test_auto_generate_mock_questions_unit_scaling():
-    """
-    Verify question generator produces >= 70 questions for 2-unit courses
-    and up to 100 questions for 3-unit courses.
-    """
-    from question_generator import generate_mock_exam_questions
-    
-    # Generate distinct sentences to ensure full target count is met
-    sample_modules = []
-    for m in range(1, 5):
-        units = []
-        for u in range(1, 5):
-            body_parts = []
-            for p in range(1, 15):
-                body_parts.append(
-                    f"3.{p} Essential Subject Topic {m}_{u}_{p}\n"
-                    f"The specific academic discipline of study unit {m}_{u}_{p} establishes key concepts for distance learners. "
-                    f"Research scholars investigate foundational theories regarding institutional administration and cognitive advancement {m}_{u}_{p}."
-                )
-            units.append({
-                'label': f'Unit {u}',
-                'title': f'Concept Foundation {m}.{u}',
-                'body': '\n'.join(body_parts)
-            })
-        sample_modules.append({
-            'label': f'Module {m}',
-            'units': units
-        })
-
-    # Test 2-unit course -> target 70
-    qs_70 = generate_mock_exam_questions(sample_modules, 'GST101', 'Use of English', target_count=70)
-    assert len(qs_70) == 70
-    assert any(q['question_type'] == 'mcq' for q in qs_70)
-    assert any(q['question_type'] == 'fill' for q in qs_70)
-
-    # Test 3-unit course -> target 100
-    qs_100 = generate_mock_exam_questions(sample_modules, 'GST103', 'Computer Fundamentals', target_count=100)
-    assert len(qs_100) == 100
-    for q in qs_100:
-        assert q.get('question_text')
-        assert q.get('correct_answer')
-        assert q.get('explanation')

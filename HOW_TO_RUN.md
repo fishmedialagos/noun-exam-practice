@@ -109,3 +109,37 @@ Students should click **Register** on the website.
 
 ## How to Stop the Server
 Press `Ctrl + C` in the terminal.
+
+## Configure AI Question Generation
+
+The upgraded mock question generator needs an AI API key to create university-standard questions. Set **one** of these environment variables before starting the app:
+
+**Windows PowerShell (current terminal only):**
+
+```powershell
+$env:GROQ_API_KEY="your_groq_api_key"
+python app.py
+```
+
+Or use OpenAI instead:
+
+```powershell
+$env:OPENAI_API_KEY="your_openai_api_key"
+python app.py
+```
+
+For a permanent/local setup, place the key in a `.env` file only if your deployment loads that file, and never upload the key to GitHub. The default models are `gpt-4o-mini` for OpenAI and `llama-3.3-70b-versatile` for Groq. OpenAI is selected first if both keys are present. Set `QUESTION_AI_PROVIDER=openai` to force OpenAI.
+
+Without either key, the platform deliberately refuses to create a mock exam rather than generating weak questions. It also refuses to publish an exam unless the full target count passes validation (70 questions for courses of up to 2 credit units; 100 for courses above 2 units), with MCQ and fill-in questions balanced and interwoven.
+
+
+### Recommended OpenAI setup (local testing)
+
+1. Copy `.env.example` to `.env`.
+2. Put your secret key after `OPENAI_API_KEY=`. Keep the key private.
+3. Keep `QUESTION_AI_PROVIDER=openai` and `OPENAI_MODEL=gpt-4o-mini`.
+4. Install dependencies: `pip install -r requirements.txt`.
+5. Check API access: `python check_openai_api.py`.
+6. If the check succeeds, start the platform: `python app.py`.
+
+The API check reports whether the key and selected model work; it never prints the key. For Render, add the same variables under the service's Environment settings instead of uploading `.env`.
