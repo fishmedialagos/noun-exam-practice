@@ -15,7 +15,7 @@ except ImportError:
     pass
 
 from config import Config
-from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress
+from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitAssessmentAttempt
 
 # Course catalogue used by the student learning planner
 def load_learning_course_catalogue():
@@ -1576,69 +1576,159 @@ def student_dashboard():
 
 
 
+def _learning_units_for_course(course):
+    code = (course.course_code or '').strip().upper()
+    _, _, local_path, urls = _resolve_material(code)
+    path = local_path or _fetch_and_cache_pdf(code, urls)
+    if not path:
+        return [], 'Course PDF could not be located or downloaded. Please try again later.'
+    pages, err = _extract_pdf_text(path, max_pages=None)
+    if err:
+        return [], err
+    full_text = '\n'.join(pages)
+    if len(full_text.strip()) < 200:
+        return [], 'This PDF has little extractable text. It may be scanned; OCR is required.'
+    modules = _split_modules_units(full_text)
+    units = []
+    for module in modules:
+        for unit in module.get('units') or []:
+            units.append({'module_label': module.get('label'), 'module_title': module.get('title'),
+                          'label': unit.get('label'), 'title': unit.get('title'), 'body': unit.get('body') or ''})
+    if not units:
+        for idx, module in enumerate(modules, 1):
+            body = module.get('body') or ''
+            if body.strip():
+                units.append({'module_label': '', 'module_title': '', 'label': str(idx),
+                              'title': module.get('title') or module.get('label') or f'Section {idx}', 'body': body})
+    return units, None if units else 'Unit headings could not be confidently identified in this PDF.'
+
+
+def _unit_access_state(course, unit_number, unit_count):
+    if unit_number < 1 or unit_number > unit_count:
+        return False
+    if unit_number == 1:
+        return True
+    previous = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id,
+                                                  unit_number=unit_number - 1, completed=True).first()
+    return previous is not None
+
+
 @app.route('/learning/course/<int:course_id>')
 @login_required
 def learning_classroom(course_id):
     course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
-    code = (course.course_code or '').strip().upper()
-    code, title, local_path, urls = _resolve_material(code)
-    path = local_path or _fetch_and_cache_pdf(code, urls)
-    modules = []
-    material_error = None
-    flattened_units = []
-    if path:
-        pages, err = _extract_pdf_text(path, max_pages=None)
-        if err:
-            material_error = err
-        else:
-            full_text = '\n'.join(pages)
-            if len(full_text.strip()) < 200:
-                material_error = 'This course PDF has little extractable text. It may be scanned; text extraction is not available for this file yet.'
-            else:
-                modules = _split_modules_units(full_text)
-                for module in modules:
-                    for unit in module.get('units') or []:
-                        flattened_units.append({'module_label':module.get('label'), 'module_title':module.get('title'), 'label':unit.get('label'), 'title':unit.get('title'), 'body':unit.get('body') or ''})
-                # Some materials list learning units without clear module headings.
-                if not flattened_units:
-                    for idx, module in enumerate(modules, 1):
-                        body = module.get('body') or ''
-                        flattened_units.append({'module_label':'', 'module_title':'', 'label':str(idx), 'title':module.get('title') or module.get('label') or f'Section {idx}', 'body':body})
-                if not flattened_units:
-                    material_error = 'We could not confidently identify unit headings in this course material.'
-    else:
-        material_error = 'Course PDF could not be located or downloaded. Please try again later or open the course material first.'
-
-    # Preserve the complete extracted unit text. Do not truncate student learning content.
-    # Keep a separate character count for transparent diagnostics in the classroom.
-    for u in flattened_units:
-        body = (u.get('body') or '').strip()
-        u['content'] = body
-        u['content_chars'] = len(body)
-        u['has_content'] = len(body) > 100
-    unit_count = len(flattened_units)
+    units, material_error = _learning_units_for_course(course)
     progress_rows = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id).all()
-    completed_units = {r.unit_number for r in progress_rows if r.completed and r.unit_number <= unit_count}
-    progress_percent = int(len(completed_units)*100/unit_count) if unit_count else 0
-    return render_template('student/learning_classroom.html', course=course, units=flattened_units,
-                           unit_count=unit_count, completed_units=completed_units,
-                           progress_percent=progress_percent, material_error=material_error)
+    completed_units = {r.unit_number for r in progress_rows if r.completed and r.unit_number <= len(units)}
+    progress_percent = int(len(completed_units) * 100 / len(units)) if units else 0
+    latest_attempts = {}
+    for row in UnitAssessmentAttempt.query.filter_by(user_id=current_user.id, study_course_id=course.id).order_by(UnitAssessmentAttempt.created_at.desc()).all():
+        latest_attempts.setdefault(row.unit_number, row)
+    for i, unit in enumerate(units, 1):
+        unit['content'] = (unit.get('body') or '').strip()
+        unit['content_chars'] = len(unit['content'])
+        unit['has_content'] = len(unit['content']) > 100
+        unit['unlocked'] = _unit_access_state(course, i, len(units))
+        unit['passed'] = i in completed_units
+        unit['latest_attempt'] = latest_attempts.get(i)
+    return render_template('student/learning_classroom.html', course=course, units=units,
+                           unit_count=len(units), completed_units=completed_units,
+                           progress_percent=progress_percent, material_error=material_error,
+                           pass_mark=70)
 
-@app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/toggle', methods=['POST'])
+
+@app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/test', methods=['GET', 'POST'])
 @login_required
-def toggle_learning_unit(course_id, unit_number):
+def learning_unit_test(course_id, unit_number):
     course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
-    if unit_number < 1:
-        flash('Invalid unit number.', 'warning')
+    units, err = _learning_units_for_course(course)
+    if err or unit_number < 1 or unit_number > len(units):
+        flash(err or 'Invalid unit.', 'warning')
         return redirect(url_for('learning_classroom', course_id=course.id))
-    row = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number).first()
-    if row is None:
-        row = StudyUnitProgress(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number, completed=True)
-        db.session.add(row)
-    else:
-        row.completed = not row.completed
-    db.session.commit()
-    return redirect(url_for('learning_classroom', course_id=course.id))
+    if not _unit_access_state(course, unit_number, len(units)):
+        flash('Pass the previous unit assessment before opening this unit test.', 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    unit = units[unit_number - 1]
+    body = (unit.get('body') or '').strip()
+    if len(body) < 300:
+        flash('There is not enough readable unit text to create a reliable test. Please check the course PDF.', 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+
+    if request.method == 'POST' and request.form.get('action') == 'generate':
+        api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            flash('Unit tests require GROQ_API_KEY or OPENAI_API_KEY to be configured on Render.', 'danger')
+            return redirect(url_for('learning_classroom', course_id=course.id))
+        try:
+            import requests as http_requests
+            use_groq = bool(os.environ.get('GROQ_API_KEY'))
+            url = 'https://api.groq.com/openai/v1/chat/completions' if use_groq else 'https://api.openai.com/v1/chat/completions'
+            model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile') if use_groq else os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+            material = body[:14000]
+            prompt = f'''Create exactly 10 fair study-check questions using ONLY the supplied NOUN course unit. Cover different parts of the material. Do not test facts absent from it. Return JSON only: {{"questions":[{{"question":"...","options":["A...","B...","C...","D..."],"answer":0,"explanation":"Explain why the answer is correct using the material."}}]}}. Each answer must be option index 0-3. Avoid ambiguous questions. COURSE: {course.course_code}. UNIT: {unit.get('title') or unit.get('label')}. MATERIAL:\\n{material}'''
+            resp = http_requests.post(url, headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                json={'model': model, 'messages':[{'role':'system','content':'You are a careful university assessment writer. Output valid JSON only.'},{'role':'user','content':prompt}],
+                      'temperature':0.2,'max_tokens':3500,'response_format':{'type':'json_object'}}, timeout=(8,45))
+            if resp.status_code != 200:
+                app.logger.warning('Unit test generation failed HTTP %s: %s', resp.status_code, resp.text[:400])
+                flash('The question service is temporarily unavailable. Please try again.', 'danger')
+                return redirect(url_for('learning_classroom', course_id=course.id))
+            data = json.loads(resp.json()['choices'][0]['message']['content'])
+            questions = data.get('questions') or []
+            valid = []
+            for q in questions:
+                opts = q.get('options')
+                ans = q.get('answer')
+                if isinstance(q.get('question'), str) and isinstance(opts, list) and len(opts) == 4 and isinstance(ans, int) and 0 <= ans < 4 and q.get('explanation'):
+                    valid.append({'question':q['question'], 'options':opts, 'answer':ans, 'explanation':q['explanation']})
+            if len(valid) < 8:
+                flash('The generated test did not pass quality checks. No incomplete test was published; please try again.', 'warning')
+                return redirect(url_for('learning_classroom', course_id=course.id))
+            attempt = UnitAssessmentAttempt(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number,
+                                            questions_json=json.dumps(valid), total_questions=len(valid))
+            db.session.add(attempt); db.session.commit()
+            return redirect(url_for('learning_unit_test_take', course_id=course.id, unit_number=unit_number, attempt_id=attempt.id))
+        except Exception as exc:
+            app.logger.exception('Unit assessment generation error: %s', exc)
+            flash('We could not prepare this test. Please try again later.', 'danger')
+            return redirect(url_for('learning_classroom', course_id=course.id))
+    return render_template('student/learning_unit_test.html', course=course, unit=unit, unit_number=unit_number)
+
+
+@app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/test/<int:attempt_id>', methods=['GET', 'POST'])
+@login_required
+def learning_unit_test_take(course_id, unit_number, attempt_id):
+    course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
+    attempt = UnitAssessmentAttempt.query.filter_by(id=attempt_id, user_id=current_user.id, study_course_id=course.id, unit_number=unit_number).first_or_404()
+    questions = json.loads(attempt.questions_json)
+    if request.method == 'POST':
+        if attempt.completed_at:
+            flash('This attempt has already been submitted.', 'info')
+            return redirect(url_for('learning_classroom', course_id=course.id))
+        answers, correct = {}, 0
+        for i, q in enumerate(questions):
+            raw = request.form.get(f'q{i}')
+            try: selected = int(raw)
+            except (TypeError, ValueError): selected = -1
+            answers[str(i)] = selected
+            if selected == q['answer']: correct += 1
+        percentage = round(correct * 100 / len(questions)) if questions else 0
+        attempt.answers_json = json.dumps(answers)
+        attempt.score = correct; attempt.total_questions = len(questions); attempt.percentage = percentage
+        attempt.passed = percentage >= 70; attempt.completed_at = datetime.utcnow()
+        if attempt.passed:
+            progress = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number).first()
+            if not progress:
+                progress = StudyUnitProgress(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number)
+                db.session.add(progress)
+            progress.completed = True
+        db.session.commit()
+        return render_template('student/learning_unit_result.html', course=course, unit_number=unit_number,
+                               questions=questions, answers=answers, attempt=attempt, pass_mark=70)
+    if attempt.completed_at:
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    return render_template('student/learning_unit_test_take.html', course=course, questions=questions,
+                           unit_number=unit_number, attempt=attempt)
 
 @app.route('/learning', methods=['GET', 'POST'])
 @login_required

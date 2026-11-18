@@ -128,3 +128,19 @@ class StudyUnitProgress(db.Model):
     completed = db.Column(db.Boolean, default=False, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     __table_args__ = (db.UniqueConstraint('user_id', 'study_course_id', 'unit_number', name='uq_student_course_unit'),)
+
+
+class UnitAssessmentAttempt(db.Model):
+    __tablename__ = 'unit_assessment_attempts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    study_course_id = db.Column(db.Integer, db.ForeignKey('study_courses.id'), nullable=False, index=True)
+    unit_number = db.Column(db.Integer, nullable=False)
+    questions_json = db.Column(db.Text, nullable=False)
+    answers_json = db.Column(db.Text)
+    score = db.Column(db.Integer, default=0)
+    total_questions = db.Column(db.Integer, default=0)
+    percentage = db.Column(db.Float, default=0.0)
+    passed = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
