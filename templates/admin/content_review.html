@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Academic Content Review - NOUN Learning Companion{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div><h2 class="mb-1">Academic Content Review</h2><p class="text-muted mb-0">Inspect uploaded course PDFs and verify their extracted unit outlines.</p></div>
+  <div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="{{ url_for('admin_learning_dashboard') }}">Learning Centre</a><a class="btn btn-primary" href="{{ url_for('admin_upload_material') }}">Upload course PDF</a></div>
+</div>
+<div class="alert alert-info">Review decisions are recorded for academic quality control. In this version, approval status does not yet block students from accessing an uploaded PDF; publication gating will be introduced only after the review workflow is tested.</div>
+<div class="row g-3 mb-4">
+{% for label,key,color in [('Course PDFs', 'total','primary'),('Awaiting review','pending','warning'),('Approved','approved','success'),('Needs revision','needs_revision','danger')] %}
+<div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">{{ label }}</div><div class="display-6">{{ counts[key] }}</div></div></div></div>
+{% endfor %}
+</div>
+<div class="card"><div class="card-header">Uploaded course materials</div><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Course</th><th>Review status</th><th>Reviewer note</th><th></th></tr></thead><tbody>
+{% for item in items %}<tr><td><strong>{{ item.code }}</strong><br><small class="text-muted">{{ item.title }}</small></td><td>{% if item.status == 'approved' %}<span class="badge bg-success">Approved</span>{% elif item.status == 'needs_revision' %}<span class="badge bg-danger">Needs revision</span>{% else %}<span class="badge bg-warning text-dark">Pending review</span>{% endif %}</td><td class="small">{{ item.review.admin_note if item.review and item.review.admin_note else '—' }}</td><td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_review_course_material', course_code=item.code) }}">Review PDF & units</a></td></tr>
+{% else %}<tr><td colspan="4" class="text-center text-muted p-4">No PDFs found in the course materials folder. Upload a course PDF to begin.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

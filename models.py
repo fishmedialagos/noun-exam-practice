@@ -144,3 +144,16 @@ class UnitAssessmentAttempt(db.Model):
     passed = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
+
+
+class CourseMaterialReview(db.Model):
+    """Admin review status for an uploaded course PDF and its extracted unit outline."""
+    __tablename__ = 'course_material_reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    course_code = db.Column(db.String(30), unique=True, nullable=False, index=True)
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending, approved, needs_revision
+    admin_note = db.Column(db.Text)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])

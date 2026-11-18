@@ -16,7 +16,7 @@ except ImportError:
     pass
 
 from config import Config
-from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitAssessmentAttempt
+from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitAssessmentAttempt, CourseMaterialReview
 
 # Course catalogue used by the student learning planner
 def load_learning_course_catalogue():
@@ -2515,6 +2515,94 @@ def shuffle_questions(exam_id):
     db.session.commit()
     flash('Questions have been randomly intermixed (MCQ + Fill-in mixed).', 'success')
     return redirect(url_for('manage_questions', exam_id=exam_id))
+
+
+@app.route('/admin/learning/content-review')
+@login_required
+def admin_content_review():
+    """Review uploaded course PDFs and the unit outline extracted from each file."""
+    if not current_user.is_teacher():
+        flash('Access denied. Teachers/Admins only.', 'danger')
+        return redirect(url_for('student_dashboard'))
+
+    material_dir = os.path.join(app.root_path, 'static', 'materials')
+    os.makedirs(material_dir, exist_ok=True)
+    catalogue = load_learning_course_catalogue()
+    reviews = {r.course_code: r for r in CourseMaterialReview.query.all()}
+    items = []
+    for filename in sorted(os.listdir(material_dir)):
+        if not filename.lower().endswith('.pdf'):
+            continue
+        code = os.path.splitext(filename)[0].upper()
+        review = reviews.get(code)
+        items.append({
+            'code': code,
+            'title': catalogue.get(code, code),
+            'status': review.status if review else 'pending',
+            'review': review,
+            'filename': filename,
+        })
+    counts = {
+        'total': len(items),
+        'pending': sum(1 for x in items if x['status'] == 'pending'),
+        'approved': sum(1 for x in items if x['status'] == 'approved'),
+        'needs_revision': sum(1 for x in items if x['status'] == 'needs_revision'),
+    }
+    return render_template('admin/content_review.html', items=items, counts=counts)
+
+
+@app.route('/admin/learning/content-review/<course_code>', methods=['GET', 'POST'])
+@login_required
+def admin_review_course_material(course_code):
+    if not current_user.is_teacher():
+        flash('Access denied. Teachers/Admins only.', 'danger')
+        return redirect(url_for('student_dashboard'))
+    code = re.sub(r'[^A-Z0-9_-]', '', (course_code or '').upper())
+    material_path = os.path.join(app.root_path, 'static', 'materials', f'{code}.pdf')
+    if not code or not os.path.isfile(material_path):
+        flash('Course PDF was not found.', 'danger')
+        return redirect(url_for('admin_content_review'))
+
+    review = CourseMaterialReview.query.filter_by(course_code=code).first()
+    if not review:
+        review = CourseMaterialReview(course_code=code, status='pending')
+        db.session.add(review)
+        db.session.commit()
+
+    if request.method == 'POST':
+        status = request.form.get('status', '')
+        if status not in ('approved', 'needs_revision'):
+            flash('Choose a valid review decision.', 'danger')
+            return redirect(url_for('admin_review_course_material', course_code=code))
+        review.status = status
+        review.admin_note = (request.form.get('admin_note') or '').strip()[:4000]
+        review.reviewed_by = current_user.id
+        review.reviewed_at = datetime.utcnow()
+        db.session.commit()
+        flash(f'{code} review decision saved.', 'success')
+        return redirect(url_for('admin_content_review'))
+
+    pages, extraction_error = _extract_pdf_text(material_path, max_pages=None)
+    full_text = '\n'.join(pages or [])
+    modules = _split_modules_units(full_text) if full_text.strip() else []
+    outline = []
+    for module in modules:
+        module_units = module.get('units') or []
+        if module_units:
+            for unit in module_units:
+                body = (unit.get('body') or '').strip()
+                outline.append({'module': module.get('title') or module.get('label') or 'Module',
+                                'label': unit.get('label') or '', 'title': unit.get('title') or 'Untitled unit',
+                                'characters': len(body), 'preview': body[:900]})
+        elif (module.get('body') or '').strip():
+            body = module.get('body').strip()
+            outline.append({'module': '', 'label': module.get('label') or '',
+                            'title': module.get('title') or 'Extracted section',
+                            'characters': len(body), 'preview': body[:900]})
+    return render_template('admin/review_course_material.html', code=code,
+        title=load_learning_course_catalogue().get(code, code), review=review,
+        outline=outline, page_count=len(pages or []), text_chars=len(full_text),
+        extraction_error=extraction_error)
 
 
 @app.route('/admin/materials/upload', methods=['GET', 'POST'])
