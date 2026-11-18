@@ -6,6 +6,7 @@ import os
 import csv
 import io
 import re
+from sqlalchemy import case
 
 # Load local .env values for development; Render environment variables still take precedence.
 try:
@@ -36,7 +37,7 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-login_manager.login_message = 'Please register or log in to your student account to access the Course Summarizer and Mock Exams.'
+login_manager.login_message = 'Please register or log in to access My Learning and Exam Preparation.'
 login_manager.login_message_category = 'warning'
 
 
@@ -1177,6 +1178,7 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
         return None
 
 
+# Legacy summarizer endpoint retained temporarily for backward compatibility; removed from student navigation.
 @app.route('/materials/summarize/<course_code>')
 @login_required
 def summarize_material(course_code):
@@ -2068,6 +2070,51 @@ def admin_dashboard():
                            total_students=total_students,
                            total_attempts=total_attempts,
                            recent_exams=recent_exams)
+
+
+@app.route('/admin/learning')
+@login_required
+def admin_learning_dashboard():
+    """Read-only academic oversight dashboard for the learning companion."""
+    if not current_user.is_teacher():
+        flash('Access denied. Teachers/Admins only.', 'danger')
+        return redirect(url_for('student_dashboard'))
+
+    total_learning_courses = StudyCourse.query.count()
+    unique_learning_students = db.session.query(StudyCourse.user_id).distinct().count()
+    total_unit_progress = StudyUnitProgress.query.count()
+    completed_units = StudyUnitProgress.query.filter_by(completed=True).count()
+    total_unit_attempts = UnitAssessmentAttempt.query.count()
+    passed_unit_attempts = UnitAssessmentAttempt.query.filter_by(passed=True).count()
+    pass_rate = round((passed_unit_attempts / total_unit_attempts) * 100, 1) if total_unit_attempts else 0
+
+    recent_unit_attempts = (db.session.query(UnitAssessmentAttempt, User, StudyCourse)
+        .join(User, UnitAssessmentAttempt.user_id == User.id)
+        .join(StudyCourse, UnitAssessmentAttempt.study_course_id == StudyCourse.id)
+        .order_by(UnitAssessmentAttempt.created_at.desc()).limit(12).all())
+
+    course_activity = (db.session.query(
+            StudyCourse.course_code,
+            StudyCourse.course_title,
+            db.func.count(db.distinct(StudyCourse.user_id)).label('student_count'),
+            db.func.count(StudyUnitProgress.id).label('tracked_units'),
+            db.func.sum(case((StudyUnitProgress.completed.is_(True), 1), else_=0)).label('completed_units')
+        )
+        .outerjoin(StudyUnitProgress, StudyUnitProgress.study_course_id == StudyCourse.id)
+        .group_by(StudyCourse.course_code, StudyCourse.course_title)
+        .order_by(db.func.count(db.distinct(StudyCourse.user_id)).desc())
+        .limit(20).all())
+
+    return render_template('admin/learning_dashboard.html',
+        total_learning_courses=total_learning_courses,
+        unique_learning_students=unique_learning_students,
+        total_unit_progress=total_unit_progress,
+        completed_units=completed_units,
+        total_unit_attempts=total_unit_attempts,
+        passed_unit_attempts=passed_unit_attempts,
+        pass_rate=pass_rate,
+        recent_unit_attempts=recent_unit_attempts,
+        course_activity=course_activity)
 
 
 @app.route('/admin/exams')
