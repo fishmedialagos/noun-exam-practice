@@ -15,7 +15,7 @@ except ImportError:
     pass
 
 from config import Config
-from models import db, User, Exam, Question, Attempt
+from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -1560,6 +1560,100 @@ def student_dashboard():
                            recent_attempts=recent_attempts,
                            total_attempts=total_attempts,
                            avg_score=round(avg_score, 1))
+
+
+
+
+@app.route('/learning', methods=['GET', 'POST'])
+@login_required
+def learning_hub():
+    if current_user.is_teacher():
+        return redirect(url_for('admin_dashboard'))
+    courses = StudyCourse.query.filter_by(user_id=current_user.id).order_by(StudyCourse.course_code.asc()).all()
+    tasks = StudyTask.query.filter_by(user_id=current_user.id).order_by(StudyTask.completed.asc(), StudyTask.due_date.asc(), StudyTask.created_at.desc()).all()
+    today = datetime.utcnow().date()
+    pending = [t for t in tasks if not t.completed]
+    completed_count = sum(1 for t in tasks if t.completed)
+    return render_template('student/learning_hub.html', courses=courses, tasks=tasks, today=today,
+                           pending_count=len(pending), completed_count=completed_count)
+
+
+@app.route('/learning/course/add', methods=['POST'])
+@login_required
+def add_study_course():
+    if current_user.is_teacher():
+        return redirect(url_for('admin_dashboard'))
+    code = (request.form.get('course_code') or '').strip().upper()
+    title = (request.form.get('course_title') or '').strip()
+    if not code:
+        flash('Please enter a course code.', 'warning')
+    elif StudyCourse.query.filter_by(user_id=current_user.id, course_code=code).first():
+        flash('That course is already in your learning plan.', 'info')
+    else:
+        db.session.add(StudyCourse(user_id=current_user.id, course_code=code, course_title=title))
+        db.session.commit()
+        flash(f'{code} added to your learning plan.', 'success')
+    return redirect(url_for('learning_hub'))
+
+
+@app.route('/learning/task/add', methods=['POST'])
+@login_required
+def add_study_task():
+    if current_user.is_teacher():
+        return redirect(url_for('admin_dashboard'))
+    course_id = request.form.get('study_course_id', type=int)
+    course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first()
+    title = (request.form.get('title') or '').strip()
+    if not course or not title:
+        flash('Choose a course and enter a study task.', 'warning')
+        return redirect(url_for('learning_hub'))
+    due = None
+    due_text = (request.form.get('due_date') or '').strip()
+    if due_text:
+        try:
+            due = datetime.strptime(due_text, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid task date.', 'warning')
+            return redirect(url_for('learning_hub'))
+    duration = request.form.get('duration_minutes', type=int) or 30
+    duration = max(5, min(duration, 240))
+    task = StudyTask(user_id=current_user.id, study_course_id=course.id, title=title,
+                     notes=(request.form.get('notes') or '').strip(), due_date=due,
+                     duration_minutes=duration)
+    db.session.add(task)
+    db.session.commit()
+    flash('Study task added.', 'success')
+    return redirect(url_for('learning_hub'))
+
+
+@app.route('/learning/task/<int:task_id>/toggle', methods=['POST'])
+@login_required
+def toggle_study_task(task_id):
+    task = StudyTask.query.filter_by(id=task_id, user_id=current_user.id).first_or_404()
+    task.completed = not task.completed
+    db.session.commit()
+    flash('Study progress updated.', 'success')
+    return redirect(url_for('learning_hub'))
+
+
+@app.route('/learning/task/<int:task_id>/delete', methods=['POST'])
+@login_required
+def delete_study_task(task_id):
+    task = StudyTask.query.filter_by(id=task_id, user_id=current_user.id).first_or_404()
+    db.session.delete(task)
+    db.session.commit()
+    flash('Study task removed.', 'info')
+    return redirect(url_for('learning_hub'))
+
+
+@app.route('/learning/course/<int:course_id>/delete', methods=['POST'])
+@login_required
+def delete_study_course(course_id):
+    course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
+    db.session.delete(course)
+    db.session.commit()
+    flash('Course and its study tasks removed from your plan.', 'info')
+    return redirect(url_for('learning_hub'))
 
 
 @app.route('/exams')
