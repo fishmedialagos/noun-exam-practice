@@ -1609,10 +1609,12 @@ def learning_classroom(course_id):
     else:
         material_error = 'Course PDF could not be located or downloaded. Please try again later or open the course material first.'
 
-    # Prepare concise, source-grounded previews; only extractive text is shown here.
+    # Preserve the complete extracted unit text. Do not truncate student learning content.
+    # Keep a separate character count for transparent diagnostics in the classroom.
     for u in flattened_units:
         body = (u.get('body') or '').strip()
-        u['preview'] = body[:1600]
+        u['content'] = body
+        u['content_chars'] = len(body)
         u['has_content'] = len(body) > 100
     unit_count = len(flattened_units)
     progress_rows = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id).all()
