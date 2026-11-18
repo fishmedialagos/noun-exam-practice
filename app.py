@@ -1580,19 +1580,53 @@ def student_dashboard():
 @login_required
 def learning_classroom(course_id):
     course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
-    # Classroom navigator uses a provisional 12-unit scaffold until unit headings
-    # can be reliably extracted from the official course PDF.
-    unit_count = 12
+    code = (course.course_code or '').strip().upper()
+    code, title, local_path, urls = _resolve_material(code)
+    path = local_path or _fetch_and_cache_pdf(code, urls)
+    modules = []
+    material_error = None
+    flattened_units = []
+    if path:
+        pages, err = _extract_pdf_text(path, max_pages=None)
+        if err:
+            material_error = err
+        else:
+            full_text = '\n'.join(pages)
+            if len(full_text.strip()) < 200:
+                material_error = 'This course PDF has little extractable text. It may be scanned; text extraction is not available for this file yet.'
+            else:
+                modules = _split_modules_units(full_text)
+                for module in modules:
+                    for unit in module.get('units') or []:
+                        flattened_units.append({'module_label':module.get('label'), 'module_title':module.get('title'), 'label':unit.get('label'), 'title':unit.get('title'), 'body':unit.get('body') or ''})
+                # Some materials list learning units without clear module headings.
+                if not flattened_units:
+                    for idx, module in enumerate(modules, 1):
+                        body = module.get('body') or ''
+                        flattened_units.append({'module_label':'', 'module_title':'', 'label':str(idx), 'title':module.get('title') or module.get('label') or f'Section {idx}', 'body':body})
+                if not flattened_units:
+                    material_error = 'We could not confidently identify unit headings in this course material.'
+    else:
+        material_error = 'Course PDF could not be located or downloaded. Please try again later or open the course material first.'
+
+    # Prepare concise, source-grounded previews; only extractive text is shown here.
+    for u in flattened_units:
+        body = (u.get('body') or '').strip()
+        u['preview'] = body[:1600]
+        u['has_content'] = len(body) > 100
+    unit_count = len(flattened_units)
     progress_rows = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id).all()
-    completed_units = {r.unit_number for r in progress_rows if r.completed}
-    return render_template('student/learning_classroom.html', course=course, unit_count=unit_count,
-                           completed_units=completed_units, progress_percent=int(len(completed_units)*100/unit_count))
+    completed_units = {r.unit_number for r in progress_rows if r.completed and r.unit_number <= unit_count}
+    progress_percent = int(len(completed_units)*100/unit_count) if unit_count else 0
+    return render_template('student/learning_classroom.html', course=course, units=flattened_units,
+                           unit_count=unit_count, completed_units=completed_units,
+                           progress_percent=progress_percent, material_error=material_error)
 
 @app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/toggle', methods=['POST'])
 @login_required
 def toggle_learning_unit(course_id, unit_number):
     course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
-    if unit_number < 1 or unit_number > 12:
+    if unit_number < 1:
         flash('Invalid unit number.', 'warning')
         return redirect(url_for('learning_classroom', course_id=course.id))
     row = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number).first()
