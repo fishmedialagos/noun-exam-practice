@@ -418,22 +418,41 @@ def _discover_nounupdate_pdf(code):
 
 
 def _fetch_and_cache_pdf(code, urls):
-    """Download first working PDF and cache locally. Also tries nounupdate page scrape."""
+    """Download a valid PDF safely into the cache; retry and clean partial files."""
     import time
+    import tempfile
     import requests as http_requests
-    cache_dir = os.path.join(app.root_path, 'static', 'materials_cache')
-    os.makedirs(cache_dir, exist_ok=True)
-    cache_pdf = os.path.join(cache_dir, f"{code}.pdf")
-    if os.path.exists(cache_pdf) and os.path.getsize(cache_pdf) > 1000:
-        return cache_pdf
 
-    # Live discover from nounupdate course page
+    cache_dir = os.path.join(app.root_path, 'static', 'materials_cache')
+    cache_pdf = os.path.join(cache_dir, f"{code}.pdf")
+
+    # Recreate cache directory every time this routine runs (Render instances
+    # and concurrent requests can leave transient directories missing).
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+    except OSError as e:
+        app.logger.error("Cannot create PDF cache directory %s: %s", cache_dir, e)
+        return None
+
+    if os.path.exists(cache_pdf) and os.path.getsize(cache_pdf) > 1000:
+        try:
+            with open(cache_pdf, 'rb') as cached:
+                if cached.read(5) == b'%PDF-':
+                    return cache_pdf
+        except OSError:
+            pass
+        # Invalid or inaccessible cache entry: remove it and redownload.
+        try:
+            os.remove(cache_pdf)
+        except OSError:
+            pass
+
     discovered, _ = _discover_nounupdate_pdf(code)
     all_urls = []
     if discovered:
         all_urls.append(discovered)
-    for u in urls:
-        if u not in all_urls:
+    for u in urls or []:
+        if u and u not in all_urls:
             all_urls.append(u)
 
     headers = {
@@ -441,36 +460,68 @@ def _fetch_and_cache_pdf(code, urls):
         'Accept': 'application/pdf,*/*',
     }
     start_t = time.time()
+    last_error = "No candidate PDF URL returned a valid PDF."
     for url in all_urls:
-        # Enforce 20s overall timeout to prevent Render 60s HTTP 502 Bad Gateway
-        if time.time() - start_t > 20:
+        if time.time() - start_t > 30:
             app.logger.warning('PDF fetch overall timeout exceeded for %s', code)
             break
+        tmp = None
         try:
-            r = http_requests.get(url, timeout=(3.5, 9.0), stream=True, headers=headers, allow_redirects=True)
-            ctype = (r.headers.get('Content-Type') or '').lower()
-            if r.status_code != 200:
-                continue
-            if 'pdf' not in ctype and 'octet' not in ctype and not url.lower().endswith('.pdf'):
-                continue
-            tmp = cache_pdf + '.part'
-            size = 0
-            with open(tmp, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=64 * 1024):
-                    if chunk:
-                        f.write(chunk)
-                        size += len(chunk)
-            if size < 1500:
+            # Ensure directory immediately before creating the temporary file.
+            os.makedirs(cache_dir, exist_ok=True)
+            r = http_requests.get(url, timeout=(4.0, 12.0), stream=True,
+                                 headers=headers, allow_redirects=True)
+            try:
+                if r.status_code != 200:
+                    last_error = f"HTTP {r.status_code} from {url}"
+                    continue
+                ctype = (r.headers.get('Content-Type') or '').lower()
+                if 'pdf' not in ctype and 'octet' not in ctype and not url.lower().endswith('.pdf'):
+                    last_error = f"Unexpected content type {ctype!r} from {url}"
+                    continue
+
+                # Use an OS-managed unique temporary file within the cache folder.
+                # This avoids stale .part files and collisions between requests.
+                with tempfile.NamedTemporaryFile(mode='wb', delete=False,
+                                                 suffix='.part', dir=cache_dir) as f:
+                    tmp = f.name
+                    size = 0
+                    first_chunk = b''
+                    for chunk in r.iter_content(chunk_size=64 * 1024):
+                        if chunk:
+                            if not first_chunk:
+                                first_chunk = chunk[:5]
+                            f.write(chunk)
+                            size += len(chunk)
+                if size < 1500 or first_chunk != b'%PDF-':
+                    last_error = f"Downloaded content is not a valid PDF (size={size}, header={first_chunk!r}) from {url}"
+                    try:
+                        os.remove(tmp)
+                    except OSError:
+                        pass
+                    tmp = None
+                    continue
+
+                # Atomic replacement once a valid complete file is present.
+                os.replace(tmp, cache_pdf)
+                tmp = None
+                return cache_pdf
+            finally:
+                try:
+                    r.close()
+                except Exception:
+                    pass
+        except Exception as e:
+            last_error = f"{type(e).__name__}: {e} from {url}"
+            app.logger.warning('PDF fetch failed %s from %s: %s', code, url, e)
+        finally:
+            if tmp and os.path.exists(tmp):
                 try:
                     os.remove(tmp)
                 except OSError:
                     pass
-                continue
-            os.replace(tmp, cache_pdf)
-            return cache_pdf
-        except Exception as e:
-            app.logger.warning('PDF fetch failed %s from %s: %s', code, url, e)
-            continue
+
+    app.logger.error("PDF fetch exhausted candidate URLs for %s: %s", code, last_error)
     return None
 
 
@@ -1394,10 +1445,17 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
 
     pages, err = _extract_pdf_text(path, max_pages=None)
     if err or not pages:
+        app.logger.error("Mock exam %s PDF extraction failed: %s", code, err or "no pages extracted")
         return None, False
 
-    raw_modules = _split_modules_units('\n'.join(pages))
+    extracted_text = '\n'.join(pages)
+    if len(extracted_text.strip()) < 500:
+        app.logger.error("Mock exam %s PDF text too short/selectable text missing (%s chars).", code, len(extracted_text.strip()))
+        return None, False
+
+    raw_modules = _split_modules_units(extracted_text)
     if not raw_modules:
+        app.logger.error("Mock exam %s text extracted (%s chars) but no module/unit structure was parsed.", code, len(extracted_text))
         return None, False
 
     from question_generator import generate_mock_exam_questions

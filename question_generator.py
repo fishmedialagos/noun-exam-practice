@@ -92,7 +92,8 @@ No markdown. Generate only questions the source supports; do not pad with weak i
         "max_tokens": min(7000, max(1800, count * 115)), "response_format": {"type": "json_object"}}
     response = requests.post(url, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, json=payload, timeout=(8, 75))
     if response.status_code != 200:
-        LOGGER.warning("Mock question AI HTTP %s: %s", response.status_code, response.text[:500])
+        LOGGER.warning("Mock question AI HTTP %s (%s): %s",
+                       response.status_code, model, response.text[:500])
         return []
     content = response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
     content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content.strip(), flags=re.I)
