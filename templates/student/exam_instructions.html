@@ -23,14 +23,9 @@
                 </div>
 
                 <ol class="mb-4">
-                    <li class="mb-2">This is a <strong>timed {{ 'pen-and-paper' if exam.exam_mode == 'paper' else 'computer-based' }} practice examination</strong>. The timer starts immediately when you click <strong>Start Exam</strong>.</li>
-                    {% if exam.exam_mode == 'paper' %}
-                    <li class="mb-2"><strong>Answer all questions and sub-questions</strong> (1a, 1b, 2a, 2b, and so on) in the space provided.</li>
-                    <li class="mb-2">Full marks are awarded for a complete response; half marks may be awarded for a close, materially correct response.</li>
-                    {% else %}
+                    <li class="mb-2">This is a <strong>timed mock examination</strong>. The timer starts immediately when you click <strong>Start Exam</strong>.</li>
                     <li class="mb-2">You must answer all questions before the time expires. The system will <strong>auto-submit</strong> when time is up.</li>
                     <li class="mb-2">For Fill-in-the-Gap questions, type your answer carefully. Answers are marked case-insensitively.</li>
-                    {% endif %}
                     <li class="mb-2">Do not close the browser during the exam.</li>
                     <li class="mb-2">You can review your answers and see explanations after submission.</li>
                     <li class="mb-2">This is for practice purposes. Treat it seriously to get the best preparation.</li>
@@ -45,7 +40,7 @@
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-noun btn-lg">
-                            <i class="bi bi-play-fill me-2"></i>Start {{ 'Paper Practice' if exam.exam_mode == 'paper' else 'Exam' }} Now
+                            <i class="bi bi-play-fill me-2"></i>Start Exam Now
                         </button>
                         <a href="{{ url_for('exam_detail', exam_id=exam.id) }}" class="btn btn-outline-secondary">
                             Go Back

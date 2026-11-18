@@ -46,9 +46,11 @@
                     <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ exam.duration_minutes }} mins</small>
                 </div>
                 <h5 class="card-title">{{ exam.title }}</h5>
+                {% if exam.description and '[AI-QA-V3]' not in exam.description %}
                 <p class="card-text text-muted small">
-                    {{ exam.description[:100] }}{% if exam.description and exam.description|length > 100 %}...{% endif %}
+                    {{ exam.description[:100] }}{% if exam.description|length > 100 %}...{% endif %}
                 </p>
+                {% endif %}
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <small class="text-muted">
                         <i class="bi bi-question-circle me-1"></i>{{ exam.total_questions }} questions
@@ -60,7 +62,7 @@
             </div>
             {% if exam.faculty %}
             <div class="card-footer bg-white border-0 pt-0">
-                <small class="text-muted"><i class="bi bi-building me-1"></i>{{ exam.faculty }}</small>
+                <small class="text-muted"><i class="bi bi-building me-1"></i>{{ 'Faculty of Computing' if exam.course_code and exam.course_code.upper().startswith('CIT') else exam.faculty }}</small>
             </div>
             {% endif %}
         </div>

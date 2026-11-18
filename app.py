@@ -1153,7 +1153,7 @@ def _ai_summarize_content(text, course_code, section_type='unit', label='', titl
                 'response_format': {'type': 'json_object'},
             }
 
-        r = http_requests.post(url, headers=headers, json=payload, timeout=(3.0, 5.5))
+        r = http_requests.post(url, headers=headers, json=payload, timeout=(5.0, 25.0))
         if r.status_code != 200:
             app.logger.warning('AI summarize HTTP %s: %s', r.status_code, r.text[:300])
             return None
@@ -1259,7 +1259,7 @@ def summarize_material(course_code):
     highlights = ext_highlights
     ai_generated = False
 
-    # Targeted fast AI enhancement for Course Overview (capped with 5-second timeout)
+    # Targeted fast AI enhancement for Course Overview (capped with a longer response timeout)
     ai_enabled = bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
     if ai_enabled and len(full_text.strip()) > 300:
         try:
@@ -1269,7 +1269,7 @@ def summarize_material(course_code):
                     _ai_summarize_content, full_text[:12000], code, 'course_overview', 'Course Overview', course_title
                 )
                 try:
-                    res = ai_fut.result(timeout=5.0)
+                    res = ai_fut.result(timeout=22.0)
                     if res:
                         if res.get('summary'):
                             overview = res.get('summary')
@@ -1398,7 +1398,7 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     # Determine credit units, title, and faculty
     credit_units = 2
     exam_title = f"{code} Comprehensive Mock Examination"
-    faculty = 'General Studies / NOUN'
+    faculty = 'Faculty of Computing' if code.startswith('CIT') else 'General Studies / NOUN'
 
     # Check timetable_courses.json
     try:
@@ -1478,7 +1478,7 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
 
     new_exam = Exam(
         title=exam_title,
-        description=f"[AI-QA-V3] Auto-generated computer-based mock examination for {code} ({credit_units} Credit Units). AI-generated from official NOUN course material and automatically quality-checked for academic clarity, answer validity, duplication, and balanced question types.",
+        description="[AI-QA-V3] Auto-generated mock examination from official NOUN course material; quality-checked.",
         course_code=code,
         faculty=faculty,
         credit_units=credit_units,
@@ -1581,7 +1581,21 @@ def exam_list():
         )
     
     exams = query.order_by(Exam.created_at.desc()).all()
-    
+
+    # Collapse duplicate AI-QA-V3 auto-generated exams by course code in the
+    # student catalogue; keep the newest one visible. Manual exams are preserved.
+    visible_exams = []
+    seen_auto_codes = set()
+    for exam in exams:
+        desc = (exam.description or '')
+        if '[AI-QA-V3]' in desc:
+            code_key = (exam.course_code or '').strip().upper()
+            if code_key in seen_auto_codes:
+                continue
+            seen_auto_codes.add(code_key)
+        visible_exams.append(exam)
+    exams = visible_exams
+
     # Get unique faculties for filter
     faculties = db.session.query(Exam.faculty).filter(
         Exam.faculty.isnot(None), Exam.is_published == True
