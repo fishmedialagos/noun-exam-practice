@@ -157,3 +157,23 @@ class CourseMaterialReview(db.Model):
     reviewed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+
+
+class LearningContentDraft(db.Model):
+    """AI-assisted study guides and unit question banks awaiting academic review."""
+    __tablename__ = 'learning_content_drafts'
+    id = db.Column(db.Integer, primary_key=True)
+    course_code = db.Column(db.String(30), nullable=False, index=True)
+    unit_number = db.Column(db.Integer, nullable=False)
+    unit_title = db.Column(db.String(250))
+    content_type = db.Column(db.String(30), nullable=False)  # study_guide or question_bank
+    content_json = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='draft', index=True)  # draft, approved, rejected
+    admin_note = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    reviewed_at = db.Column(db.DateTime)
+    creator = db.relationship('User', foreign_keys=[created_by])
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+    __table_args__ = (db.Index('ix_learning_content_course_unit_type', 'course_code', 'unit_number', 'content_type'),)

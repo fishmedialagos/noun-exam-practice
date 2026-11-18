@@ -2,7 +2,8 @@
 {% block title %}Academic Content Review - NOUN Learning Companion{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-  <div><h2 class="mb-1">Academic Content Review</h2><p class="text-muted mb-0">Inspect uploaded course PDFs and verify their extracted unit outlines.</p></div>
+  <div><a class="btn btn-primary mb-3" href="{{ url_for('admin_learning_content_studio') }}">AI Study Guide & Question Bank Studio</a>
+<h2 class="mb-1">Academic Content Review</h2><p class="text-muted mb-0">Inspect uploaded course PDFs and verify their extracted unit outlines.</p></div>
   <div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="{{ url_for('admin_learning_dashboard') }}">Learning Centre</a><a class="btn btn-primary" href="{{ url_for('admin_upload_material') }}">Upload course PDF</a></div>
 </div>
 <div class="alert alert-info">Review decisions are recorded for academic quality control. In this version, approval status does not yet block students from accessing an uploaded PDF; publication gating will be introduced only after the review workflow is tested.</div>

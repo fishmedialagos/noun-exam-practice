@@ -16,7 +16,7 @@ except ImportError:
     pass
 
 from config import Config
-from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitAssessmentAttempt, CourseMaterialReview
+from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitAssessmentAttempt, CourseMaterialReview, LearningContentDraft
 
 # Course catalogue used by the student learning planner
 def load_learning_course_catalogue():
@@ -2515,6 +2515,142 @@ def shuffle_questions(exam_id):
     db.session.commit()
     flash('Questions have been randomly intermixed (MCQ + Fill-in mixed).', 'success')
     return redirect(url_for('manage_questions', exam_id=exam_id))
+
+
+
+def _admin_unit_source(course_code, unit_number):
+    """Resolve a course PDF and return one extracted unit for admin-only content drafting."""
+    code = re.sub(r'[^A-Z0-9_-]', '', (course_code or '').upper())
+    if not code or not (1 <= unit_number <= 100):
+        return code, None, 'Enter a valid course code and unit number.'
+    _, title, local_path, urls = _resolve_material(code)
+    path = local_path or _fetch_and_cache_pdf(code, urls)
+    if not path:
+        return code, None, f'Could not locate a readable PDF for {code}. Upload the official course material first.'
+    pages, error = _extract_pdf_text(path, max_pages=None)
+    if error:
+        return code, None, error
+    modules = _split_modules_units('\n'.join(pages or []))
+    units = []
+    for module in modules:
+        if module.get('units'):
+            for unit in module['units']:
+                units.append({'title': unit.get('title') or unit.get('label') or 'Untitled unit', 'body': unit.get('body') or ''})
+        elif (module.get('body') or '').strip():
+            units.append({'title': module.get('title') or module.get('label') or 'Extracted section', 'body': module.get('body') or ''})
+    if unit_number > len(units):
+        return code, None, f'Only {len(units)} sections were detected for {code}; unit {unit_number} was not found. Check the PDF outline first.'
+    unit = units[unit_number - 1]
+    body = (unit.get('body') or '').strip()
+    if len(body) < 500:
+        return code, None, 'The extracted unit is too short for reliable AI content generation. Review the PDF extraction first.'
+    return code, {'course_title': title, 'unit_title': unit['title'], 'body': body}, None
+
+
+@app.route('/admin/learning/content-studio', methods=['GET', 'POST'])
+@login_required
+def admin_learning_content_studio():
+    if not current_user.is_teacher():
+        flash('Access denied. Teachers/Admins only.', 'danger')
+        return redirect(url_for('student_dashboard'))
+    if request.method == 'POST':
+        code = (request.form.get('course_code') or '').strip().upper()
+        try:
+            unit_number = int(request.form.get('unit_number', '0'))
+        except ValueError:
+            unit_number = 0
+        content_type = request.form.get('content_type', 'study_guide')
+        if content_type not in ('study_guide', 'question_bank'):
+            flash('Choose a valid content type.', 'danger')
+            return redirect(url_for('admin_learning_content_studio'))
+        code, unit, error = _admin_unit_source(code, unit_number)
+        if error:
+            flash(error, 'warning')
+            return redirect(url_for('admin_learning_content_studio'))
+        api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            flash('Configure GROQ_API_KEY or OPENAI_API_KEY on Render before generating content.', 'danger')
+            return redirect(url_for('admin_learning_content_studio'))
+        if content_type == 'study_guide':
+            schema = '{"overview":"...","objectives":["..."],"sections":[{"heading":"...","explanation":"Detailed explanation grounded in the supplied text."}],"key_terms":[{"term":"...","definition":"..."}],"summary":["..."]}'
+            instruction = 'Create a detailed student-friendly study guide. Explain the unit step by step, preserve the source terminology, use Nigerian examples only when they genuinely clarify the source, and do not add unsupported facts. Include all major topics found in the supplied unit.'
+        else:
+            schema = '{"questions":[{"question":"...","options":["...","...","...","..."],"answer":0,"explanation":"..."}]}'
+            instruction = 'Create exactly 15 clear, fair multiple-choice questions covering the full supplied unit from beginning to end. Use only the supplied text. Each question must have four distinct options, answer index 0-3, and a useful explanation. Avoid trivial repetition and unsupported facts.'
+        prompt = (instruction + '\nReturn valid JSON only matching this structure: ' + schema + '\nCOURSE: ' + code + ' — ' + unit['course_title'] + '\nUNIT ' + str(unit_number) + ': ' + unit['unit_title'] + '\nSOURCE MATERIAL (may be long; use the full provided text):\n' + unit['body'][:24000])
+        try:
+            import requests as http_requests
+            use_groq = bool(os.environ.get('GROQ_API_KEY'))
+            api_url = 'https://api.groq.com/openai/v1/chat/completions' if use_groq else 'https://api.openai.com/v1/chat/completions'
+            model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile') if use_groq else os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+            response = http_requests.post(api_url, headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                json={'model': model, 'messages':[{'role':'system','content':'You are a careful university instructional designer. Treat the supplied course material as the only factual source. Return valid JSON only.'},{'role':'user','content':prompt}], 'temperature':0.2, 'max_tokens':6500, 'response_format':{'type':'json_object'}}, timeout=(8,60))
+            if response.status_code != 200:
+                app.logger.warning('Admin content generation failed HTTP %s: %s', response.status_code, response.text[:400])
+                flash('The AI service could not generate this content. No draft was saved.', 'danger')
+                return redirect(url_for('admin_learning_content_studio'))
+            generated = json.loads(response.json()['choices'][0]['message']['content'])
+            if content_type == 'study_guide':
+                valid = isinstance(generated.get('overview'), str) and isinstance(generated.get('objectives'), list) and len(generated.get('sections') or []) >= 3 and isinstance(generated.get('key_terms'), list)
+            else:
+                qs = generated.get('questions') or []
+                valid = len(qs) >= 10 and all(isinstance(q.get('question'), str) and isinstance(q.get('options'), list) and len(q['options']) == 4 and isinstance(q.get('answer'), int) and 0 <= q['answer'] <= 3 and isinstance(q.get('explanation'), str) for q in qs)
+            if not valid:
+                flash('The generated content did not pass structural checks. No draft was saved.', 'warning')
+                return redirect(url_for('admin_learning_content_studio'))
+            draft = LearningContentDraft(course_code=code, unit_number=unit_number, unit_title=unit['unit_title'], content_type=content_type, content_json=json.dumps(generated, ensure_ascii=False), status='draft', created_by=current_user.id)
+            db.session.add(draft); db.session.commit()
+            flash('AI draft created. It is NOT visible to students until an administrator approves it.', 'success')
+            return redirect(url_for('admin_learning_content_review', draft_id=draft.id))
+        except Exception as exc:
+            db.session.rollback()
+            app.logger.exception('Admin learning content generation error: %s', exc)
+            flash('Content generation failed. Please try again after checking the server logs.', 'danger')
+            return redirect(url_for('admin_learning_content_studio'))
+    drafts = LearningContentDraft.query.order_by(LearningContentDraft.created_at.desc()).limit(100).all()
+    counts = {s: LearningContentDraft.query.filter_by(status=s).count() for s in ('draft','approved','rejected')}
+    return render_template('admin/learning_content_studio.html', drafts=drafts, counts=counts)
+
+
+@app.route('/admin/learning/content-studio/<int:draft_id>', methods=['GET', 'POST'])
+@login_required
+def admin_learning_content_review(draft_id):
+    if not current_user.is_teacher():
+        flash('Access denied. Teachers/Admins only.', 'danger')
+        return redirect(url_for('student_dashboard'))
+    draft = LearningContentDraft.query.get_or_404(draft_id)
+    if request.method == 'POST':
+        action = request.form.get('action')
+        raw = request.form.get('content_json', '')
+        note = (request.form.get('admin_note') or '').strip()[:4000]
+        try:
+            data = json.loads(raw)
+            if not isinstance(data, dict): raise ValueError('Content must be a JSON object.')
+            if draft.content_type == 'study_guide':
+                if not isinstance(data.get('overview'), str) or not isinstance(data.get('sections'), list) or not data['sections']:
+                    raise ValueError('Study guide must include an overview and at least one section.')
+            else:
+                qs = data.get('questions') or []
+                if not qs or not all(isinstance(q.get('question'), str) and isinstance(q.get('options'), list) and len(q['options']) == 4 and isinstance(q.get('answer'), int) and 0 <= q['answer'] <= 3 and isinstance(q.get('explanation'), str) for q in qs):
+                    raise ValueError('Question bank must contain valid questions, four options, an answer index and an explanation.')
+            draft.content_json = json.dumps(data, ensure_ascii=False)
+        except Exception as exc:
+            flash(f'Cannot save this draft: {exc}', 'danger')
+            return redirect(url_for('admin_learning_content_review', draft_id=draft.id))
+        draft.admin_note = note
+        if action == 'approve': draft.status = 'approved'
+        elif action == 'reject': draft.status = 'rejected'
+        elif action == 'save': draft.status = 'draft'
+        else:
+            flash('Choose Save draft, Approve or Reject.', 'warning')
+            return redirect(url_for('admin_learning_content_review', draft_id=draft.id))
+        if action in ('approve','reject'):
+            draft.reviewed_by = current_user.id
+            draft.reviewed_at = datetime.utcnow()
+        db.session.commit()
+        flash('Content review decision saved.', 'success')
+        return redirect(url_for('admin_learning_content_review', draft_id=draft.id))
+    return render_template('admin/review_learning_content.html', draft=draft)
 
 
 @app.route('/admin/learning/content-review')
