@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ course.course_code }} Classroom{% endblock %}
+{% block content %}
+<div class="mb-4">
+ <a href="{{ url_for('learning_hub') }}" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> My Learning</a>
+ <h2><i class="bi bi-book-half text-success me-2"></i>{{ course.course_code }} — {{ course.course_title or 'Course Classroom' }}</h2>
+ <p class="text-muted">Your unit navigator and study progress. Unit headings are placeholders until they are linked to extracted official material.</p>
+</div>
+<div class="card mb-4"><div class="card-body">
+ <div class="d-flex justify-content-between"><strong>Unit completion</strong><strong>{{ progress_percent }}%</strong></div>
+ <div class="progress mt-2" role="progressbar" aria-valuenow="{{ progress_percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-success" style="width: {{ progress_percent }}%"></div></div>
+ <small class="text-muted">{{ completed_units|length }} of {{ unit_count }} units marked complete</small>
+</div></div>
+<div class="row g-3">
+{% for n in range(1, unit_count+1) %}
+<div class="col-md-6 col-xl-4"><div class="card h-100"><div class="card-body">
+ <h5>Unit {{ n }}</h5><p class="text-muted small">Study this unit in your official course material and mark it complete when you finish.</p>
+ {% if n in completed_units %}<span class="badge bg-success mb-2">Completed</span>{% else %}<span class="badge bg-secondary mb-2">Not completed</span>{% endif %}
+ <form method="post" action="{{ url_for('toggle_learning_unit', course_id=course.id, unit_number=n) }}"><button class="btn btn-sm {% if n in completed_units %}btn-outline-secondary{% else %}btn-success{% endif %} w-100">{% if n in completed_units %}Undo completion{% else %}Mark as studied{% endif %}</button></form>
+</div></div></div>
+{% endfor %}
+</div>
+{% endblock %}

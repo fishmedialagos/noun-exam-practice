@@ -117,3 +117,14 @@ class StudyTask(db.Model):
     duration_minutes = db.Column(db.Integer, default=30)
     completed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class StudyUnitProgress(db.Model):
+    __tablename__ = 'study_unit_progress'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    study_course_id = db.Column(db.Integer, db.ForeignKey('study_courses.id'), nullable=False, index=True)
+    unit_number = db.Column(db.Integer, nullable=False)
+    completed = db.Column(db.Boolean, default=False, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('user_id', 'study_course_id', 'unit_number', name='uq_student_course_unit'),)
