@@ -1398,7 +1398,7 @@ def _get_or_create_course_mock_exam(course_code, current_user_id=None):
     # Determine credit units, title, and faculty
     credit_units = 2
     exam_title = f"{code} Comprehensive Mock Examination"
-    faculty = 'Faculty of Computing' if code.startswith('CIT') else 'General Studies / NOUN'
+    faculty = ('Faculty of Computing' if code.startswith('CIT') else ('Faculty of Mass Communication' if code.startswith('MAC') else 'General Studies / NOUN'))
 
     # Check timetable_courses.json
     try:
