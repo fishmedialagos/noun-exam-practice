@@ -17,6 +17,18 @@ except ImportError:
 from config import Config
 from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask
 
+# Course catalogue used by the student learning planner
+def load_learning_course_catalogue():
+    catalogue_path = os.path.join(os.path.dirname(__file__), 'timetable_courses.json')
+    try:
+        with open(catalogue_path, encoding='utf-8') as catalogue_file:
+            items = json.load(catalogue_file)
+        return {str(item.get('course_code', '')).strip().upper(): str(item.get('title', '')).strip()
+                for item in items if item.get('course_code')}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
 app = Flask(__name__)
 app.config.from_object(Config)
 
@@ -1575,7 +1587,8 @@ def learning_hub():
     pending = [t for t in tasks if not t.completed]
     completed_count = sum(1 for t in tasks if t.completed)
     return render_template('student/learning_hub.html', courses=courses, tasks=tasks, today=today,
-                           pending_count=len(pending), completed_count=completed_count)
+                           pending_count=len(pending), completed_count=completed_count,
+                           course_catalogue=load_learning_course_catalogue())
 
 
 @app.route('/learning/course/add', methods=['POST'])
@@ -1584,9 +1597,12 @@ def add_study_course():
     if current_user.is_teacher():
         return redirect(url_for('admin_dashboard'))
     code = (request.form.get('course_code') or '').strip().upper()
-    title = (request.form.get('course_title') or '').strip()
+    catalogue = load_learning_course_catalogue()
+    title = catalogue.get(code, '')
     if not code:
-        flash('Please enter a course code.', 'warning')
+        flash('Please select a course from the course catalogue.', 'warning')
+    elif code not in catalogue:
+        flash('Please choose a valid course from the catalogue suggestions.', 'warning')
     elif StudyCourse.query.filter_by(user_id=current_user.id, course_code=code).first():
         flash('That course is already in your learning plan.', 'info')
     else:

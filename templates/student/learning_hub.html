@@ -13,8 +13,11 @@
  <div class="col-lg-4">
   <div class="card mb-3"><div class="card-header">Add a course to my plan</div><div class="card-body">
    <form method="post" action="{{ url_for('add_study_course') }}">
-    <div class="mb-3"><label class="form-label">Course code</label><input class="form-control" name="course_code" placeholder="e.g. CIT237" required maxlength="30"></div>
-    <div class="mb-3"><label class="form-label">Course title (optional)</label><input class="form-control" name="course_title" placeholder="Course title"></div>
+    <div class="mb-3"><label class="form-label" for="learningCourseSearch">Search course by code or title</label>
+      <input class="form-control" id="learningCourseSearch" name="course_code" list="learningCourseCatalogue" placeholder="Type e.g. CIT237 or Operating Systems" required autocomplete="off" maxlength="30">
+      <datalist id="learningCourseCatalogue">{% for code, title in course_catalogue.items() %}<option value="{{ code }}" label="{{ title }}"></option>{% endfor %}</datalist>
+      <div class="form-text">Start typing and select a course code from the catalogue suggestions.</div>
+    </div>
     <button class="btn btn-noun w-100">Add Course</button>
    </form>
   </div></div>
