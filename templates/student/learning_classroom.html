@@ -1,11 +1,67 @@
 {% extends "base.html" %}
 {% block title %}{{ course.course_code }} Classroom{% endblock %}
 {% block content %}
-<div class="mb-4"><a href="{{ url_for('learning_hub') }}" class="btn btn-sm btn-outline-secondary mb-3">← My Learning</a><h2>{{ course.course_code }} — {{ course.course_title or 'Course Classroom' }}</h2><p class="text-muted">Read each complete unit, take its reading test and pass before moving forward.</p></div>
-<div class="card mb-4"><div class="card-body"><div class="d-flex justify-content-between"><strong>Learning progress</strong><strong>{{ progress_percent }}%</strong></div><div class="progress mt-2"><div class="progress-bar bg-success" style="width:{{ progress_percent }}%"></div></div><small class="text-muted">{{ completed_units|length }} of {{ unit_count }} units passed · Pass mark: {{ pass_mark }}%</small></div></div>
+<div class="mb-4">
+  <a href="{{ url_for('learning_hub') }}" class="btn btn-sm btn-outline-secondary mb-3">← My Learning</a>
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2">
+    <div><div class="small text-success fw-semibold">MY LEARNING · COURSE CLASSROOM</div>
+      <h2 class="mb-1">{{ course.course_code }} — {{ course.course_title or 'Course Classroom' }}</h2>
+      <p class="text-muted mb-0">Read the material comfortably, use the approved study guide, then pass the unit assessment to continue.</p>
+    </div>
+    <span class="badge bg-light text-dark border">{{ unit_count }} detected units</span>
+  </div>
+</div>
+<div class="card mb-4"><div class="card-body">
+  <div class="d-flex justify-content-between"><strong>Learning progress</strong><strong>{{ progress_percent }}%</strong></div>
+  <div class="progress mt-2" role="progressbar" aria-label="Course learning progress" aria-valuenow="{{ progress_percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-success" style="width:{{ progress_percent }}%"></div></div>
+  <small class="text-muted">{{ completed_units|length }} of {{ unit_count }} units passed · Pass mark: {{ pass_mark }}%</small>
+</div></div>
 {% if material_error %}<div class="alert alert-warning"><strong>Course material issue:</strong> {{ material_error }}. We will not create tests from missing or unreadable content.</div>{% endif %}
-{% if units %}<div class="row g-3">{% for u in units %}{% set n=loop.index %}<div class="col-12"><div class="card {% if not u.unlocked %}border-secondary{% elif u.passed %}border-success{% endif %}"><div class="card-body"><div class="d-flex justify-content-between gap-3"><div>{% if u.module_title or u.module_label %}<div class="small text-success fw-semibold">{{ u.module_label or 'Module' }} {{ u.module_title or '' }}</div>{% endif %}<h5>{{ u.label or ('Unit ' ~ n) }} — {{ u.title or 'Course unit' }}</h5><small class="text-muted">{{ "{:,.0f}".format(u.content_chars) }} characters extracted</small></div><div>{% if u.passed %}<span class="badge bg-success">Passed</span>{% elif u.unlocked %}<span class="badge bg-primary">Available</span>{% else %}<span class="badge bg-secondary">Locked</span>{% endif %}</div></div>
-{% if u.has_content and u.unlocked %}<div class="mt-3"><button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#content{{ n }}">Read complete unit</button><div class="collapse mt-3" id="content{{ n }}"><div class="border rounded p-3 bg-body-tertiary" style="white-space:pre-wrap;line-height:1.75;overflow-wrap:anywhere">{{ u.content }}</div><small class="text-muted">Extracted from the course PDF. Complex tables, diagrams and scanned pages may need separate review.</small></div></div>
-<div class="mt-3 d-flex flex-wrap gap-2">{% if u.approved_guide %}<a class="btn btn-outline-primary btn-sm" href="{{ url_for('learning_unit_guide', course_id=course.id, unit_number=n) }}">Open detailed study guide</a>{% else %}<span class="badge bg-light text-dark border align-self-center">Study guide awaiting academic approval</span>{% endif %}{% if u.approved_bank %}<a class="btn btn-success btn-sm" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Retake approved unit test{% else %}Take approved unit test{% endif %}</a>{% else %}<span class="badge bg-light text-dark border align-self-center">Assessment awaiting academic approval</span>{% endif %}{% if u.latest_attempt %}<span class="align-self-center small text-muted">Latest score: {{ u.latest_attempt.percentage|int }}%{% if u.latest_attempt.passed %} · Passed{% else %} · Not yet passed{% endif %}</span>{% endif %}</div>
-{% elif not u.has_content %}<div class="alert alert-warning mt-3 mb-0">The detected unit has insufficient readable text. Its assessment is unavailable until the source material is checked.</div>{% elif not u.unlocked %}<p class="text-muted mt-3 mb-0">Pass the previous unit's reading test to unlock this unit.</p>{% endif %}</div></div></div>{% endfor %}</div>{% elif not material_error %}<div class="alert alert-info">No units were confidently detected in this course PDF.</div>{% endif %}
+{% if units %}
+<div class="d-flex align-items-center gap-2 mb-3"><h4 class="mb-0">Course contents</h4><span class="text-muted small">Open a unit to read its material</span></div>
+<div class="row g-3">
+{% for u in units %}{% set n=loop.index %}
+<div class="col-12">
+  <article class="card h-100 {% if not u.unlocked %}border-secondary{% elif u.passed %}border-success{% endif %}">
+    <div class="card-body p-3 p-md-4">
+      <div class="d-flex justify-content-between gap-3 align-items-start">
+        <div class="flex-grow-1">
+          {% if u.module_title or u.module_label %}<div class="small text-success fw-semibold mb-1">{{ u.module_label or 'Module' }} {{ u.module_title or '' }}</div>{% endif %}
+          <h5 class="mb-1">{{ u.label or ('Unit ' ~ n) }} — {{ u.title or 'Course unit' }}</h5>
+          <small class="text-muted">{{ "{:,.0f}".format(u.content_chars) }} characters · {{ u.reading_blocks|length }} reading blocks</small>
+        </div>
+        {% if u.passed %}<span class="badge bg-success">Passed</span>{% elif u.unlocked %}<span class="badge bg-primary">Available</span>{% else %}<span class="badge bg-secondary">Locked</span>{% endif %}
+      </div>
+      {% if u.has_content and u.unlocked %}
+      <div class="mt-3 d-flex flex-wrap gap-2">
+        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reader{{ n }}" aria-expanded="false" aria-controls="reader{{ n }}">Read course material</button>
+        {% if u.approved_guide %}<a class="btn btn-outline-primary btn-sm" href="{{ url_for('learning_unit_guide', course_id=course.id, unit_number=n) }}">Open detailed study guide</a>{% else %}<span class="badge bg-light text-dark border align-self-center">Study guide awaiting academic approval</span>{% endif %}
+        {% if u.approved_bank %}<a class="btn btn-success btn-sm" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Retake approved unit test{% else %}Take approved unit test{% endif %}</a>{% else %}<span class="badge bg-light text-dark border align-self-center">Assessment awaiting academic approval</span>{% endif %}
+      </div>
+      <div class="collapse mt-3" id="reader{{ n }}">
+        <div class="learning-reader">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div><div class="small text-success fw-semibold">{{ course.course_code }} · UNIT {{ n }}</div><h3 class="h4 mb-0">{{ u.title or u.label or ('Unit ' ~ n) }}</h3></div>
+            <span class="small text-muted">Original course material</span>
+          </div>
+          {% include "student/_reading_controls.html" %}
+          <div class="reader-body">
+            {% for block in u.reading_blocks %}
+              {% if block.kind == 'heading' %}<h4>{{ block.text }}</h4>
+              {% elif block.kind == 'list_item' %}<div class="reader-list-item">{{ block.text }}</div>
+              {% else %}<p>{{ block.text }}</p>{% endif %}
+            {% endfor %}
+          </div>
+          <div class="reader-note border-top pt-3 mt-4">Text extracted from the course PDF and formatted for easier reading. The wording is retained; complex tables, diagrams and scanned pages may require checking against the original PDF.</div>
+        </div>
+      </div>
+      {% elif not u.has_content %}<div class="alert alert-warning mt-3 mb-0">The detected unit has insufficient readable text. Its assessment is unavailable until the source material is checked.</div>
+      {% else %}<p class="text-muted mt-3 mb-0">Pass the previous unit's reading test to unlock this unit.</p>{% endif %}
+      {% if u.latest_attempt %}<div class="small text-muted mt-3">Latest assessment: {{ u.latest_attempt.percentage|int }}% · {% if u.latest_attempt.passed %}Passed{% else %}Not yet passed{% endif %}</div>{% endif %}
+    </div>
+  </article>
+</div>
+{% endfor %}
+</div>
+{% elif not material_error %}<div class="alert alert-info">No units were confidently detected in this course PDF.</div>{% endif %}
 {% endblock %}

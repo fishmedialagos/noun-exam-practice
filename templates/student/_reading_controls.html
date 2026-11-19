@@ -1,0 +1,42 @@
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3 reader-toolbar">
+  <span class="small text-muted me-1">Reading settings</span>
+  <button type="button" class="btn btn-sm btn-outline-secondary" data-reader-size="down" aria-label="Decrease text size">A−</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary" data-reader-size="up" aria-label="Increase text size">A+</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary" class="reader-theme-toggle">Switch reading theme</button>
+  <span class="small text-muted ms-auto">Your settings apply to this reading session</span>
+</div>
+<style>
+  .learning-reader { --reader-font: 1.08rem; --reader-bg: var(--bs-body-bg); --reader-fg: var(--bs-body-color);
+    max-width: 850px; margin: 0 auto; padding: clamp(1rem, 3vw, 2.25rem);
+    background: var(--reader-bg); color: var(--reader-fg); border: 1px solid var(--bs-border-color);
+    border-radius: 1rem; box-shadow: 0 .25rem 1rem rgba(0,0,0,.04); }
+  .learning-reader.reader-sepia { --reader-bg: #f7f1e5; --reader-fg: #332d25; }
+  .learning-reader.reader-dark { --reader-bg: #171b22; --reader-fg: #e7eaf0; }
+  .learning-reader .reader-body { font-size: var(--reader-font); line-height: 1.9; overflow-wrap: anywhere; }
+  .learning-reader .reader-body p { margin: 0 0 1.25rem; }
+  .learning-reader .reader-body h4 { font-size: 1.18em; line-height: 1.45; font-weight: 700; margin: 2rem 0 .85rem; }
+  .learning-reader .reader-body .reader-list-item { padding-left: 1.4rem; position: relative; margin: .55rem 0; }
+  .learning-reader .reader-body .reader-list-item:before { content: "•"; position: absolute; left: .35rem; font-weight: 700; }
+  .learning-reader .reader-note { font-size: .88rem; color: var(--bs-secondary-color); }
+  @media (max-width: 576px) { .learning-reader { padding: 1rem; border-radius: .7rem; } .learning-reader .reader-body { line-height: 1.8; } }
+</style>
+<script>
+document.querySelectorAll('.learning-reader').forEach(reader => {
+  let size = 1.08;
+  const toolbar = reader.querySelector('.reader-toolbar');
+  if (!toolbar) return;
+  toolbar.querySelectorAll('[data-reader-size]').forEach(btn => btn.addEventListener('click', () => {
+    size = Math.max(.9, Math.min(1.45, size + (btn.dataset.readerSize === 'up' ? .08 : -.08)));
+    reader.style.setProperty('--reader-font', size.toFixed(2) + 'rem');
+  }));
+  const themeButton = toolbar.querySelector('.reader-theme-toggle');
+  let themeIndex = 0;
+  const themes = ['', 'reader-sepia', 'reader-dark'];
+  if (themeButton) themeButton.addEventListener('click', () => {
+    reader.classList.remove('reader-sepia', 'reader-dark');
+    themeIndex = (themeIndex + 1) % themes.length;
+    if (themes[themeIndex]) reader.classList.add(themes[themeIndex]);
+    themeButton.textContent = ['Switch reading theme', 'Switch to dark theme', 'Switch to default theme'][themeIndex];
+  });
+});
+</script>

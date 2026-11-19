@@ -1578,6 +1578,49 @@ def student_dashboard():
 
 
 
+
+def _learning_reading_blocks(raw_text):
+    """Format extracted PDF text for comfortable reading without rewriting its wording."""
+    import re
+    text = (raw_text or '').replace('\r\n', '\n').replace('\r', '\n').replace('\x0c', '\n\n')
+    lines = [re.sub(r'[ \t]+', ' ', line).strip() for line in text.split('\n')]
+    blocks = []
+    paragraph = []
+
+    def flush_paragraph():
+        if paragraph:
+            joined = ' '.join(paragraph).strip()
+            if joined:
+                blocks.append({'kind': 'paragraph', 'text': joined})
+            paragraph.clear()
+
+    heading_patterns = [
+        re.compile(r'^(?:MODULE|UNIT|CHAPTER|SECTION)\s+(?:[A-Z]|\d+)(?:[\.: -].*)?$', re.I),
+        re.compile(r'^\d+(?:\.\d+){0,4}\s+[A-Z][A-Za-z0-9 ,:;()&/\'-]{2,100}$'),
+        re.compile(r'^(?:LEARNING OBJECTIVES?|INTRODUCTION|SUMMARY|REFERENCES|CONCLUSION|SELF-ASSESSMENT|REVIEW QUESTIONS)\s*:?\s*$', re.I),
+    ]
+    bullet_pattern = re.compile(r'^(?:[•●▪◦‣\-–]|\(?[a-zA-Z0-9]{1,3}[.)])\s+')
+    for line in lines:
+        if not line:
+            flush_paragraph()
+            continue
+        # Preserve likely headings as their own blocks.
+        is_heading = any(p.match(line) for p in heading_patterns)
+        is_short_caps = len(line) <= 100 and len(line.split()) <= 12 and line.upper() == line and re.search(r'[A-Z]', line)
+        if is_heading or is_short_caps:
+            flush_paragraph()
+            blocks.append({'kind': 'heading', 'text': line})
+        elif bullet_pattern.match(line):
+            flush_paragraph()
+            blocks.append({'kind': 'list_item', 'text': line})
+        else:
+            # PDF extraction often wraps one sentence across many visual lines.
+            # Join those lines while retaining blank-line paragraph boundaries.
+            paragraph.append(line)
+    flush_paragraph()
+    return blocks
+
+
 def _learning_units_for_course(course):
     code = (course.course_code or '').strip().upper()
     _, _, local_path, urls = _resolve_material(code)
@@ -1635,6 +1678,7 @@ def learning_classroom(course_id):
             approved_banks.setdefault(draft.unit_number, draft)
     for i, unit in enumerate(units, 1):
         unit['content'] = (unit.get('body') or '').strip()
+        unit['reading_blocks'] = _learning_reading_blocks(unit['content'])
         unit['content_chars'] = len(unit['content'])
         unit['has_content'] = len(unit['content']) > 100
         unit['unlocked'] = _unit_access_state(course, i, len(units))
