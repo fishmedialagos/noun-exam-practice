@@ -1736,26 +1736,30 @@ def learning_unit_test(course_id, unit_number):
         return redirect(url_for('learning_classroom', course_id=course.id))
 
     if request.method == 'POST' and request.form.get('action') == 'generate':
-        approved_bank = LearningContentDraft.query.filter_by(
-            course_code=course.course_code, unit_number=unit_number,
-            content_type='question_bank', status='approved'
-        ).order_by(LearningContentDraft.created_at.desc()).first()
-        if not approved_bank:
-            flash('The unit assessment has not yet been approved by the academic team. Please study the material and check back later.', 'warning')
-            return redirect(url_for('learning_classroom', course_id=course.id))
+        # Students can practise immediately. Admin-approved banks remain a separate
+        # quality-improvement resource and are not a prerequisite for practice.
         try:
-            data = json.loads(approved_bank.content_json)
-            source_questions = data.get('questions') or []
+            from question_generator import generate_mock_exam_questions
+            module = {'label': 'Module', 'title': unit.get('module_title') or 'Course content',
+                      'units': [{'label': unit.get('label') or f'Unit {unit_number}',
+                                 'title': unit.get('title') or f'Unit {unit_number}', 'body': body}]}
+            generated = generate_mock_exam_questions([module], course_code=course.course_code,
+                                                       course_title=course.course_title or course.course_code,
+                                                       target_count=20)
             questions = []
-            for q in source_questions:
-                opts = q.get('options')
-                ans = q.get('answer')
-                if (isinstance(q.get('question'), str) and isinstance(opts, list) and len(opts) == 4
-                        and isinstance(ans, int) and 0 <= ans < 4 and isinstance(q.get('explanation'), str)):
-                    questions.append({'question': q['question'], 'options': opts,
-                                       'answer': ans, 'explanation': q['explanation']})
+            for item in generated:
+                if item.get('question_type') != 'mcq':
+                    continue
+                options = [item.get('option_' + letter) for letter in 'abcd']
+                answer_letter = str(item.get('correct_answer') or '').upper()
+                if len(options) == 4 and all(options) and answer_letter in 'ABCD':
+                    questions.append({'question': item.get('question_text'), 'options': options,
+                                       'answer': 'ABCD'.index(answer_letter),
+                                       'explanation': item.get('explanation') or 'Review the relevant section of the course material.'})
+                if len(questions) >= 10:
+                    break
             if len(questions) < 8:
-                flash('The approved question bank is incomplete. Please contact the academic team.', 'warning')
+                flash('We could not generate enough reliable questions from this unit. Please check the course material or try again later.', 'warning')
                 return redirect(url_for('learning_classroom', course_id=course.id))
             attempt = UnitAssessmentAttempt(user_id=current_user.id, study_course_id=course.id,
                                             unit_number=unit_number, questions_json=json.dumps(questions),
@@ -1766,8 +1770,8 @@ def learning_unit_test(course_id, unit_number):
                                      unit_number=unit_number, attempt_id=attempt.id))
         except Exception:
             db.session.rollback()
-            app.logger.exception('Approved unit question bank could not be loaded')
-            flash('We could not prepare this assessment. Please contact the academic team.', 'danger')
+            app.logger.exception('On-demand unit mock test generation failed')
+            flash('We could not prepare this practice test right now. Please try again later.', 'danger')
             return redirect(url_for('learning_classroom', course_id=course.id))
     return render_template('student/learning_unit_test.html', course=course, unit=unit, unit_number=unit_number)
 
