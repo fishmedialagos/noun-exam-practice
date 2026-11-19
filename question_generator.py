@@ -60,13 +60,28 @@ def _api_settings():
     return None
 
 
-def _call_question_ai(source, course_code, course_title, count):
+def _call_question_ai(source, course_code, course_title, count, question_types=None):
     settings = _api_settings()
     if not settings:
         LOGGER.warning("Mock exam generation requires OPENAI_API_KEY or GROQ_API_KEY; refusing low-quality fallback.")
         return []
     url, key, model = settings
-    prompt = f'''Create {count} rigorous undergraduate examination questions for National Open University of Nigeria (NOUN).
+    allowed_types = set(question_types or ("mcq", "fill"))
+    if allowed_types == {"mcq"}:
+        type_guidance = ("Generate ONLY multiple-choice questions (MCQ). Do not generate fill-in-the-gap, true/false, or short-answer questions.\n"
+                         "For every MCQ, provide a self-contained stem and four plausible, relevant, distinct options. Exactly one answer must be defensible. Distractors should be credible misconceptions or related subject concepts, not random words. Options should be parallel in grammar and specificity. correct_answer must be either the exact correct option text or its letter A, B, C, or D.\n"
+                         "Return question objects with question_type set to mcq and all four option fields populated.")
+        schema_example = '{"questions":[{"question_type":"mcq","question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"exact option text","explanation":"Brief explanation grounded in this source."}]}'
+    elif allowed_types == {"fill"}:
+        type_guidance = ("Generate ONLY fill-in-the-gap questions. Use one blank for a meaningful technical term or concept explicitly supported by the source. Do not blank articles, prepositions or generic verbs. Provide the exact expected answer. Set all option fields to null.")
+        schema_example = '{"questions":[{"question_type":"fill","question_text":"... __________ ...","option_a":null,"option_b":null,"option_c":null,"option_d":null,"correct_answer":"...","explanation":"Brief explanation grounded in this source."}]}'
+    else:
+        type_guidance = ("Produce a balanced mix: approximately half MCQ and half fill-in-the-gap.\n"
+                         "MCQ: Provide a self-contained stem and four plausible, relevant, distinct options. Exactly one answer must be defensible. Distractors should be credible misconceptions or related subject concepts, not random words. Options should be parallel in grammar and specificity. correct_answer must be the exact correct option text.\n"
+                         "FILL: Use one blank for a meaningful technical term or concept explicitly supported by the source. Do not blank articles, prepositions or generic verbs. Provide the exact expected answer.")
+        schema_example = '{"questions":[{"question_type":"mcq","question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"exact option text","explanation":"Brief explanation grounded in this source."},{"question_type":"fill","question_text":"... __________ ...","option_a":null,"option_b":null,"option_c":null,"option_d":null,"correct_answer":"...","explanation":"Brief explanation grounded in this source."}]}'
+
+    prompt = f'''Create up to {count} rigorous undergraduate examination questions for National Open University of Nigeria (NOUN).
 Course: {course_code} — {course_title}
 Source unit: {source['module']} / {source['unit']} / {source['title']}
 Use ONLY the following source for facts and correct answers:
@@ -78,13 +93,10 @@ QUALITY REQUIREMENTS:
 - Use clear, complete, formal academic English appropriate for undergraduate examinations.
 - Do not invent facts, scholars, dates, examples or terminology absent from the source.
 - Avoid vague stems, trivial recall, trick wording, immature wording, grammatical clues and duplicate testing of the same fact.
-- Produce a balanced mix: approximately half MCQ and half fill-in-the-gap.
+- Generate only the requested question type(s). Do not pad with weak items.
+{type_guidance}
 
-MCQ: Provide a self-contained stem and four plausible, relevant, distinct options. Exactly one answer must be defensible. Distractors should be credible misconceptions or related subject concepts, not random words. Options should be parallel in grammar and specificity. correct_answer must be the exact correct option text.
-
-FILL: Use one blank for a meaningful technical term or concept explicitly supported by the source. Do not blank articles, prepositions or generic verbs. Provide the exact expected answer.
-
-Return ONLY JSON: {{"questions":[{{"question_type":"mcq","question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"exact option text","explanation":"Brief explanation grounded in this source."}},{{"question_type":"fill","question_text":"... __________ ...","option_a":null,"option_b":null,"option_c":null,"option_d":null,"correct_answer":"...","explanation":"Brief explanation grounded in this source."}}]}}
+Return ONLY JSON: {schema_example}
 No markdown. Generate only questions the source supports; do not pad with weak items.'''
     payload = {"model": model, "messages": [
         {"role": "system", "content": "You are a careful university assessment setter. Source fidelity and academic quality take priority over quantity. Return valid JSON only."},
@@ -104,13 +116,16 @@ No markdown. Generate only questions the source supports; do not pad with weak i
 def _validate(raw, source, seen):
     if not isinstance(raw, dict):
         return None
-    kind = str(raw.get("question_type") or "").strip().lower()
-    stem, answer, explanation = _clean(raw.get("question_text")), _clean(raw.get("correct_answer")), _clean(raw.get("explanation"))
+    kind = str(raw.get("question_type") or raw.get("type") or "").strip().lower()
+    stem = _clean(raw.get("question_text") or raw.get("question") or raw.get("stem"))
+    answer = _clean(raw.get("correct_answer") or raw.get("answer"))
+    explanation = _clean(raw.get("explanation") or raw.get("rationale"))
     source_text = source["text"].casefold()
     if kind not in {"mcq", "fill"} or not 35 <= len(stem) <= 650 or not answer or len(answer) > 180 or len(explanation) < 20:
         return None
-    if not any(term in explanation.casefold() for term in ("source", "material", "concept", "principle", "definition", "section", source["title"].casefold(), source["unit"].casefold())):
-        return None
+    # Do not require literal phrases such as "source material" in explanations.
+    # The previous phrase gate rejected sound explanations that explained a source
+    # concept directly without repeating one of those exact words.
     if re.search(r"(?i)\b(which page|which section contains|where in the material|according to the quotation)\b", stem):
         return None
     if len(re.findall(r"_{3,}", stem)) > 1:
@@ -120,10 +135,19 @@ def _validate(raw, source, seen):
         return None
     result = {"question_text": stem, "question_type": kind, "option_a": None, "option_b": None, "option_c": None, "option_d": None, "correct_answer": answer, "explanation": explanation}
     if kind == "mcq":
-        options = [_clean(raw.get("option_" + x)) for x in "abcd"]
+        raw_options = raw.get("options")
+        if isinstance(raw_options, list) and len(raw_options) == 4:
+            options = [_clean(value) for value in raw_options]
+        else:
+            options = [_clean(raw.get("option_" + x)) for x in "abcd"]
         if any(not x or len(x) > 220 for x in options) or len({x.casefold() for x in options}) != 4:
             return None
-        matches = [i for i, option in enumerate(options) if option.casefold() == answer.casefold()]
+        # Models sometimes return A/B/C/D rather than repeating option text.
+        letter_answer = re.fullmatch(r"([ABCD])(?:[.)])?", answer.strip(), flags=re.I)
+        if letter_answer:
+            matches = ["ABCD".index(letter_answer.group(1).upper())]
+        else:
+            matches = [i for i, option in enumerate(options) if option.casefold() == answer.casefold()]
         if len(matches) != 1 or any(x.casefold() in {"all of the above", "none of the above", "true", "false"} for x in options):
             return None
         result.update({"option_" + letter: option for letter, option in zip("abcd", options)})
@@ -145,19 +169,32 @@ def _validate(raw, source, seen):
     return result
 
 
-def generate_mock_exam_questions(modules, course_code, course_title, target_count=70):
-    """Generate AI questions and retain only those passing deterministic QA.
+def generate_mock_exam_questions(modules, course_code, course_title, target_count=70, question_types=None):
+    """Generate source-grounded questions with deterministic quality checks.
 
-    It intentionally returns fewer than target_count if quality or source coverage
-    is insufficient. The application must not publish an underfilled exam.
+    By default, full mock exams retain the established balanced MCQ/fill mix.
+    Callers may pass question_types=("mcq",) for MCQ-only assessments such as
+    the unit Knowledge Check. The requested types are never silently discarded.
     """
     units = _source_units(modules or [])
     if not units:
+        LOGGER.warning("No usable source units found for %s (%s).", course_code, course_title)
         return []
+
     target_count = max(1, min(int(target_count), 150))
+    allowed_types = tuple(dict.fromkeys(str(value).strip().lower() for value in (question_types or ("mcq", "fill"))))
+    if not allowed_types or any(value not in {"mcq", "fill"} for value in allowed_types):
+        LOGGER.warning("Invalid question_types=%r for %s; generation cancelled.", question_types, course_code)
+        return []
+
     questions, seen = [], set()
-    mcq_limit = (target_count + 1) // 2
-    fill_limit = target_count // 2
+    if set(allowed_types) == {"mcq", "fill"}:
+        type_limits = {"mcq": (target_count + 1) // 2, "fill": target_count // 2}
+    else:
+        type_limits = {allowed_types[0]: target_count}
+
+    # Multiple short attempts help recover from occasional poor or duplicate
+    # model suggestions without weakening validation requirements.
     rounds_needed = max(4, (target_count + (len(units) * 10) - 1) // (len(units) * 10) + 1)
     for _round in range(rounds_needed):
         if len(questions) >= target_count:
@@ -167,29 +204,46 @@ def generate_mock_exam_questions(modules, course_code, course_title, target_coun
             if remaining <= 0:
                 break
             try:
-                proposed = _call_question_ai(source, course_code, course_title, min(10, remaining + 3))
+                proposed = _call_question_ai(
+                    source, course_code, course_title,
+                    min(10, remaining + 3), question_types=allowed_types
+                )
             except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
                 LOGGER.warning("Question generation failed for %s/%s: %s", course_code, source["unit"], exc)
                 proposed = []
             except Exception:
                 LOGGER.exception("Unexpected question-generation error for %s", course_code)
                 proposed = []
+
+            if not isinstance(proposed, list):
+                LOGGER.warning("AI provider returned a non-list question payload for %s/%s.", course_code, source["unit"])
+                continue
+
             for item in proposed:
                 clean = _validate(item, source, seen)
-                if clean:
-                    current_type_count = sum(q["question_type"] == clean["question_type"] for q in questions)
-                    type_limit = mcq_limit if clean["question_type"] == "mcq" else fill_limit
-                    if current_type_count >= type_limit:
-                        continue
-                    questions.append(clean)
-                    if len(questions) >= target_count:
-                        break
-    mcqs = [q for q in questions if q["question_type"] == "mcq"]
-    fills = [q for q in questions if q["question_type"] == "fill"]
-    mixed = []
-    while mcqs or fills:
-        if mcqs:
-            mixed.append(mcqs.pop(0))
-        if fills:
-            mixed.append(fills.pop(0))
-    return mixed[:target_count]
+                if not clean or clean["question_type"] not in allowed_types:
+                    continue
+                current_type_count = sum(q["question_type"] == clean["question_type"] for q in questions)
+                if current_type_count >= type_limits.get(clean["question_type"], 0):
+                    continue
+                questions.append(clean)
+                if len(questions) >= target_count:
+                    break
+
+    counts = {kind: sum(q["question_type"] == kind for q in questions) for kind in ("mcq", "fill")}
+    LOGGER.info(
+        "Question generation completed for %s: %s/%s accepted (MCQ=%s, fill=%s; requested=%s).",
+        course_code, len(questions), target_count, counts["mcq"], counts["fill"], ",".join(allowed_types)
+    )
+
+    if set(allowed_types) == {"mcq", "fill"}:
+        mcqs = [q for q in questions if q["question_type"] == "mcq"]
+        fills = [q for q in questions if q["question_type"] == "fill"]
+        mixed = []
+        while mcqs or fills:
+            if mcqs:
+                mixed.append(mcqs.pop(0))
+            if fills:
+                mixed.append(fills.pop(0))
+        return mixed[:target_count]
+    return questions[:target_count]

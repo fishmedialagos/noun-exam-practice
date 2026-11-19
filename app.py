@@ -2584,23 +2584,50 @@ def learning_unit_test(course_id, unit_number):
             module = {'label': 'Module', 'title': unit.get('module_title') or 'Course content',
                       'units': [{'label': unit.get('label') or f'Unit {unit_number}',
                                  'title': unit.get('title') or f'Unit {unit_number}', 'body': body}]}
-            generated = generate_mock_exam_questions([module], course_code=course.course_code,
-                                                       course_title=course.course_title or course.course_code,
-                                                       target_count=20)
+            if not (os.environ.get('OPENAI_API_KEY') or os.environ.get('GROQ_API_KEY')):
+                app.logger.error('Unit Knowledge Check generation is unavailable: no AI provider key is configured.')
+                flash('Unit Knowledge Check generation is temporarily unavailable. Please contact the support team.', 'warning')
+                return redirect(url_for('learning_classroom', course_id=course.id))
+
+            # The full mock-exam generator defaults to a balanced MCQ/fill mix.
+            # This assessment page accepts MCQs only, so explicitly request MCQs
+            # instead of generating fill questions and discarding half the result.
+            generated = generate_mock_exam_questions(
+                [module], course_code=course.course_code,
+                course_title=course.course_title or course.course_code,
+                target_count=10, question_types=('mcq',)
+            )
             questions = []
             for item in generated:
-                if item.get('question_type') != 'mcq':
+                if not isinstance(item, dict) or item.get('question_type') != 'mcq':
                     continue
-                options = [item.get('option_' + letter) for letter in 'abcd']
-                answer_letter = str(item.get('correct_answer') or '').upper()
-                if len(options) == 4 and all(options) and answer_letter in 'ABCD':
-                    questions.append({'question': item.get('question_text'), 'options': options,
-                                       'answer': 'ABCD'.index(answer_letter),
-                                       'explanation': item.get('explanation') or 'Review the relevant section of the course material.'})
+                options = [str(item.get('option_' + letter) or '').strip() for letter in 'abcd']
+                answer_letter = str(item.get('correct_answer') or '').strip().upper()
+                question_text = str(item.get('question_text') or '').strip()
+                if (len(options) == 4 and all(options) and len(set(option.casefold() for option in options)) == 4
+                        and answer_letter in 'ABCD' and question_text):
+                    questions.append({
+                        'question': question_text, 'options': options,
+                        'answer': 'ABCD'.index(answer_letter),
+                        'explanation': item.get('explanation') or 'Review the relevant section of the course material.'
+                    })
                 if len(questions) >= 10:
                     break
+
+            app.logger.info(
+                'Unit Knowledge Check for %s unit %s: accepted %s of 10 MCQs.',
+                course.course_code, unit_number, len(questions)
+            )
             if len(questions) < 8:
-                flash('We could not generate enough reliable questions from this unit. Please check the course material or try again later.', 'warning')
+                app.logger.warning(
+                    'Unit Knowledge Check for %s unit %s did not meet the 8-question minimum; accepted %s.',
+                    course.course_code, unit_number, len(questions)
+                )
+                flash(
+                    f'We could prepare only {len(questions)} reliable multiple-choice questions from this unit. '
+                    'Please try again. If this continues, contact support and provide the course code and unit number.',
+                    'warning'
+                )
                 return redirect(url_for('learning_classroom', course_id=course.id))
             attempt = UnitAssessmentAttempt(user_id=current_user.id, study_course_id=course.id,
                                             unit_number=unit_number, questions_json=json.dumps(questions),
@@ -2621,6 +2648,20 @@ def learning_unit_test(course_id, unit_number):
 @login_required
 def learning_unit_test_take(course_id, unit_number, attempt_id):
     course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
+    units, unit_error = _learning_units_for_course(course)
+    if unit_error or unit_number < 1 or unit_number > len(units):
+        flash(unit_error or 'Invalid unit.', 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    if not _unit_access_state(course, unit_number, len(units)):
+        flash("Pass the previous unit's Unit Knowledge Check before opening this unit.", 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    reading = UnitReadingProgress.query.filter_by(
+        user_id=current_user.id, study_course_id=course.id,
+        unit_number=unit_number, completed=True
+    ).first()
+    if not reading:
+        flash('Read at least 90% of this unit to unlock its Unit Knowledge Check.', 'info')
+        return redirect(url_for('learning_classroom', course_id=course.id))
     attempt = UnitAssessmentAttempt.query.filter_by(id=attempt_id, user_id=current_user.id, study_course_id=course.id, unit_number=unit_number).first_or_404()
     questions = json.loads(attempt.questions_json)
     if request.method == 'POST':
