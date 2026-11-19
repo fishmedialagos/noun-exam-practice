@@ -1,26 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}Register - NOUN Exam Mock{% endblock %}
+{% block title %}Register - NOUN Learning Companion{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-lg-7 col-xl-6">
         <div class="card">
             <div class="card-body p-4 p-md-5">
-                <h3 class="text-center mb-4">Create Student Account</h3>
+                <div class="text-center mb-4">
+                    <div class="display-6 text-success"><i class="bi bi-mortarboard-fill"></i></div>
+                    <h3 class="mb-1">Create Student Account</h3>
+                    <p class="text-muted mb-0">Join NOUN Learning Companion</p>
+                </div>
                 <form method="POST">
                     <div class="mb-3">
                         <label class="form-label">Full Name *</label>
-                        <input type="text" name="full_name" class="form-control" required placeholder="e.g. Chinedu Okeke">
+                        <input type="text" name="full_name" class="form-control" required autocomplete="name" placeholder="e.g. Chinedu Okeke">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Matric Number *</label>
-                        <input type="text" name="matric_no" class="form-control" required placeholder="e.g. NOU123456789" style="text-transform: uppercase;">
-                        <div class="form-text">This will be your username for login</div>
+                        <input type="text" name="matric_no" class="form-control" required autocomplete="username" placeholder="e.g. NOU123456789" style="text-transform: uppercase;">
+                        <div class="form-text">This will be your username for login.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email *</label>
-                        <input type="email" name="email" class="form-control" required>
+                        <input type="email" name="email" class="form-control" required autocomplete="email">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Faculty / Department</label>
@@ -38,19 +42,57 @@
                             <option value="Faculty of Agricultural Sciences">Faculty of Agricultural Sciences</option>
                         </select>
                     </div>
+                    <div class="border rounded-3 p-3 mb-3 bg-light-subtle">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-whatsapp text-success fs-4"></i>
+                            <div>
+                                <strong>WhatsApp number <span class="text-muted fw-normal">(optional)</span></strong>
+                                <div class="small text-muted">Add a number where you can receive study reminders.</div>
+                            </div>
+                        </div>
+                        <label class="form-label" for="whatsapp_number">WhatsApp phone number</label>
+                        <input type="tel" id="whatsapp_number" name="whatsapp_number" class="form-control" autocomplete="tel" inputmode="tel" placeholder="e.g. 08012345678 or +2348012345678">
+                        <div class="form-text">Nigerian numbers beginning with 0 are accepted and saved in international format.</div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" value="on" id="whatsapp_reminders_enabled" name="whatsapp_reminders_enabled">
+                            <label class="form-check-label" for="whatsapp_reminders_enabled">
+                                I agree to receive one daily learning reminder on WhatsApp from <strong>NOUN Learning Companion</strong>. I can turn this off from my account settings at any time.
+                            </label>
+                        </div>
+                        <div class="mt-3" id="reminderTimeWrap" hidden>
+                            <label class="form-label" for="whatsapp_reminder_time">Preferred reminder time (Lagos time)</label>
+                            <input type="time" class="form-control" id="whatsapp_reminder_time" name="whatsapp_reminder_time" value="08:00" step="900">
+                        </div>
+                        <div class="form-text mt-2">Your number is optional. No WhatsApp reminders will be sent unless you tick the consent box.</div>
+                    </div>
                     <div class="mb-4">
                         <label class="form-label">Password *</label>
-                        <input type="password" name="password" class="form-control" required minlength="6">
+                        <input type="password" name="password" class="form-control" required minlength="6" autocomplete="new-password">
                     </div>
                     <button type="submit" class="btn btn-noun btn-lg w-100">
-                        <i class="bi bi-person-plus me-2"></i>Register
+                        <i class="bi bi-person-plus me-2"></i>Create Account
                     </button>
                 </form>
-                <p class="text-center mt-4 mb-0">
-                    Already have an account? <a href="{{ url_for('login') }}">Login with Matric Number</a>
-                </p>
+                <p class="text-center mt-4 mb-0">Already have an account? <a href="{{ url_for('login') }}">Login with Matric Number</a></p>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+    const checkbox = document.getElementById('whatsapp_reminders_enabled');
+    const wrap = document.getElementById('reminderTimeWrap');
+    const number = document.getElementById('whatsapp_number');
+    function updateReminderFields() {
+        const enabled = checkbox.checked;
+        wrap.hidden = !enabled;
+        number.required = enabled;
+    }
+    checkbox.addEventListener('change', updateReminderFields);
+    updateReminderFields();
+})();
+</script>
 {% endblock %}

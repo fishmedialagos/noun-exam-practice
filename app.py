@@ -9,8 +9,9 @@ import re
 import copy
 import time
 import tempfile
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from collections import OrderedDict
-from sqlalchemy import case
+from sqlalchemy import case, inspect, text
 
 # Load local .env values for development; Render environment variables still take precedence.
 try:
@@ -157,6 +158,126 @@ def trigger_sync():
     return redirect(url_for('admin_exams'))
 
 
+# ==================== WHATSAPP STUDY REMINDERS ====================
+
+def _normalise_whatsapp_number(raw_number):
+    """Return an E.164 phone number. Nigerian local numbers are accepted and normalised to +234."""
+    raw = (raw_number or '').strip()
+    if not raw:
+        return None
+    compact = re.sub(r'[\s().-]', '', raw)
+    if compact.startswith('00'):
+        compact = '+' + compact[2:]
+    if compact.startswith('0') and len(compact) == 11 and compact.isdigit():
+        compact = '+234' + compact[1:]
+    elif compact.startswith('234') and compact.isdigit():
+        compact = '+' + compact
+    elif compact.startswith('+'):
+        pass
+    elif compact.isdigit():
+        # Require an international country code for non-Nigerian formats.
+        compact = '+' + compact
+    if not re.fullmatch(r'\+[1-9]\d{7,14}', compact):
+        raise ValueError('Enter a valid WhatsApp number, for example +2348012345678.')
+    return compact
+
+
+def _reminder_timezone():
+    tz_name = os.environ.get('WHATSAPP_TIMEZONE', 'Africa/Lagos')
+    try:
+        return ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError:
+        app.logger.warning('Invalid WHATSAPP_TIMEZONE %s; using Africa/Lagos.', tz_name)
+        return ZoneInfo('Africa/Lagos')
+
+
+def _send_whatsapp_learning_reminder(user):
+    """Send one approved WhatsApp template to one explicitly opted-in student."""
+    access_token = os.environ.get('WHATSAPP_ACCESS_TOKEN')
+    phone_number_id = os.environ.get('WHATSAPP_PHONE_NUMBER_ID')
+    template_name = os.environ.get('WHATSAPP_DAILY_REMINDER_TEMPLATE', 'noun_learning_daily_reminder')
+    language = os.environ.get('WHATSAPP_TEMPLATE_LANGUAGE', 'en_US')
+    api_version = os.environ.get('WHATSAPP_GRAPH_API_VERSION', 'v27.0')
+    public_base_url = os.environ.get('PUBLIC_BASE_URL', 'https://noun-exam.onrender.com').rstrip('/')
+
+    if not all([access_token, phone_number_id, user.whatsapp_number, user.whatsapp_reminders_enabled]):
+        return False, 'WhatsApp is not fully configured or the student has not opted in.'
+
+    # Business-initiated daily reminders must use a Meta-approved template.
+    try:
+        import requests as http_requests
+        endpoint = f'https://graph.facebook.com/{api_version}/{phone_number_id}/messages'
+        first_name = (user.full_name or user.username or 'Student').strip().split()[0]
+        payload = {
+            'messaging_product': 'whatsapp',
+            'recipient_type': 'individual',
+            'to': user.whatsapp_number.lstrip('+'),
+            'type': 'template',
+            'template': {
+                'name': template_name,
+                'language': {'code': language},
+                'components': [{
+                    'type': 'body',
+                    'parameters': [
+                        {'type': 'text', 'text': first_name},
+                        {'type': 'text', 'text': public_base_url + '/learning'},
+                    ],
+                }],
+            },
+        }
+        response = http_requests.post(
+            endpoint,
+            headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'},
+            json=payload,
+            timeout=(5, 20),
+        )
+        if response.status_code >= 400:
+            # Do not log the recipient phone number or access token.
+            app.logger.warning('WhatsApp reminder API returned HTTP %s: %s',
+                               response.status_code, response.text[:400])
+            return False, f'WhatsApp API returned HTTP {response.status_code}.'
+        return True, 'sent'
+    except Exception as exc:
+        app.logger.exception('WhatsApp reminder send failed: %s', type(exc).__name__)
+        return False, 'WhatsApp reminder request failed.'
+
+
+def send_due_whatsapp_learning_reminders(now=None):
+    """Cron entry point. Run every 15 minutes; one reminder is sent per opted-in student per local day."""
+    local_now = now or datetime.now(_reminder_timezone())
+    today_key = local_now.strftime('%Y-%m-%d')
+    current_hour = local_now.strftime('%H')
+    current_slot = (local_now.minute // 15) * 15
+    users = User.query.filter(
+        User.whatsapp_reminders_enabled.is_(True),
+        User.whatsapp_number.isnot(None),
+    ).all()
+
+    result = {'sent': 0, 'failed': 0, 'not_due': 0, 'skipped_already_sent': 0}
+    for user in users:
+        reminder_time = (user.whatsapp_reminder_time or '08:00')
+        try:
+            hour, minute = reminder_time.split(':', 1)
+            desired_hour, desired_slot = int(hour), (int(minute) // 15) * 15
+        except (ValueError, TypeError):
+            result['failed'] += 1
+            continue
+        if desired_hour != int(current_hour) or desired_slot != current_slot:
+            result['not_due'] += 1
+            continue
+        if user.whatsapp_reminder_last_sent == today_key:
+            result['skipped_already_sent'] += 1
+            continue
+        sent, _message = _send_whatsapp_learning_reminder(user)
+        if sent:
+            user.whatsapp_reminder_last_sent = today_key
+            db.session.commit()
+            result['sent'] += 1
+        else:
+            result['failed'] += 1
+    return result
+
+
 # ==================== AUTH ROUTES ====================
 
 @app.route('/')
@@ -172,42 +293,106 @@ def index():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    
+
     if request.method == 'POST':
         matric_no = request.form.get('matric_no', '').strip().upper()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         full_name = request.form.get('full_name', '').strip()
         faculty = request.form.get('faculty', '').strip()
-        
+        raw_whatsapp = request.form.get('whatsapp_number', '').strip()
+        reminders_enabled = request.form.get('whatsapp_reminders_enabled') == 'on'
+        reminder_time = request.form.get('whatsapp_reminder_time', '08:00').strip() or '08:00'
+
         if not all([matric_no, email, password, full_name]):
             flash('Please fill in all required fields (including Matric Number).', 'danger')
             return redirect(url_for('register'))
-        
+
         if User.query.filter_by(username=matric_no).first() or User.query.filter_by(matric_no=matric_no).first():
             flash('This Matric Number is already registered.', 'danger')
             return redirect(url_for('register'))
-        
+
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'danger')
             return redirect(url_for('register'))
-        
+
+        try:
+            whatsapp_number = _normalise_whatsapp_number(raw_whatsapp)
+            datetime.strptime(reminder_time, '%H:%M')
+            if int(reminder_time.split(':')[1]) not in (0, 15, 30, 45):
+                raise ValueError('Choose a reminder time on a 15-minute interval.')
+        except ValueError as exc:
+            flash(str(exc), 'danger')
+            return redirect(url_for('register'))
+
+        if reminders_enabled and not whatsapp_number:
+            flash('Enter your WhatsApp number to enable daily learning reminders.', 'danger')
+            return redirect(url_for('register'))
+
         user = User(
-            username=matric_no,          # Matric number is the username
+            username=matric_no,
             matric_no=matric_no,
             email=email,
             full_name=full_name,
             faculty=faculty,
-            role='student'
+            role='student',
+            whatsapp_number=whatsapp_number,
+            whatsapp_reminders_enabled=reminders_enabled,
+            whatsapp_reminder_time=reminder_time,
+            whatsapp_opted_in_at=datetime.utcnow() if reminders_enabled else None,
         )
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-        
+
         flash('Registration successful! Login with your Matric Number and password.', 'success')
         return redirect(url_for('login'))
-    
+
     return render_template('register.html')
+
+
+@app.route('/learning/reminder-settings', methods=['GET', 'POST'])
+@login_required
+def whatsapp_reminder_settings():
+    """Let students manage their WhatsApp number, daily reminder consent and preferred time."""
+    if current_user.is_teacher():
+        return redirect(url_for('admin_dashboard'))
+
+    if request.method == 'POST':
+        raw_number = request.form.get('whatsapp_number', '').strip()
+        enabled = request.form.get('whatsapp_reminders_enabled') == 'on'
+        reminder_time = request.form.get('whatsapp_reminder_time', '08:00').strip() or '08:00'
+        previous_enabled = bool(current_user.whatsapp_reminders_enabled)
+        previous_number = current_user.whatsapp_number
+
+        try:
+            number = _normalise_whatsapp_number(raw_number)
+            datetime.strptime(reminder_time, '%H:%M')
+            if int(reminder_time.split(':')[1]) not in (0, 15, 30, 45):
+                raise ValueError('Choose a reminder time on a 15-minute interval.')
+        except ValueError as exc:
+            flash(str(exc), 'danger')
+            return redirect(url_for('whatsapp_reminder_settings'))
+
+        if enabled and not number:
+            flash('Enter your WhatsApp number before enabling reminders.', 'danger')
+            return redirect(url_for('whatsapp_reminder_settings'))
+
+        current_user.whatsapp_number = number
+        current_user.whatsapp_reminders_enabled = enabled
+        current_user.whatsapp_reminder_time = reminder_time
+        if enabled and (not previous_enabled or number != previous_number):
+            # Changing the destination number requires the student to confirm consent again.
+            current_user.whatsapp_opted_in_at = datetime.utcnow()
+            current_user.whatsapp_opted_out_at = None
+            current_user.whatsapp_reminder_last_sent = None
+        elif not enabled and previous_enabled:
+            current_user.whatsapp_opted_out_at = datetime.utcnow()
+        db.session.commit()
+        flash('Your WhatsApp reminder preferences have been saved.', 'success')
+        return redirect(url_for('whatsapp_reminder_settings'))
+
+    return render_template('student/whatsapp_reminder_settings.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -3672,11 +3857,32 @@ def admin_upload_material():
     return render_template('admin/upload_material.html', faculties=faculties)
 
 
+# ==================== DATABASE COMPATIBILITY MIGRATIONS ====================
+
+def ensure_whatsapp_user_columns():
+    """Add WhatsApp preference fields to existing installations without replacing user data."""
+    required_columns = {
+        'whatsapp_number': 'VARCHAR(20)',
+        'whatsapp_reminders_enabled': 'BOOLEAN NOT NULL DEFAULT FALSE',
+        'whatsapp_reminder_time': "VARCHAR(5) NOT NULL DEFAULT '08:00'",
+        'whatsapp_opted_in_at': 'TIMESTAMP NULL',
+        'whatsapp_opted_out_at': 'TIMESTAMP NULL',
+        'whatsapp_reminder_last_sent': 'VARCHAR(10) NULL',
+    }
+    existing = {column['name'] for column in inspect(db.engine).get_columns('users')}
+    with db.engine.begin() as connection:
+        for column_name, sql_type in required_columns.items():
+            if column_name not in existing:
+                connection.execute(text(f'ALTER TABLE users ADD COLUMN {column_name} {sql_type}'))
+                app.logger.info('Added users.%s for WhatsApp reminder preferences.', column_name)
+
+
 # ==================== INITIALIZE DATABASE ====================
 
 def init_db():
     with app.app_context():
         db.create_all()
+        ensure_whatsapp_user_columns()
         
         # Create default admin if not exists
         admin = User.query.filter_by(username='admin').first()

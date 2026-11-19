@@ -16,6 +16,13 @@ class User(UserMixin, db.Model):
     matric_no = db.Column(db.String(50), unique=True)
     role = db.Column(db.String(20), default='student')
     faculty = db.Column(db.String(100))
+    # Optional WhatsApp contact and explicit daily reminder consent.
+    whatsapp_number = db.Column(db.String(20))
+    whatsapp_reminders_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    whatsapp_reminder_time = db.Column(db.String(5), nullable=False, default='08:00')
+    whatsapp_opted_in_at = db.Column(db.DateTime)
+    whatsapp_opted_out_at = db.Column(db.DateTime)
+    whatsapp_reminder_last_sent = db.Column(db.String(10))  # YYYY-MM-DD in the student's reminder timezone
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     attempts = db.relationship('Attempt', backref='student', lazy='dynamic')
