@@ -46,7 +46,7 @@
             <span class="small text-muted">Original course material</span>
           </div>
           {% include "student/_reading_controls.html" %}
-          <div class="reader-body" id="readerBody{{ n }}" data-progress-url="{{ url_for('update_unit_reading_progress', course_id=course.id, unit_number=n) }}">
+          <div class="reader-body" id="readerBody{{ n }}" data-progress-url="{{ url_for('update_unit_reading_progress', course_id=course.id, unit_number=n) }}" data-test-url="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">
             {% for block in u.reading_blocks %}
               {% if block.kind == 'heading' %}<h4>{{ block.text }}</h4>
               {% elif block.kind == 'list_item' %}<div class="reader-list-item">{{ block.text }}</div>
@@ -79,55 +79,63 @@ document.addEventListener('DOMContentLoaded', function () {
     const hintEl = document.getElementById('readingHint' + n);
     const gateEl = document.getElementById('knowledgeCheck' + n);
     const collapse = reader.closest('.collapse');
-    let lastSent = -1, sending = false, pending = null;
+    let furthestPercent = Number(percentEl ? percentEl.textContent.replace('%','') : 0);
+    let sending = false, pending = null;
 
     function calculateProgress() {
-      // Measure how far the viewport has travelled through the complete reader,
-      // including the portion above the viewport after the student scrolls.
       const rect = reader.getBoundingClientRect();
-      const total = Math.max(1, reader.getBoundingClientRect().height);
-      const visibleBottom = Math.min(total, Math.max(0, window.innerHeight - rect.top));
-      return Math.max(0, Math.min(100, Math.floor((visibleBottom / total) * 100)));
+      const total = Math.max(1, reader.scrollHeight);
+      // Furthest point reached in the reading content, not merely the visible screen height.
+      const reached = Math.max(0, Math.min(total, window.innerHeight - rect.top));
+      return Math.max(0, Math.min(100, Math.floor((reached / total) * 100)));
+    }
+    function unlockButton() {
+      if (!gateEl || gateEl.tagName === 'A') return;
+      const link = document.createElement('a');
+      link.className = 'btn btn-success btn-sm';
+      link.id = gateEl.id;
+      link.href = reader.dataset.testUrl;
+      link.textContent = 'Start Unit Knowledge Check';
+      gateEl.replaceWith(link);
     }
     function sendProgress(percent) {
-      if (percent <= lastSent || percent < 1) return;
-      lastSent = percent;
-      if (sending) { pending = Math.max(pending || 0, percent); return; }
+      furthestPercent = Math.max(furthestPercent, percent);
+      if (furthestPercent < 1) return;
+      if (sending) { pending = Math.max(pending || 0, furthestPercent); return; }
       sending = true;
+      const value = furthestPercent;
       fetch(reader.dataset.progressUrl, {
         method: 'POST', credentials: 'same-origin',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
-        body: JSON.stringify({percent: percent})
-      }).then(r => r.json()).then(data => {
-        if (!data.ok) { lastSent = -1; return; }
-        percentEl.textContent = data.percent + '%';
-        barEl.style.width = data.percent + '%';
+        body: JSON.stringify({percent: value})
+      }).then(function (response) {
+        if (!response.ok) throw new Error('Progress could not be saved');
+        return response.json();
+      }).then(function (data) {
+        if (!data.ok) throw new Error(data.message || 'Progress could not be saved');
+        if (percentEl) percentEl.textContent = data.percent + '%';
+        if (barEl) barEl.style.width = data.percent + '%';
         if (data.completed) {
-          hintEl.textContent = 'Reading requirement completed. Your Unit Knowledge Check is now unlocked.';
-          if (gateEl && gateEl.tagName !== 'A') {
-            const link = document.createElement('a');
-            link.className = 'btn btn-success btn-sm';
-            link.id = gateEl.id;
-            link.href = reader.dataset.testUrl;
-            link.textContent = 'Start Unit Knowledge Check';
-            gateEl.replaceWith(link);
-          }
+          if (hintEl) hintEl.textContent = 'Reading requirement completed. Your Unit Knowledge Check is now unlocked.';
+          unlockButton();
+        } else if (hintEl) {
+          hintEl.textContent = 'Keep reading. The Unit Knowledge Check unlocks at 90%.';
         }
-      }).catch(() => { lastSent = -1; }).finally(() => {
+      }).catch(function (error) {
+        console.warn('Reading progress:', error);
+        if (hintEl) hintEl.textContent = 'Could not save reading progress. Please check your connection and continue reading.';
+      }).finally(function () {
         sending = false;
-        if (pending !== null) { const p = pending; pending = null; sendProgress(p); }
+        if (pending !== null) { const next = pending; pending = null; sendProgress(next); }
       });
     }
     function update() {
       if (collapse && !collapse.classList.contains('show')) return;
       sendProgress(calculateProgress());
     }
-    if (gateEl && gateEl.tagName !== 'A') {
-      reader.dataset.testUrl = "{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}";
-    }
     window.addEventListener('scroll', update, {passive:true});
     window.addEventListener('resize', update);
-    if (collapse) collapse.addEventListener('shown.bs.collapse', function () { lastSent = -1; update(); });
+    if (collapse) collapse.addEventListener('shown.bs.collapse', function () { update(); });
     update();
   });
 });

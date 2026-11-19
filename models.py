@@ -130,6 +130,19 @@ class StudyUnitProgress(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'study_course_id', 'unit_number', name='uq_student_course_unit'),)
 
 
+class UnitReadingProgress(db.Model):
+    """Per-student progress through the original reading material for a unit."""
+    __tablename__ = 'unit_reading_progress'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    study_course_id = db.Column(db.Integer, db.ForeignKey('study_courses.id'), nullable=False, index=True)
+    unit_number = db.Column(db.Integer, nullable=False)
+    progress_percent = db.Column(db.Integer, default=0, nullable=False)
+    completed = db.Column(db.Boolean, default=False, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    __table_args__ = (db.UniqueConstraint('user_id', 'study_course_id', 'unit_number', name='uq_unit_reading_student_course_unit'),)
+
+
 class UnitAssessmentAttempt(db.Model):
     __tablename__ = 'unit_assessment_attempts'
     id = db.Column(db.Integer, primary_key=True)

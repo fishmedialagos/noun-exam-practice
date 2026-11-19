@@ -1653,9 +1653,12 @@ def _unit_access_state(course, unit_number, unit_count):
         return False
     if unit_number == 1:
         return True
-    previous = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id,
-                                                    unit_number=unit_number - 1, completed=True).first()
-    return previous is not None
+    # A student advances only after passing the previous unit's Knowledge Check.
+    previous_pass = UnitAssessmentAttempt.query.filter_by(
+        user_id=current_user.id, study_course_id=course.id,
+        unit_number=unit_number - 1, passed=True
+    ).first()
+    return previous_pass is not None
 
 
 @app.route('/learning/course/<int:course_id>')
@@ -1703,7 +1706,8 @@ def update_unit_reading_progress(course_id, unit_number):
     if err or unit_number < 1 or unit_number > len(units) or not _unit_access_state(course, unit_number, len(units)):
         return jsonify({'ok': False, 'message': 'Unit is not available.'}), 403
     try:
-        percent = max(0, min(100, int(request.json.get('percent', 0))))
+        payload = request.get_json(silent=True) or {}
+        percent = max(0, min(100, int(float(payload.get('percent', 0)))))
     except (AttributeError, TypeError, ValueError):
         return jsonify({'ok': False, 'message': 'Invalid reading progress.'}), 400
     row = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number).first()
@@ -1726,7 +1730,7 @@ def learning_unit_guide(course_id, unit_number):
         flash(err or 'Invalid unit.', 'warning')
         return redirect(url_for('learning_classroom', course_id=course.id))
     if not _unit_access_state(course, unit_number, len(units)):
-        flash('Pass the previous unit assessment before opening this unit.', 'warning')
+        flash("Pass the previous unit's Unit Knowledge Check before opening this unit.", 'warning')
         return redirect(url_for('learning_classroom', course_id=course.id))
     draft = LearningContentDraft.query.filter_by(course_code=course.course_code, unit_number=unit_number,
                                                    content_type='study_guide', status='approved').order_by(
@@ -1752,7 +1756,7 @@ def learning_unit_test(course_id, unit_number):
         flash(err or 'Invalid unit.', 'warning')
         return redirect(url_for('learning_classroom', course_id=course.id))
     if not _unit_access_state(course, unit_number, len(units)):
-        flash('Pass the previous unit assessment before opening this unit test.', 'warning')
+        flash("Pass the previous unit's Unit Knowledge Check before opening this unit.", 'warning')
         return redirect(url_for('learning_classroom', course_id=course.id))
     reading = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number, completed=True).first()
     if not reading:
