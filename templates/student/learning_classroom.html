@@ -1,33 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ course.course_code }} Classroom<script>
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('.reader-body[data-progress-url]').forEach(function (reader) {
-    const n = reader.id.replace('readerBody','');
-    let lastSent = -1;
-    function updateProgress() {
-      const rect = reader.getBoundingClientRect();
-      const total = Math.max(1, reader.offsetHeight);
-      const viewed = Math.max(0, Math.min(total, window.innerHeight - rect.top));
-      const percent = Math.min(100, Math.round((viewed / total) * 100));
-      if (percent === lastSent || percent < 1) return;
-      lastSent = percent;
-      fetch(reader.dataset.progressUrl, {method:'POST', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'}, body:JSON.stringify({percent:percent})})
-        .then(r => r.json()).then(data => {
-          if (!data.ok) return;
-          document.getElementById('readingPercent'+n).textContent = data.percent + '%';
-          document.getElementById('readingBar'+n).style.width = data.percent + '%';
-          if (data.completed) {
-            document.getElementById('readingHint'+n).textContent = 'Reading completed. Refresh this page to start your Unit Knowledge Check.';
-          }
-        }).catch(() => {});
-    }
-    window.addEventListener('scroll', updateProgress, {passive:true});
-    window.addEventListener('resize', updateProgress);
-    updateProgress();
-  });
-});
-</script>
-{% endblock %}
+{% block title %}{{ course.course_code }} Classroom{% endblock %}
+
 {% block content %}
 <div class="mb-4">
   <a href="{{ url_for('learning_hub') }}" class="btn btn-sm btn-outline-secondary mb-3">← My Learning</a>
@@ -64,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <div class="mt-3 d-flex flex-wrap gap-2">
         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reader{{ n }}" aria-expanded="false" aria-controls="reader{{ n }}">Read course material</button>
         {% if u.approved_guide %}<a class="btn btn-outline-primary btn-sm" href="{{ url_for('learning_unit_guide', course_id=course.id, unit_number=n) }}">Open detailed study guide</a>{% endif %}
-        {% if u.reading_completed %}<a class="btn btn-success btn-sm" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Practise this unit again{% else %}Start Unit Knowledge Check{% endif %}</a>{% else %}<span class="btn btn-secondary btn-sm disabled" aria-disabled="true">Knowledge Check locked · Read unit first</span>{% endif %}
+        {% if u.reading_completed %}<a class="btn btn-success btn-sm" id="knowledgeCheck{{ n }}" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Practise this unit again{% else %}Start Unit Knowledge Check{% endif %}</a>{% else %}<span class="btn btn-secondary btn-sm disabled" id="knowledgeCheck{{ n }}" aria-disabled="true">Knowledge Check locked · Read at least 90%</span>{% endif %}
       </div>
       <div class="collapse mt-3" id="reader{{ n }}">
         <div class="learning-reader">
@@ -100,28 +73,62 @@ document.addEventListener('DOMContentLoaded', function () {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.reader-body[data-progress-url]').forEach(function (reader) {
-    const n = reader.id.replace('readerBody','');
-    let lastSent = -1;
-    function updateProgress() {
+    const n = reader.id.replace('readerBody', '');
+    const percentEl = document.getElementById('readingPercent' + n);
+    const barEl = document.getElementById('readingBar' + n);
+    const hintEl = document.getElementById('readingHint' + n);
+    const gateEl = document.getElementById('knowledgeCheck' + n);
+    const collapse = reader.closest('.collapse');
+    let lastSent = -1, sending = false, pending = null;
+
+    function calculateProgress() {
+      // Measure how far the viewport has travelled through the complete reader,
+      // including the portion above the viewport after the student scrolls.
       const rect = reader.getBoundingClientRect();
-      const total = Math.max(1, reader.offsetHeight);
-      const viewed = Math.max(0, Math.min(total, window.innerHeight - rect.top));
-      const percent = Math.min(100, Math.round((viewed / total) * 100));
-      if (percent === lastSent || percent < 1) return;
-      lastSent = percent;
-      fetch(reader.dataset.progressUrl, {method:'POST', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'}, body:JSON.stringify({percent:percent})})
-        .then(r => r.json()).then(data => {
-          if (!data.ok) return;
-          document.getElementById('readingPercent'+n).textContent = data.percent + '%';
-          document.getElementById('readingBar'+n).style.width = data.percent + '%';
-          if (data.completed) {
-            document.getElementById('readingHint'+n).textContent = 'Reading completed. Refresh this page to start your Unit Knowledge Check.';
-          }
-        }).catch(() => {});
+      const total = Math.max(1, reader.getBoundingClientRect().height);
+      const visibleBottom = Math.min(total, Math.max(0, window.innerHeight - rect.top));
+      return Math.max(0, Math.min(100, Math.floor((visibleBottom / total) * 100)));
     }
-    window.addEventListener('scroll', updateProgress, {passive:true});
-    window.addEventListener('resize', updateProgress);
-    updateProgress();
+    function sendProgress(percent) {
+      if (percent <= lastSent || percent < 1) return;
+      lastSent = percent;
+      if (sending) { pending = Math.max(pending || 0, percent); return; }
+      sending = true;
+      fetch(reader.dataset.progressUrl, {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+        body: JSON.stringify({percent: percent})
+      }).then(r => r.json()).then(data => {
+        if (!data.ok) { lastSent = -1; return; }
+        percentEl.textContent = data.percent + '%';
+        barEl.style.width = data.percent + '%';
+        if (data.completed) {
+          hintEl.textContent = 'Reading requirement completed. Your Unit Knowledge Check is now unlocked.';
+          if (gateEl && gateEl.tagName !== 'A') {
+            const link = document.createElement('a');
+            link.className = 'btn btn-success btn-sm';
+            link.id = gateEl.id;
+            link.href = reader.dataset.testUrl;
+            link.textContent = 'Start Unit Knowledge Check';
+            gateEl.replaceWith(link);
+          }
+        }
+      }).catch(() => { lastSent = -1; }).finally(() => {
+        sending = false;
+        if (pending !== null) { const p = pending; pending = null; sendProgress(p); }
+      });
+    }
+    function update() {
+      if (collapse && !collapse.classList.contains('show')) return;
+      sendProgress(calculateProgress());
+    }
+    if (gateEl && gateEl.tagName !== 'A') {
+      reader.dataset.testUrl = "{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}";
+    }
+    window.addEventListener('scroll', update, {passive:true});
+    window.addEventListener('resize', update);
+    if (collapse) collapse.addEventListener('shown.bs.collapse', function () { lastSent = -1; update(); });
+    update();
   });
 });
 </script>
