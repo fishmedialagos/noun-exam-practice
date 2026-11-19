@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, session
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, session, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
 import json
@@ -16,7 +16,7 @@ except ImportError:
     pass
 
 from config import Config
-from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitReadingProgress, UnitAssessmentAttempt, CourseMaterialReview, LearningContentDraft, StudyTutorMessage
+from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitReadingProgress, UnitAssessmentAttempt, CourseMaterialReview, LearningContentDraft, StudyTutorMessage, UnitFlashcard
 
 # Course catalogue used by the student learning planner
 def load_learning_course_catalogue():
@@ -1882,6 +1882,215 @@ def learning_unit_tutor(course_id, unit_number):
         'student/learning_unit_tutor.html', course=course, unit=unit,
         unit_number=unit_number, messages=messages,
         tutor_enabled=bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
+    )
+
+
+def _generate_unit_flashcard_content(course, unit, count=10):
+    """Generate concise, source-grounded flashcards from one extracted course unit."""
+    api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
+    if not api_key:
+        return None, 'Flashcards are not configured yet. Please ask the platform administrator to configure GROQ_API_KEY or OPENAI_API_KEY.'
+
+    source_text = (unit.get('body') or '').strip()
+    if len(source_text) < 300:
+        return None, 'There is not enough readable text in this unit to create reliable flashcards. Please check the course material.'
+    source_text = source_text[:20000]
+    use_groq = bool(os.environ.get('GROQ_API_KEY'))
+    if use_groq:
+        api_url = 'https://api.groq.com/openai/v1/chat/completions'
+        model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
+    else:
+        api_url = 'https://api.openai.com/v1/chat/completions'
+        model = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+
+    system_prompt = (
+        'You create accurate university study flashcards. Use only the supplied course-unit text as the factual source. '
+        'Do not invent facts or introduce outside topics. Each card must test one important definition, concept, process, '
+        'distinction, principle, or example. Write a concise question or prompt on the front and a clear answer on the back. '
+        'Return valid JSON only.'
+    )
+    user_prompt = (
+        f'Create exactly {count} useful flashcards for this NOUN course unit. Cover the unit broadly, not just its opening. '
+        'Avoid duplicate questions and trivial details. Keep each front and back brief but meaningful. '
+        'Return this JSON structure: {"cards":[{"front":"Question or prompt","back":"Answer grounded in the source"}]}\n\n'
+        f'COURSE: {course.course_code} — {course.course_title or course.course_code}\n'
+        f'UNIT: {unit.get("title") or unit.get("label") or "Unit"}\n\n'
+        f'UNIT SOURCE MATERIAL:\n{source_text}'
+    )
+    try:
+        import requests as http_requests
+        response = http_requests.post(
+            api_url,
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            json={
+                'model': model,
+                'messages': [
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_prompt},
+                ],
+                'temperature': 0.25,
+                'max_tokens': 3000,
+                'response_format': {'type': 'json_object'},
+            },
+            timeout=(8, 60),
+        )
+        if response.status_code != 200:
+            app.logger.warning('Unit flashcard generation failed HTTP %s: %s', response.status_code, response.text[:350])
+            if response.status_code == 429:
+                return None, 'The AI service is busy. Please wait a little and try generating your flashcards again.'
+            return None, 'The AI service could not generate flashcards right now. Please try again later.'
+        payload = response.json()
+        content = payload.get('choices', [{}])[0].get('message', {}).get('content', '')
+        generated = json.loads(content)
+        raw_cards = generated.get('cards') if isinstance(generated, dict) else None
+        if not isinstance(raw_cards, list):
+            return None, 'The AI response did not contain a valid flashcard set. Please try again.'
+
+        clean_cards = []
+        seen_fronts = set()
+        for item in raw_cards:
+            if not isinstance(item, dict):
+                continue
+            front = re.sub(r'\s+', ' ', str(item.get('front') or '')).strip()
+            back = re.sub(r'\s+', ' ', str(item.get('back') or '')).strip()
+            key = front.casefold()
+            if not front or not back or len(front) > 350 or len(back) > 600 or key in seen_fronts:
+                continue
+            seen_fronts.add(key)
+            clean_cards.append({'front': front, 'back': back})
+            if len(clean_cards) >= count:
+                break
+        if len(clean_cards) < 6:
+            return None, 'The AI returned too few usable flashcards. No cards were saved. Please try again.'
+        return clean_cards, None
+    except (ValueError, KeyError, TypeError, IndexError):
+        app.logger.exception('Could not parse generated unit flashcards')
+        return None, 'The flashcards could not be prepared from the AI response. Please try again.'
+    except Exception:
+        app.logger.exception('Unit flashcard generation request failed')
+        return None, 'Flashcard generation is temporarily unavailable. Please try again shortly.'
+
+
+def _apply_flashcard_rating(card, rating, reviewed_at=None):
+    """Schedule a card using a simple spaced-repetition interval progression."""
+    now = reviewed_at or datetime.utcnow()
+    ease = float(card.ease_factor or 2.5)
+    reps = int(card.repetitions or 0)
+    interval = float(card.interval_days or 0.0)
+
+    if rating == 'again':
+        card.repetitions = 0
+        card.interval_days = 10.0 / 1440.0  # retry in ten minutes
+        card.ease_factor = max(1.3, ease - 0.20)
+    elif rating == 'hard':
+        next_interval = 0.5 if reps == 0 else max(1.0, interval * 1.2)
+        card.repetitions = reps + 1
+        card.interval_days = next_interval
+        card.ease_factor = max(1.3, ease - 0.15)
+    elif rating == 'good':
+        if reps == 0:
+            next_interval = 1.0
+        elif reps == 1:
+            next_interval = 3.0
+        else:
+            next_interval = max(1.0, interval * ease)
+        card.repetitions = reps + 1
+        card.interval_days = next_interval
+    elif rating == 'easy':
+        if reps == 0:
+            next_interval = 3.0
+        elif reps == 1:
+            next_interval = 6.0
+        else:
+            next_interval = max(1.0, interval * (ease + 0.30))
+        card.repetitions = reps + 1
+        card.interval_days = next_interval
+        card.ease_factor = min(3.2, ease + 0.15)
+    else:
+        raise ValueError('Unsupported flashcard rating')
+
+    card.review_count = int(card.review_count or 0) + 1
+    card.last_rating = rating
+    card.last_reviewed_at = now
+    card.due_at = now + timedelta(days=card.interval_days)
+
+
+@app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/flashcards', methods=['GET', 'POST'])
+@login_required
+def learning_unit_flashcards(course_id, unit_number):
+    """Generate and review flashcards for a unit the student is allowed to access."""
+    course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
+    units, err = _learning_units_for_course(course)
+    if err or unit_number < 1 or unit_number > len(units):
+        flash(err or 'Invalid unit.', 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    if not _unit_access_state(course, unit_number, len(units)):
+        flash("Pass the previous unit's Unit Knowledge Check before opening this unit.", 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+
+    unit = units[unit_number - 1]
+    cards_query = UnitFlashcard.query.filter_by(
+        user_id=current_user.id, study_course_id=course.id, unit_number=unit_number
+    )
+
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+        if action == 'generate':
+            recent_generation_cards = UnitFlashcard.query.filter(
+                UnitFlashcard.user_id == current_user.id,
+                UnitFlashcard.created_at >= datetime.utcnow() - timedelta(hours=1)
+            ).count()
+            if recent_generation_cards >= 30:
+                flash('You have reached the flashcard generation limit for this hour. Please try again later.', 'warning')
+            else:
+                generated, error = _generate_unit_flashcard_content(course, unit, count=10)
+                if error:
+                    flash(error, 'warning')
+                else:
+                    now = datetime.utcnow()
+                    for item in generated:
+                        db.session.add(UnitFlashcard(
+                            user_id=current_user.id,
+                            study_course_id=course.id,
+                            unit_number=unit_number,
+                            front=item['front'],
+                            back=item['back'],
+                            due_at=now,
+                        ))
+                    db.session.commit()
+                    flash(f'{len(generated)} flashcards were created from this unit. Start reviewing below.', 'success')
+                    return redirect(url_for('learning_unit_flashcards', course_id=course.id, unit_number=unit_number))
+        elif action == 'review':
+            try:
+                card_id = int(request.form.get('card_id', '0'))
+            except (TypeError, ValueError):
+                card_id = 0
+            rating = (request.form.get('rating') or '').strip().lower()
+            card = cards_query.filter_by(id=card_id).first()
+            if not card:
+                abort(404)
+            if rating not in ('again', 'hard', 'good', 'easy'):
+                flash('Choose a valid recall rating.', 'warning')
+            elif card.due_at and card.due_at > datetime.utcnow():
+                flash('This flashcard is not due for review yet.', 'info')
+            else:
+                _apply_flashcard_rating(card, rating)
+                db.session.commit()
+                flash('Your review was saved and the next review was scheduled.', 'success')
+                return redirect(url_for('learning_unit_flashcards', course_id=course.id, unit_number=unit_number))
+        else:
+            flash('Choose a valid flashcard action.', 'warning')
+
+    now = datetime.utcnow()
+    cards = cards_query.order_by(UnitFlashcard.due_at.asc(), UnitFlashcard.created_at.asc()).all()
+    due_cards = [card for card in cards if not card.due_at or card.due_at <= now]
+    upcoming_cards = [card for card in cards if card.due_at and card.due_at > now]
+    flashcards_enabled = bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
+    return render_template(
+        'student/learning_unit_flashcards.html',
+        course=course, unit=unit, unit_number=unit_number,
+        cards=cards, due_cards=due_cards, upcoming_cards=upcoming_cards,
+        now=now, flashcards_enabled=flashcards_enabled,
     )
 
 

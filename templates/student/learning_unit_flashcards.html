@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Study Flashcards · {{ course.course_code }} Unit {{ unit_number }}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{{ url_for('learning_classroom', course_id=course.id) }}" class="btn btn-sm btn-outline-secondary mb-3">← Back to classroom</a>
+  <div class="small text-success fw-semibold">{{ course.course_code }} · UNIT {{ unit_number }}</div>
+  <h2 class="mb-1">Study Flashcards</h2>
+  <p class="text-muted mb-0">{{ unit.title or unit.label or ('Unit ' ~ unit_number) }}</p>
+</div>
+<div class="alert alert-info" role="note">
+  These study cards are generated from the extracted text of this unit. Read the front, try to recall the answer, then reveal it and rate how well you remembered. Check the original course material for important details that may not have extracted cleanly.
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4"><div class="card h-100"><div class="card-body"><div class="small text-muted">Total cards</div><div class="fs-3 fw-bold">{{ cards|length }}</div></div></div></div>
+  <div class="col-6 col-md-4"><div class="card h-100"><div class="card-body"><div class="small text-muted">Due now</div><div class="fs-3 fw-bold text-success">{{ due_cards|length }}</div></div></div></div>
+  <div class="col-12 col-md-4"><div class="card h-100"><div class="card-body"><div class="small text-muted">Scheduled for later</div><div class="fs-3 fw-bold">{{ upcoming_cards|length }}</div></div></div></div>
+</div>
+{% if not flashcards_enabled %}
+<div class="alert alert-warning">Flashcard generation is not configured yet. The platform administrator needs to add <code>GROQ_API_KEY</code> or <code>OPENAI_API_KEY</code> to the hosting environment.</div>
+{% endif %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div><h4 class="mb-1">Your unit deck</h4><div class="small text-muted">Each card is scheduled separately based on your recall rating.</div></div>
+  <form method="post">
+    <input type="hidden" name="action" value="generate">
+    <button class="btn btn-primary" type="submit" {% if not flashcards_enabled %}disabled{% endif %}>{% if cards %}Generate 10 more cards{% else %}Generate my flashcards{% endif %}</button>
+  </form>
+</div>
+{% if due_cards %}
+<div class="row g-3">
+{% for card in due_cards %}
+  <div class="col-12 col-lg-6">
+    <article class="card h-100 flashcard-item">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center"><strong>Card {{ loop.index }}</strong><span class="badge bg-success">Due for review</span></div>
+      <div class="card-body">
+        <div class="small text-muted fw-semibold mb-2">QUESTION / FRONT</div>
+        <div class="flashcard-front mb-3">{{ card.front }}</div>
+        <button type="button" class="btn btn-outline-primary btn-sm reveal-answer" data-target="answer{{ card.id }}" data-ratings="ratings{{ card.id }}">Reveal answer</button>
+        <div id="answer{{ card.id }}" class="flashcard-answer mt-3" hidden>
+          <div class="small text-success fw-semibold mb-2">ANSWER / BACK</div>
+          <div>{{ card.back }}</div>
+        </div>
+        <div id="ratings{{ card.id }}" class="mt-3" hidden>
+          <div class="small text-muted mb-2">How well did you remember?</div>
+          <form method="post" class="d-flex flex-wrap gap-2">
+            <input type="hidden" name="action" value="review">
+            <input type="hidden" name="card_id" value="{{ card.id }}">
+            <button class="btn btn-outline-danger btn-sm" name="rating" value="again" type="submit">Again · 10 min</button>
+            <button class="btn btn-outline-warning btn-sm" name="rating" value="hard" type="submit">Hard</button>
+            <button class="btn btn-outline-success btn-sm" name="rating" value="good" type="submit">Good</button>
+            <button class="btn btn-success btn-sm" name="rating" value="easy" type="submit">Easy</button>
+          </form>
+        </div>
+      </div>
+      <div class="card-footer bg-white small text-muted">Reviewed {{ card.review_count }} time{% if card.review_count != 1 %}s{% endif %}</div>
+    </article>
+  </div>
+{% endfor %}
+</div>
+{% elif cards %}
+<div class="alert alert-success"><strong>You're up to date!</strong> No flashcards are due right now. Your next reviews are scheduled below.</div>
+{% else %}
+<div class="card"><div class="card-body text-center py-5"><div class="display-6 mb-2">🗂️</div><h5>Your flashcard deck is empty</h5><p class="text-muted">Generate a set of cards from this unit's course material to begin active recall.</p><button class="btn btn-primary" type="button" onclick="document.querySelector('form input[name=action]').form.requestSubmit()" {% if not flashcards_enabled %}disabled{% endif %}>Create 10 flashcards</button></div></div>
+{% endif %}
+{% if upcoming_cards %}
+<div class="mt-4">
+  <h5>Upcoming cards</h5>
+  <p class="small text-muted">These cards are scheduled for a later review. You can see the prompt, but cannot rate them until they are due.</p>
+  <div class="accordion" id="upcomingFlashcards">
+  {% for card in upcoming_cards %}
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="upHeading{{ card.id }}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#upCard{{ card.id }}" aria-expanded="false" aria-controls="upCard{{ card.id }}">{{ card.front }} <span class="ms-auto small text-muted">Due {{ card.due_at.strftime('%d %b %Y, %I:%M %p') }}</span></button></h2>
+      <div id="upCard{{ card.id }}" class="accordion-collapse collapse" aria-labelledby="upHeading{{ card.id }}" data-bs-parent="#upcomingFlashcards"><div class="accordion-body">{{ card.back }}</div></div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+<style>
+.flashcard-front { font-size:1.15rem; font-weight:600; line-height:1.55; overflow-wrap:anywhere; }
+.flashcard-answer { border-left:4px solid var(--bs-success); background:var(--bs-tertiary-bg); border-radius:8px; padding:14px; line-height:1.6; overflow-wrap:anywhere; }
+.flashcard-item { min-height:240px; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.reveal-answer').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const answer = document.getElementById(button.dataset.target);
+      const ratings = document.getElementById(button.dataset.ratings);
+      if (answer) answer.hidden = false;
+      if (ratings) ratings.hidden = false;
+      button.disabled = true;
+      button.textContent = 'Answer revealed';
+    });
+  });
+});
+</script>
+{% endblock %}

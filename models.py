@@ -204,3 +204,27 @@ class StudyTutorMessage(db.Model):
 
     __table_args__ = (db.Index('ix_study_tutor_student_course_unit', 'user_id', 'study_course_id', 'unit_number'),)
 
+class UnitFlashcard(db.Model):
+    """A student's generated flashcard for one accessible course unit."""
+    __tablename__ = 'unit_flashcards'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    study_course_id = db.Column(db.Integer, db.ForeignKey('study_courses.id'), nullable=False, index=True)
+    unit_number = db.Column(db.Integer, nullable=False, index=True)
+    front = db.Column(db.Text, nullable=False)
+    back = db.Column(db.Text, nullable=False)
+    interval_days = db.Column(db.Float, nullable=False, default=0.0)
+    ease_factor = db.Column(db.Float, nullable=False, default=2.5)
+    repetitions = db.Column(db.Integer, nullable=False, default=0)
+    review_count = db.Column(db.Integer, nullable=False, default=0)
+    due_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    last_reviewed_at = db.Column(db.DateTime)
+    last_rating = db.Column(db.String(10))
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (db.Index(
+        'ix_unit_flashcard_student_course_unit_due',
+        'user_id', 'study_course_id', 'unit_number', 'due_at'
+    ),)
+
