@@ -190,3 +190,17 @@ class LearningContentDraft(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by])
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])
     __table_args__ = (db.Index('ix_learning_content_course_unit_type', 'course_code', 'unit_number', 'content_type'),)
+
+class StudyTutorMessage(db.Model):
+    """A student's AI tutor conversation, scoped to one course unit."""
+    __tablename__ = 'study_tutor_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    study_course_id = db.Column(db.Integer, db.ForeignKey('study_courses.id'), nullable=False, index=True)
+    unit_number = db.Column(db.Integer, nullable=False, index=True)
+    role = db.Column(db.String(20), nullable=False)  # user or assistant
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    __table_args__ = (db.Index('ix_study_tutor_student_course_unit', 'user_id', 'study_course_id', 'unit_number'),)
+

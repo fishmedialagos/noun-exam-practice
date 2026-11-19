@@ -37,6 +37,7 @@
       <div class="mt-3 d-flex flex-wrap gap-2">
         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reader{{ n }}" aria-expanded="false" aria-controls="reader{{ n }}">Read course material</button>
         {% if u.approved_guide %}<a class="btn btn-outline-primary btn-sm" href="{{ url_for('learning_unit_guide', course_id=course.id, unit_number=n) }}">Open detailed study guide</a>{% endif %}
+        <a class="btn btn-outline-info btn-sm" href="{{ url_for('learning_unit_tutor', course_id=course.id, unit_number=n) }}">Ask AI Study Tutor</a>
         {% if u.reading_completed %}<a class="btn btn-success btn-sm" id="knowledgeCheck{{ n }}" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Practise this unit again{% else %}Start Unit Knowledge Check{% endif %}</a>{% else %}<span class="btn btn-secondary btn-sm disabled" id="knowledgeCheck{{ n }}" aria-disabled="true">Knowledge Check locked · Read at least 90%</span>{% endif %}
       </div>
       <div class="collapse mt-3" id="reader{{ n }}">

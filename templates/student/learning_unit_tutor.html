@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}AI Study Tutor · {{ course.course_code }} Unit {{ unit_number }}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{{ url_for('learning_classroom', course_id=course.id) }}" class="btn btn-sm btn-outline-secondary mb-3">← Back to classroom</a>
+  <div class="small text-success fw-semibold">{{ course.course_code }} · UNIT {{ unit_number }}</div>
+  <h2 class="mb-1">AI Study Tutor</h2>
+  <p class="text-muted mb-0">{{ unit.title or unit.label or ('Unit ' ~ unit_number) }}</p>
+</div>
+<div class="alert alert-info" role="note">
+  Ask about definitions, difficult paragraphs, examples or concepts in this unit. The tutor uses the extracted unit material as its main source. Check the original course PDF for important details, tables and diagrams.
+</div>
+{% if not tutor_enabled %}
+<div class="alert alert-warning">The AI Study Tutor is not currently configured. The platform administrator needs to configure <code>GROQ_API_KEY</code> or <code>OPENAI_API_KEY</code> on the hosting service.</div>
+{% endif %}
+<div class="card shadow-sm">
+  <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div><strong>Conversation for this unit</strong><div class="small text-muted">Your questions are kept separate for each course unit.</div></div>
+    {% if messages %}
+    <form method="post" onsubmit="return confirm('Clear this unit tutor conversation?');">
+      <input type="hidden" name="action" value="clear">
+      <button type="submit" class="btn btn-sm btn-outline-secondary">Clear conversation</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-body tutor-thread" id="tutorThread" aria-live="polite">
+    {% if messages %}
+      {% for message in messages %}
+      <div class="d-flex mb-3 {% if message.role == 'user' %}justify-content-end{% else %}justify-content-start{% endif %}">
+        <div class="tutor-bubble {% if message.role == 'user' %}tutor-user{% else %}tutor-assistant{% endif %}">
+          <div class="small fw-semibold mb-1">{% if message.role == 'user' %}You{% else %}NOUN AI Study Tutor{% endif %}</div>
+          <div class="tutor-message">{{ message.content }}</div>
+          <div class="small opacity-75 mt-2">{{ message.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-center py-4">
+        <div class="display-6 mb-2">📘</div>
+        <h5>What would you like to understand?</h5>
+        <p class="text-muted mb-2">Try asking:</p>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary prompt-choice">Explain the main idea of this unit in simple terms.</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary prompt-choice">Break down a difficult concept step by step.</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary prompt-choice">Give me a simple example from this topic.</button>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+  <div class="card-footer bg-white">
+    <form method="post" id="tutorForm">
+      <input type="hidden" name="action" value="send">
+      <label for="tutorMessage" class="form-label fw-semibold">Your question</label>
+      <textarea class="form-control" name="message" id="tutorMessage" rows="3" maxlength="2000" required placeholder="Ask a question about this unit..." {% if not tutor_enabled %}disabled{% endif %}></textarea>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
+        <small class="text-muted">Up to 2,000 characters. Avoid sharing passwords or private information.</small>
+        <button class="btn btn-primary" type="submit" {% if not tutor_enabled %}disabled{% endif %}>Send question</button>
+      </div>
+    </form>
+  </div>
+</div>
+<p class="small text-muted mt-3">AI responses can contain mistakes. Use them as study support, and verify important academic details against the official NOUN course material.</p>
+<style>
+.tutor-thread { min-height: 280px; max-height: 62vh; overflow-y: auto; }
+.tutor-bubble { max-width: min(92%, 760px); border-radius: 14px; padding: 12px 15px; }
+.tutor-user { background: #e8f2ff; color: #183452; }
+.tutor-assistant { background: #f1f3f5; color: #20252a; }
+.tutor-message { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.prompt-choice { white-space: normal; }
+@media (max-width: 576px) { .tutor-bubble { max-width: 100%; } .tutor-thread { max-height: 58vh; } }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const thread = document.getElementById('tutorThread');
+  if (thread) thread.scrollTop = thread.scrollHeight;
+  const input = document.getElementById('tutorMessage');
+  document.querySelectorAll('.prompt-choice').forEach(function (button) {
+    button.addEventListener('click', function () {
+      if (input) { input.value = button.textContent.trim(); input.focus(); }
+    });
+  });
+});
+</script>
+{% endblock %}
