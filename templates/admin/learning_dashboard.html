@@ -9,6 +9,7 @@
   <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Admin Dashboard</a>
 </div>
 <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>This first version is a monitoring dashboard. It does not yet approve or edit course materials and questions. Those controls will be added after the review workflow is designed and tested.</div>
+<div class="mb-3"><a class="btn btn-outline-primary" href="{{ url_for('admin_learning_analytics') }}"><i class="bi bi-graph-up-arrow me-1"></i>Open Learning Analytics</a></div>
 <div class="row g-3 mb-4">
   {% set cards = [
     ('bi-people','Students using My Learning',unique_learning_students,'primary'),

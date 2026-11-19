@@ -2148,6 +2148,68 @@ def admin_learning_dashboard():
         course_activity=course_activity)
 
 
+@app.route('/admin/learning/analytics')
+@login_required
+def admin_learning_analytics():
+    """Academic analytics based only on recorded student activity and assessment attempts."""
+    if not current_user.is_teacher():
+        flash('Access denied. Teachers/Admins only.', 'danger')
+        return redirect(url_for('student_dashboard'))
+
+    total_attempts = UnitAssessmentAttempt.query.count()
+    passed_attempts = UnitAssessmentAttempt.query.filter_by(passed=True).count()
+    overall_pass_rate = round(passed_attempts * 100 / total_attempts, 1) if total_attempts else 0
+    avg_score = db.session.query(db.func.avg(UnitAssessmentAttempt.percentage)).scalar()
+
+    unit_rows = (db.session.query(
+        StudyCourse.course_code, StudyCourse.course_title,
+        UnitAssessmentAttempt.unit_number,
+        db.func.count(UnitAssessmentAttempt.id).label('attempts'),
+        db.func.avg(UnitAssessmentAttempt.percentage).label('average_score'),
+        db.func.sum(case((UnitAssessmentAttempt.passed.is_(True), 1), else_=0)).label('passes')
+    ).join(StudyCourse, UnitAssessmentAttempt.study_course_id == StudyCourse.id)
+     .group_by(StudyCourse.course_code, StudyCourse.course_title, UnitAssessmentAttempt.unit_number)
+     .order_by(db.func.avg(UnitAssessmentAttempt.percentage).asc()).limit(40).all())
+
+    difficult_units = []
+    for row in unit_rows:
+        attempts = int(row.attempts or 0)
+        if attempts:
+            difficult_units.append({
+                'course_code': row.course_code, 'course_title': row.course_title,
+                'unit_number': row.unit_number, 'attempts': attempts,
+                'average_score': round(float(row.average_score or 0), 1),
+                'pass_rate': round(int(row.passes or 0) * 100 / attempts, 1)
+            })
+    recent = (db.session.query(UnitAssessmentAttempt, User, StudyCourse)
+        .join(User, UnitAssessmentAttempt.user_id == User.id)
+        .join(StudyCourse, UnitAssessmentAttempt.study_course_id == StudyCourse.id)
+        .order_by(UnitAssessmentAttempt.created_at.desc()).limit(30).all())
+    return render_template('admin/learning_analytics.html', total_attempts=total_attempts,
+        passed_attempts=passed_attempts, overall_pass_rate=overall_pass_rate,
+        avg_score=round(float(avg_score or 0), 1), difficult_units=difficult_units, recent=recent)
+
+
+@app.route('/learning/progress')
+@login_required
+def student_learning_progress():
+    """Personal learning progress and assessment history for the signed-in student."""
+    courses = StudyCourse.query.filter_by(user_id=current_user.id).order_by(StudyCourse.created_at.desc()).all()
+    summaries = []
+    for course in courses:
+        attempts = UnitAssessmentAttempt.query.filter_by(user_id=current_user.id, study_course_id=course.id).all()
+        progress_rows = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, completed=True).all()
+        summaries.append({
+            'course': course,
+            'completed_units': len(progress_rows),
+            'attempts': len(attempts),
+            'passed_attempts': sum(1 for a in attempts if a.passed),
+            'average_score': round(sum((a.percentage or 0) for a in attempts) / len(attempts), 1) if attempts else None,
+            'latest_attempt': max(attempts, key=lambda a: a.created_at or datetime.min) if attempts else None
+        })
+    return render_template('student/learning_progress.html', summaries=summaries)
+
+
 @app.route('/admin/exams')
 @login_required
 def admin_exams():
