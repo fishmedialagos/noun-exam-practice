@@ -1,5 +1,33 @@
 {% extends "base.html" %}
-{% block title %}{{ course.course_code }} Classroom{% endblock %}
+{% block title %}{{ course.course_code }} Classroom<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.reader-body[data-progress-url]').forEach(function (reader) {
+    const n = reader.id.replace('readerBody','');
+    let lastSent = -1;
+    function updateProgress() {
+      const rect = reader.getBoundingClientRect();
+      const total = Math.max(1, reader.offsetHeight);
+      const viewed = Math.max(0, Math.min(total, window.innerHeight - rect.top));
+      const percent = Math.min(100, Math.round((viewed / total) * 100));
+      if (percent === lastSent || percent < 1) return;
+      lastSent = percent;
+      fetch(reader.dataset.progressUrl, {method:'POST', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'}, body:JSON.stringify({percent:percent})})
+        .then(r => r.json()).then(data => {
+          if (!data.ok) return;
+          document.getElementById('readingPercent'+n).textContent = data.percent + '%';
+          document.getElementById('readingBar'+n).style.width = data.percent + '%';
+          if (data.completed) {
+            document.getElementById('readingHint'+n).textContent = 'Reading completed. Refresh this page to start your Unit Knowledge Check.';
+          }
+        }).catch(() => {});
+    }
+    window.addEventListener('scroll', updateProgress, {passive:true});
+    window.addEventListener('resize', updateProgress);
+    updateProgress();
+  });
+});
+</script>
+{% endblock %}
 {% block content %}
 <div class="mb-4">
   <a href="{{ url_for('learning_hub') }}" class="btn btn-sm btn-outline-secondary mb-3">← My Learning</a>
@@ -36,7 +64,7 @@
       <div class="mt-3 d-flex flex-wrap gap-2">
         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reader{{ n }}" aria-expanded="false" aria-controls="reader{{ n }}">Read course material</button>
         {% if u.approved_guide %}<a class="btn btn-outline-primary btn-sm" href="{{ url_for('learning_unit_guide', course_id=course.id, unit_number=n) }}">Open detailed study guide</a>{% endif %}
-        <a class="btn btn-success btn-sm" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Practise this unit again{% else %}Start Unit Knowledge Check{% endif %}</a>
+        {% if u.reading_completed %}<a class="btn btn-success btn-sm" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Practise this unit again{% else %}Start Unit Knowledge Check{% endif %}</a>{% else %}<span class="btn btn-secondary btn-sm disabled" aria-disabled="true">Knowledge Check locked · Read unit first</span>{% endif %}
       </div>
       <div class="collapse mt-3" id="reader{{ n }}">
         <div class="learning-reader">
@@ -45,12 +73,17 @@
             <span class="small text-muted">Original course material</span>
           </div>
           {% include "student/_reading_controls.html" %}
-          <div class="reader-body">
+          <div class="reader-body" id="readerBody{{ n }}" data-progress-url="{{ url_for('update_unit_reading_progress', course_id=course.id, unit_number=n) }}">
             {% for block in u.reading_blocks %}
               {% if block.kind == 'heading' %}<h4>{{ block.text }}</h4>
               {% elif block.kind == 'list_item' %}<div class="reader-list-item">{{ block.text }}</div>
               {% else %}<p>{{ block.text }}</p>{% endif %}
             {% endfor %}
+          </div>
+          <div class="mt-3">
+            <div class="d-flex justify-content-between small"><span>Reading progress</span><strong id="readingPercent{{ n }}">{{ u.reading_percent }}%</strong></div>
+            <div class="progress mt-1"><div id="readingBar{{ n }}" class="progress-bar bg-success" style="width:{{ u.reading_percent }}%"></div></div>
+            <small class="text-muted" id="readingHint{{ n }}">Read through at least 90% of this unit to unlock its Knowledge Check.</small>
           </div>
           <div class="reader-note border-top pt-3 mt-4">Text extracted from the course PDF and formatted for easier reading. The wording is retained; complex tables, diagrams and scanned pages may require checking against the original PDF.</div>
         </div>
@@ -64,4 +97,32 @@
 {% endfor %}
 </div>
 {% elif not material_error %}<div class="alert alert-info">No units were confidently detected in this course PDF.</div>{% endif %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.reader-body[data-progress-url]').forEach(function (reader) {
+    const n = reader.id.replace('readerBody','');
+    let lastSent = -1;
+    function updateProgress() {
+      const rect = reader.getBoundingClientRect();
+      const total = Math.max(1, reader.offsetHeight);
+      const viewed = Math.max(0, Math.min(total, window.innerHeight - rect.top));
+      const percent = Math.min(100, Math.round((viewed / total) * 100));
+      if (percent === lastSent || percent < 1) return;
+      lastSent = percent;
+      fetch(reader.dataset.progressUrl, {method:'POST', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'}, body:JSON.stringify({percent:percent})})
+        .then(r => r.json()).then(data => {
+          if (!data.ok) return;
+          document.getElementById('readingPercent'+n).textContent = data.percent + '%';
+          document.getElementById('readingBar'+n).style.width = data.percent + '%';
+          if (data.completed) {
+            document.getElementById('readingHint'+n).textContent = 'Reading completed. Refresh this page to start your Unit Knowledge Check.';
+          }
+        }).catch(() => {});
+    }
+    window.addEventListener('scroll', updateProgress, {passive:true});
+    window.addEventListener('resize', updateProgress);
+    updateProgress();
+  });
+});
+</script>
 {% endblock %}

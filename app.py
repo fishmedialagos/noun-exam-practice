@@ -16,7 +16,7 @@ except ImportError:
     pass
 
 from config import Config
-from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitAssessmentAttempt, CourseMaterialReview, LearningContentDraft
+from models import db, User, Exam, Question, Attempt, StudyCourse, StudyTask, StudyUnitProgress, UnitReadingProgress, UnitAssessmentAttempt, CourseMaterialReview, LearningContentDraft
 
 # Course catalogue used by the student learning planner
 def load_learning_course_catalogue():
@@ -1653,8 +1653,8 @@ def _unit_access_state(course, unit_number, unit_count):
         return False
     if unit_number == 1:
         return True
-    previous = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id,
-                                                  unit_number=unit_number - 1, completed=True).first()
+    previous = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id,
+                                                    unit_number=unit_number - 1, completed=True).first()
     return previous is not None
 
 
@@ -1683,6 +1683,9 @@ def learning_classroom(course_id):
         unit['has_content'] = len(unit['content']) > 100
         unit['unlocked'] = _unit_access_state(course, i, len(units))
         unit['passed'] = i in completed_units
+        reading = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=i).first()
+        unit['reading_percent'] = reading.progress_percent if reading else 0
+        unit['reading_completed'] = bool(reading and reading.completed)
         unit['latest_attempt'] = latest_attempts.get(i)
         unit['approved_guide'] = approved_guides.get(i)
         unit['approved_bank'] = approved_banks.get(i)
@@ -1690,6 +1693,28 @@ def learning_classroom(course_id):
                            unit_count=len(units), completed_units=completed_units,
                            progress_percent=progress_percent, material_error=material_error,
                            pass_mark=70)
+
+
+@app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/reading-progress', methods=['POST'])
+@login_required
+def update_unit_reading_progress(course_id, unit_number):
+    course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
+    units, err = _learning_units_for_course(course)
+    if err or unit_number < 1 or unit_number > len(units) or not _unit_access_state(course, unit_number, len(units)):
+        return jsonify({'ok': False, 'message': 'Unit is not available.'}), 403
+    try:
+        percent = max(0, min(100, int(request.json.get('percent', 0))))
+    except (AttributeError, TypeError, ValueError):
+        return jsonify({'ok': False, 'message': 'Invalid reading progress.'}), 400
+    row = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number).first()
+    if not row:
+        row = UnitReadingProgress(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number)
+        db.session.add(row)
+    row.progress_percent = max(row.progress_percent or 0, percent)
+    if row.progress_percent >= 90:
+        row.completed = True
+    db.session.commit()
+    return jsonify({'ok': True, 'percent': row.progress_percent, 'completed': row.completed})
 
 
 @app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/guide')
@@ -1728,6 +1753,10 @@ def learning_unit_test(course_id, unit_number):
         return redirect(url_for('learning_classroom', course_id=course.id))
     if not _unit_access_state(course, unit_number, len(units)):
         flash('Pass the previous unit assessment before opening this unit test.', 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    reading = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number, completed=True).first()
+    if not reading:
+        flash('Read at least 90% of this unit to unlock its Unit Knowledge Check.', 'info')
         return redirect(url_for('learning_classroom', course_id=course.id))
     unit = units[unit_number - 1]
     body = (unit.get('body') or '').strip()
@@ -2681,6 +2710,10 @@ def _admin_unit_source(course_code, unit_number):
             units.append({'title': module.get('title') or module.get('label') or 'Extracted section', 'body': module.get('body') or ''})
     if unit_number > len(units):
         return code, None, f'Only {len(units)} sections were detected for {code}; unit {unit_number} was not found. Check the PDF outline first.'
+    reading = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number, completed=True).first()
+    if not reading:
+        flash('Read at least 90% of this unit to unlock its Unit Knowledge Check.', 'info')
+        return redirect(url_for('learning_classroom', course_id=course.id))
     unit = units[unit_number - 1]
     body = (unit.get('body') or '').strip()
     if len(body) < 500:
