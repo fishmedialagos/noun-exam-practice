@@ -1626,6 +1626,13 @@ def learning_classroom(course_id):
     latest_attempts = {}
     for row in UnitAssessmentAttempt.query.filter_by(user_id=current_user.id, study_course_id=course.id).order_by(UnitAssessmentAttempt.created_at.desc()).all():
         latest_attempts.setdefault(row.unit_number, row)
+    approved_guides = {}
+    approved_banks = {}
+    for draft in LearningContentDraft.query.filter_by(course_code=course.course_code, status='approved').order_by(LearningContentDraft.created_at.desc()).all():
+        if draft.content_type == 'study_guide':
+            approved_guides.setdefault(draft.unit_number, draft)
+        elif draft.content_type == 'question_bank':
+            approved_banks.setdefault(draft.unit_number, draft)
     for i, unit in enumerate(units, 1):
         unit['content'] = (unit.get('body') or '').strip()
         unit['content_chars'] = len(unit['content'])
@@ -1633,10 +1640,38 @@ def learning_classroom(course_id):
         unit['unlocked'] = _unit_access_state(course, i, len(units))
         unit['passed'] = i in completed_units
         unit['latest_attempt'] = latest_attempts.get(i)
+        unit['approved_guide'] = approved_guides.get(i)
+        unit['approved_bank'] = approved_banks.get(i)
     return render_template('student/learning_classroom.html', course=course, units=units,
                            unit_count=len(units), completed_units=completed_units,
                            progress_percent=progress_percent, material_error=material_error,
                            pass_mark=70)
+
+
+@app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/guide')
+@login_required
+def learning_unit_guide(course_id, unit_number):
+    course = StudyCourse.query.filter_by(id=course_id, user_id=current_user.id).first_or_404()
+    units, err = _learning_units_for_course(course)
+    if err or unit_number < 1 or unit_number > len(units):
+        flash(err or 'Invalid unit.', 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    if not _unit_access_state(course, unit_number, len(units)):
+        flash('Pass the previous unit assessment before opening this unit.', 'warning')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    draft = LearningContentDraft.query.filter_by(course_code=course.course_code, unit_number=unit_number,
+                                                   content_type='study_guide', status='approved').order_by(
+                                                   LearningContentDraft.created_at.desc()).first()
+    if not draft:
+        flash('The detailed study guide for this unit has not yet been approved by the academic team. You can still study the original course material.', 'info')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    try:
+        guide = json.loads(draft.content_json)
+    except (TypeError, ValueError):
+        flash('The approved study guide could not be opened. Please report this to the academic team.', 'danger')
+        return redirect(url_for('learning_classroom', course_id=course.id))
+    return render_template('student/learning_unit_guide.html', course=course, unit=units[unit_number-1],
+                           unit_number=unit_number, guide=guide, draft=draft)
 
 
 @app.route('/learning/course/<int:course_id>/unit/<int:unit_number>/test', methods=['GET', 'POST'])
@@ -1657,42 +1692,38 @@ def learning_unit_test(course_id, unit_number):
         return redirect(url_for('learning_classroom', course_id=course.id))
 
     if request.method == 'POST' and request.form.get('action') == 'generate':
-        api_key = os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY')
-        if not api_key:
-            flash('Unit tests require GROQ_API_KEY or OPENAI_API_KEY to be configured on Render.', 'danger')
+        approved_bank = LearningContentDraft.query.filter_by(
+            course_code=course.course_code, unit_number=unit_number,
+            content_type='question_bank', status='approved'
+        ).order_by(LearningContentDraft.created_at.desc()).first()
+        if not approved_bank:
+            flash('The unit assessment has not yet been approved by the academic team. Please study the material and check back later.', 'warning')
             return redirect(url_for('learning_classroom', course_id=course.id))
         try:
-            import requests as http_requests
-            use_groq = bool(os.environ.get('GROQ_API_KEY'))
-            url = 'https://api.groq.com/openai/v1/chat/completions' if use_groq else 'https://api.openai.com/v1/chat/completions'
-            model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile') if use_groq else os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
-            material = body[:14000]
-            prompt = f'''Create exactly 10 fair study-check questions using ONLY the supplied NOUN course unit. Cover different parts of the material. Do not test facts absent from it. Return JSON only: {{"questions":[{{"question":"...","options":["A...","B...","C...","D..."],"answer":0,"explanation":"Explain why the answer is correct using the material."}}]}}. Each answer must be option index 0-3. Avoid ambiguous questions. COURSE: {course.course_code}. UNIT: {unit.get('title') or unit.get('label')}. MATERIAL:\\n{material}'''
-            resp = http_requests.post(url, headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-                json={'model': model, 'messages':[{'role':'system','content':'You are a careful university assessment writer. Output valid JSON only.'},{'role':'user','content':prompt}],
-                      'temperature':0.2,'max_tokens':3500,'response_format':{'type':'json_object'}}, timeout=(8,45))
-            if resp.status_code != 200:
-                app.logger.warning('Unit test generation failed HTTP %s: %s', resp.status_code, resp.text[:400])
-                flash('The question service is temporarily unavailable. Please try again.', 'danger')
-                return redirect(url_for('learning_classroom', course_id=course.id))
-            data = json.loads(resp.json()['choices'][0]['message']['content'])
-            questions = data.get('questions') or []
-            valid = []
-            for q in questions:
+            data = json.loads(approved_bank.content_json)
+            source_questions = data.get('questions') or []
+            questions = []
+            for q in source_questions:
                 opts = q.get('options')
                 ans = q.get('answer')
-                if isinstance(q.get('question'), str) and isinstance(opts, list) and len(opts) == 4 and isinstance(ans, int) and 0 <= ans < 4 and q.get('explanation'):
-                    valid.append({'question':q['question'], 'options':opts, 'answer':ans, 'explanation':q['explanation']})
-            if len(valid) < 8:
-                flash('The generated test did not pass quality checks. No incomplete test was published; please try again.', 'warning')
+                if (isinstance(q.get('question'), str) and isinstance(opts, list) and len(opts) == 4
+                        and isinstance(ans, int) and 0 <= ans < 4 and isinstance(q.get('explanation'), str)):
+                    questions.append({'question': q['question'], 'options': opts,
+                                       'answer': ans, 'explanation': q['explanation']})
+            if len(questions) < 8:
+                flash('The approved question bank is incomplete. Please contact the academic team.', 'warning')
                 return redirect(url_for('learning_classroom', course_id=course.id))
-            attempt = UnitAssessmentAttempt(user_id=current_user.id, study_course_id=course.id, unit_number=unit_number,
-                                            questions_json=json.dumps(valid), total_questions=len(valid))
-            db.session.add(attempt); db.session.commit()
-            return redirect(url_for('learning_unit_test_take', course_id=course.id, unit_number=unit_number, attempt_id=attempt.id))
-        except Exception as exc:
-            app.logger.exception('Unit assessment generation error: %s', exc)
-            flash('We could not prepare this test. Please try again later.', 'danger')
+            attempt = UnitAssessmentAttempt(user_id=current_user.id, study_course_id=course.id,
+                                            unit_number=unit_number, questions_json=json.dumps(questions),
+                                            total_questions=len(questions))
+            db.session.add(attempt)
+            db.session.commit()
+            return redirect(url_for('learning_unit_test_take', course_id=course.id,
+                                     unit_number=unit_number, attempt_id=attempt.id))
+        except Exception:
+            db.session.rollback()
+            app.logger.exception('Approved unit question bank could not be loaded')
+            flash('We could not prepare this assessment. Please contact the academic team.', 'danger')
             return redirect(url_for('learning_classroom', course_id=course.id))
     return render_template('student/learning_unit_test.html', course=course, unit=unit, unit_number=unit_number)
 

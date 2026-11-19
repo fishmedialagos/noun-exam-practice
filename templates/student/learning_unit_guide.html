@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ course.course_code }} Unit {{ unit_number }} Study Guide{% endblock %}
+{% block content %}
+<a class="btn btn-sm btn-outline-secondary mb-3" href="{{ url_for('learning_classroom', course_id=course.id) }}">← Back to classroom</a>
+<div class="mb-4"><div class="small text-success fw-semibold">{{ course.course_code }} · Unit {{ unit_number }}</div><h2>{{ unit.title or unit.label }} — Detailed Study Guide</h2><p class="text-muted">Supplementary learning guide prepared from the course material and approved by the academic team.</p></div>
+<div class="alert alert-info">Use this guide alongside the original NOUN course material. The official course material remains the primary source.</div>
+{% if guide.overview %}<section class="card mb-3"><div class="card-body"><h4>Unit overview</h4><div style="white-space:pre-wrap;line-height:1.75">{{ guide.overview }}</div></div></section>{% endif %}
+{% if guide.objectives %}<section class="card mb-3"><div class="card-body"><h4>Learning objectives</h4><ul>{% for item in guide.objectives %}<li class="mb-2">{{ item }}</li>{% endfor %}</ul></div></section>{% endif %}
+{% for section in guide.sections or [] %}<section class="card mb-3"><div class="card-body"><h4>{{ section.heading }}</h4><div style="white-space:pre-wrap;line-height:1.75">{{ section.explanation }}</div></div></section>{% endfor %}
+{% if guide.key_terms %}<section class="card mb-3"><div class="card-body"><h4>Key terms and definitions</h4>{% for item in guide.key_terms %}<p><strong>{{ item.term }}:</strong> {{ item.definition }}</p>{% endfor %}</div></section>{% endif %}
+{% if guide.summary %}<section class="card mb-3"><div class="card-body"><h4>Unit summary</h4><ul>{% for item in guide.summary %}<li class="mb-2">{{ item }}</li>{% endfor %}</ul></div></section>{% endif %}
+<div class="d-flex flex-wrap gap-2"><a class="btn btn-outline-secondary" href="{{ url_for('learning_classroom', course_id=course.id) }}">Back to course units</a><a class="btn btn-success" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=unit_number) }}">Take unit assessment</a></div>
+{% endblock %}
