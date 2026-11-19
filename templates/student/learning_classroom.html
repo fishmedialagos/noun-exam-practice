@@ -36,7 +36,7 @@
       <div class="mt-3 d-flex flex-wrap gap-2">
         <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reader{{ n }}" aria-expanded="false" aria-controls="reader{{ n }}">Read course material</button>
         {% if u.approved_guide %}<a class="btn btn-outline-primary btn-sm" href="{{ url_for('learning_unit_guide', course_id=course.id, unit_number=n) }}">Open detailed study guide</a>{% endif %}
-        <a class="btn btn-success btn-sm" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Practise this unit again{% else %}Generate unit mock test{% endif %}</a>
+        <a class="btn btn-success btn-sm" href="{{ url_for('learning_unit_test', course_id=course.id, unit_number=n) }}">{% if u.passed %}Practise this unit again{% else %}Start Unit Knowledge Check{% endif %}</a>
       </div>
       <div class="collapse mt-3" id="reader{{ n }}">
         <div class="learning-reader">
