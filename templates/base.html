@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}NOUN Exam Mock Platform{% endblock %}</title>
+    <meta name="description" content="An independent learning companion for NOUN students: course reading, AI study support, flashcards, knowledge checks and revision tools.">
+    <meta name="theme-color" content="#063d2b">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>{{ self.title()|replace('NOUN Exam Mock Platform', 'NOUN Learning Companion')|replace('NOUN Exam Mock', 'NOUN Learning Companion') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
@@ -101,7 +104,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-mortarboard-fill me-2"></i>NOUN Exam Mock
+                <i class="bi bi-mortarboard-fill me-2"></i>NOUN Learning Companion
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
                 <span class="navbar-toggler-icon"></span>
@@ -156,6 +159,9 @@
                                     <i class="bi bi-journal-bookmark me-1"></i>My Learning
                                 </a>
                     <a class="nav-link" href="{{ url_for('student_learning_progress') }}">My Progress</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('student_revision_centre') }}">Revision Centre</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('my_results') }}">
@@ -241,7 +247,7 @@
 
     <footer class="text-center">
         <div class="container">
-            <p class="mb-0">NOUN Exam Mock Platform &copy; 2026 &mdash; Built for National Open University of Nigeria students</p>
+            <p class="mb-0">NOUN Learning Companion &copy; 2026 &mdash; An independent learning resource for NOUN students. Not an official NOUN portal.</p>
         </div>
     </footer>
 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, session, abort
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, session, abort, g
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
 import json
@@ -6,6 +6,10 @@ import os
 import csv
 import io
 import re
+import copy
+import time
+import tempfile
+from collections import OrderedDict
 from sqlalchemy import case
 
 # Load local .env values for development; Render environment variables still take precedence.
@@ -32,6 +36,8 @@ def load_learning_course_catalogue():
 
 app = Flask(__name__)
 app.config.from_object(Config)
+# Cache static assets in browsers for one week; the landing hero uses a versioned URL.
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 7 * 24 * 60 * 60
 
 db.init_app(app)
 login_manager = LoginManager()
@@ -39,6 +45,23 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please register or log in to access My Learning and Exam Preparation.'
 login_manager.login_message_category = 'warning'
+
+
+# Light-touch request timing helps identify slow routes in Render logs without
+# logging query strings, form data, or personal information.
+@app.before_request
+def _start_request_timer():
+    g._request_started_at = time.perf_counter()
+
+
+@app.after_request
+def _log_slow_request(response):
+    started = getattr(g, '_request_started_at', None)
+    if started is not None and request.endpoint != 'static':
+        elapsed = time.perf_counter() - started
+        if elapsed >= 1.5:
+            app.logger.warning('Slow request %.2fs %s [%s]', elapsed, request.path, response.status_code)
+    return response
 
 
 @app.template_filter('safe_bold')
@@ -340,6 +363,31 @@ def course_materials():
 
 
 
+
+_MATERIAL_INDEX_CACHE = {'signature': None, 'index': {}}
+
+def _course_material_index():
+    """Read timetable course metadata once per file version per worker."""
+    json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'timetable_courses.json')
+    try:
+        stat = os.stat(json_path)
+        signature = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return {}
+    cached = _MATERIAL_INDEX_CACHE
+    if cached.get('signature') == signature:
+        return cached.get('index') or {}
+    try:
+        with open(json_path, 'r', encoding='utf-8') as handle:
+            items = json.load(handle)
+        index = {str(item.get('course_code', '')).strip().upper(): item for item in items if item.get('course_code')}
+        cached['signature'] = signature
+        cached['index'] = index
+        return index
+    except (OSError, ValueError, TypeError):
+        return cached.get('index') or {}
+
+
 def _resolve_material(course_code):
     """Return (code, title, local_path_or_None, url_list). Includes nounupdate.com."""
     code = course_code.replace(' ', '').upper()
@@ -354,20 +402,15 @@ def _resolve_material(course_code):
     if not local_path and os.path.exists(cache_pdf) and os.path.getsize(cache_pdf) > 1000:
         local_path = cache_pdf
 
-    json_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'timetable_courses.json')
     matched_url = None
     course_title = code
-    if os.path.exists(json_path):
-        try:
-            with open(json_path, 'r', encoding='utf-8') as f:
-                c_list = json.load(f)
-                for item in c_list:
-                    if item.get('course_code') == code:
-                        matched_url = item.get('pdf_url')
-                        course_title = item.get('title', code)
-                        break
-        except Exception:
-            pass
+    try:
+        catalogue = _course_material_index()
+        item = catalogue.get(code) or {}
+        matched_url = item.get('pdf_url')
+        course_title = item.get('title') or code
+    except Exception:
+        app.logger.debug('Course material catalogue cache unavailable for %s', code)
 
     # Priority order: local/cache handled above; remote candidates:
     # 1) nounupdate.com direct file  2) timetable url  3) official NOUN patterns
@@ -1621,31 +1664,104 @@ def _learning_reading_blocks(raw_text):
     return blocks
 
 
+_LEARNING_UNITS_MEMORY_CACHE = OrderedDict()
+_LEARNING_UNITS_MEMORY_LIMIT = 6
+_LEARNING_UNITS_CACHE_VERSION = 1
+
+
 def _learning_units_for_course(course):
+    """Return parsed units, caching extraction so progress/API requests never re-parse PDFs."""
     code = (course.course_code or '').strip().upper()
     _, _, local_path, urls = _resolve_material(code)
     path = local_path or _fetch_and_cache_pdf(code, urls)
     if not path:
         return [], 'Course PDF could not be located or downloaded. Please try again later.'
+
+    try:
+        stat = os.stat(path)
+        signature = {
+            'path': os.path.realpath(path),
+            'size': stat.st_size,
+            'mtime_ns': getattr(stat, 'st_mtime_ns', int(stat.st_mtime * 1_000_000_000)),
+        }
+    except OSError:
+        return [], 'The course PDF is temporarily unavailable. Please try again later.'
+
+    cache_key = (code, signature['path'], signature['size'], signature['mtime_ns'])
+    cached_units = _LEARNING_UNITS_MEMORY_CACHE.get(cache_key)
+    if cached_units is not None:
+        _LEARNING_UNITS_MEMORY_CACHE.move_to_end(cache_key)
+        return copy.deepcopy(cached_units), None
+
+    cache_dir = os.path.join(app.instance_path, 'learning_units_cache')
+    cache_file = os.path.join(cache_dir, f'{re.sub(r"[^A-Z0-9_-]", "", code)}.json')
+    try:
+        with open(cache_file, 'r', encoding='utf-8') as cache_handle:
+            payload = json.load(cache_handle)
+        if (payload.get('version') == _LEARNING_UNITS_CACHE_VERSION
+                and payload.get('source') == signature
+                and isinstance(payload.get('units'), list)
+                and payload.get('units')):
+            units = payload['units']
+            _LEARNING_UNITS_MEMORY_CACHE[cache_key] = units
+            _LEARNING_UNITS_MEMORY_CACHE.move_to_end(cache_key)
+            while len(_LEARNING_UNITS_MEMORY_CACHE) > _LEARNING_UNITS_MEMORY_LIMIT:
+                _LEARNING_UNITS_MEMORY_CACHE.popitem(last=False)
+            return copy.deepcopy(units), None
+    except (OSError, ValueError, TypeError):
+        pass
+
     pages, err = _extract_pdf_text(path, max_pages=None)
     if err:
         return [], err
     full_text = '\n'.join(pages)
     if len(full_text.strip()) < 200:
         return [], 'This PDF has little extractable text. It may be scanned; OCR is required.'
+
     modules = _split_modules_units(full_text)
     units = []
     for module in modules:
         for unit in module.get('units') or []:
-            units.append({'module_label': module.get('label'), 'module_title': module.get('title'),
-                          'label': unit.get('label'), 'title': unit.get('title'), 'body': unit.get('body') or ''})
+            units.append({
+                'module_label': module.get('label'),
+                'module_title': module.get('title'),
+                'label': unit.get('label'),
+                'title': unit.get('title'),
+                'body': unit.get('body') or '',
+            })
     if not units:
         for idx, module in enumerate(modules, 1):
             body = module.get('body') or ''
             if body.strip():
-                units.append({'module_label': '', 'module_title': '', 'label': str(idx),
-                              'title': module.get('title') or module.get('label') or f'Section {idx}', 'body': body})
-    return units, None if units else 'Unit headings could not be confidently identified in this PDF.'
+                units.append({
+                    'module_label': '', 'module_title': '', 'label': str(idx),
+                    'title': module.get('title') or module.get('label') or f'Section {idx}',
+                    'body': body,
+                })
+    if not units:
+        return [], 'Unit headings could not be confidently identified in this PDF.'
+
+    # Keep the cache private under instance_path, not in the public static directory.
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode='w', encoding='utf-8', delete=False, suffix='.tmp', dir=cache_dir
+        ) as cache_handle:
+            tmp_path = cache_handle.name
+            json.dump({
+                'version': _LEARNING_UNITS_CACHE_VERSION,
+                'source': signature,
+                'units': units,
+            }, cache_handle, ensure_ascii=False)
+        os.replace(tmp_path, cache_file)
+    except OSError as cache_error:
+        app.logger.warning('Could not write learning-unit cache for %s: %s', code, cache_error)
+
+    _LEARNING_UNITS_MEMORY_CACHE[cache_key] = units
+    _LEARNING_UNITS_MEMORY_CACHE.move_to_end(cache_key)
+    while len(_LEARNING_UNITS_MEMORY_CACHE) > _LEARNING_UNITS_MEMORY_LIMIT:
+        _LEARNING_UNITS_MEMORY_CACHE.popitem(last=False)
+    return copy.deepcopy(units), None
 
 
 def _unit_access_state(course, unit_number, unit_count):
@@ -1669,9 +1785,19 @@ def learning_classroom(course_id):
     progress_rows = StudyUnitProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id).all()
     completed_units = {r.unit_number for r in progress_rows if r.completed and r.unit_number <= len(units)}
     progress_percent = int(len(completed_units) * 100 / len(units)) if units else 0
+    attempt_rows = UnitAssessmentAttempt.query.filter_by(
+        user_id=current_user.id, study_course_id=course.id
+    ).order_by(UnitAssessmentAttempt.created_at.desc()).all()
     latest_attempts = {}
-    for row in UnitAssessmentAttempt.query.filter_by(user_id=current_user.id, study_course_id=course.id).order_by(UnitAssessmentAttempt.created_at.desc()).all():
+    passed_units = set()
+    for row in attempt_rows:
         latest_attempts.setdefault(row.unit_number, row)
+        if row.passed:
+            passed_units.add(row.unit_number)
+    reading_rows = UnitReadingProgress.query.filter_by(
+        user_id=current_user.id, study_course_id=course.id
+    ).all()
+    reading_by_unit = {row.unit_number: row for row in reading_rows}
     approved_guides = {}
     approved_banks = {}
     for draft in LearningContentDraft.query.filter_by(course_code=course.course_code, status='approved').order_by(LearningContentDraft.created_at.desc()).all():
@@ -1684,9 +1810,9 @@ def learning_classroom(course_id):
         unit['reading_blocks'] = _learning_reading_blocks(unit['content'])
         unit['content_chars'] = len(unit['content'])
         unit['has_content'] = len(unit['content']) > 100
-        unit['unlocked'] = _unit_access_state(course, i, len(units))
+        unit['unlocked'] = (i == 1 or (i - 1) in passed_units)
         unit['passed'] = i in completed_units
-        reading = UnitReadingProgress.query.filter_by(user_id=current_user.id, study_course_id=course.id, unit_number=i).first()
+        reading = reading_by_unit.get(i)
         unit['reading_percent'] = reading.progress_percent if reading else 0
         unit['reading_completed'] = bool(reading and reading.completed)
         unit['latest_attempt'] = latest_attempts.get(i)
@@ -1883,6 +2009,156 @@ def learning_unit_tutor(course_id, unit_number):
         unit_number=unit_number, messages=messages,
         tutor_enabled=bool(os.environ.get('GROQ_API_KEY') or os.environ.get('OPENAI_API_KEY'))
     )
+
+
+@app.route('/learning/revision-centre')
+@login_required
+def student_revision_centre():
+    """Show an actionable, student-specific revision plan from recorded learning activity."""
+    if current_user.is_teacher():
+        return redirect(url_for('admin_learning_dashboard'))
+
+    now = datetime.utcnow()
+    courses = StudyCourse.query.filter_by(user_id=current_user.id).order_by(StudyCourse.course_code.asc()).all()
+    course_plans = []
+    overall = {
+        'course_count': len(courses), 'unit_count': 0, 'read_count': 0,
+        'passed_count': 0, 'due_cards': 0, 'completed_checks': 0
+    }
+
+    for course in courses:
+        units, material_error = _learning_units_for_course(course)
+        units = units or []
+        overall['unit_count'] += len(units)
+
+        reading_rows = UnitReadingProgress.query.filter_by(
+            user_id=current_user.id, study_course_id=course.id
+        ).all()
+        reading_by_unit = {row.unit_number: row for row in reading_rows}
+
+        attempts = UnitAssessmentAttempt.query.filter_by(
+            user_id=current_user.id, study_course_id=course.id
+        ).order_by(UnitAssessmentAttempt.created_at.desc()).all()
+        attempts_by_unit = {}
+        completed_attempts = []
+        for attempt in attempts:
+            attempts_by_unit.setdefault(attempt.unit_number, []).append(attempt)
+            if attempt.completed_at:
+                completed_attempts.append(attempt)
+
+        flashcards = UnitFlashcard.query.filter_by(
+            user_id=current_user.id, study_course_id=course.id
+        ).all()
+        cards_by_unit = {}
+        for card in flashcards:
+            cards_by_unit.setdefault(card.unit_number, []).append(card)
+
+        unit_rows = []
+        course_read_count = 0
+        course_passed_count = 0
+        course_due_count = 0
+        action_count = 0
+
+        for unit_number, unit in enumerate(units, start=1):
+            reading = reading_by_unit.get(unit_number)
+            reading_percent = max(0, min(100, int(reading.progress_percent or 0))) if reading else 0
+            reading_complete = bool(reading and reading.completed and reading_percent >= 90)
+            unit_attempts = attempts_by_unit.get(unit_number, [])
+            latest_attempt = next((a for a in unit_attempts if a.completed_at), None)
+            passed = any(a.passed for a in unit_attempts)
+            unit_cards = cards_by_unit.get(unit_number, [])
+            due_cards = sum(1 for card in unit_cards if card.due_at and card.due_at <= now)
+            unlocked = _unit_access_state(course, unit_number, len(units))
+
+            if reading_complete:
+                course_read_count += 1
+                overall['read_count'] += 1
+            if passed:
+                course_passed_count += 1
+                overall['passed_count'] += 1
+            if latest_attempt:
+                overall['completed_checks'] += 1
+
+            if unlocked and due_cards:
+                course_due_count += due_cards
+                overall['due_cards'] += due_cards
+
+            classroom_url = url_for('learning_classroom', course_id=course.id) + f'#unitCard{unit_number}'
+            if not unlocked:
+                state = 'locked'
+                state_label = 'Locked'
+                recommendation = "Pass the previous unit's Knowledge Check first."
+                action_label = 'Unit locked'
+                action_url = None
+            elif passed and due_cards:
+                state = 'flashcards_due'
+                state_label = 'Flashcards due'
+                recommendation = f'{due_cards} flashcard(s) are ready for review.'
+                action_label = 'Review flashcards'
+                action_url = url_for('learning_unit_flashcards', course_id=course.id, unit_number=unit_number)
+            elif passed and unit_cards:
+                state = 'scheduled'
+                state_label = 'Review scheduled'
+                recommendation = 'You have passed this unit. Your flashcards are scheduled for future review.'
+                action_label = 'View flashcards'
+                action_url = url_for('learning_unit_flashcards', course_id=course.id, unit_number=unit_number)
+            elif passed:
+                state = 'passed'
+                state_label = 'Knowledge Check passed'
+                recommendation = 'You have passed this unit. Create flashcards to strengthen long-term recall.'
+                action_label = 'Create flashcards'
+                action_url = url_for('learning_unit_flashcards', course_id=course.id, unit_number=unit_number)
+            elif not reading_complete:
+                state = 'reading'
+                state_label = 'Reading in progress' if reading_percent else 'Not started'
+                recommendation = ('Continue reading until you reach 90% to unlock the Knowledge Check.'
+                                  if reading_percent else 'Start the unit reading. The Knowledge Check unlocks at 90%.')
+                action_label = 'Continue reading' if reading_percent else 'Start reading'
+                action_url = classroom_url
+            else:
+                state = 'knowledge_check'
+                state_label = 'Knowledge Check ready'
+                recommendation = ('Review the unit, then try the Knowledge Check again.' if latest_attempt
+                                  else 'Your reading requirement is complete. Take the Knowledge Check when ready.')
+                action_label = 'Open Knowledge Check'
+                action_url = url_for('learning_unit_test', course_id=course.id, unit_number=unit_number)
+
+            if action_url:
+                action_count += 1
+            unit_rows.append({
+                'number': unit_number,
+                'title': unit.get('title') or unit.get('label') or f'Unit {unit_number}',
+                'module_title': unit.get('module_title') or '',
+                'unlocked': unlocked,
+                'reading_percent': reading_percent,
+                'reading_complete': reading_complete,
+                'passed': passed,
+                'latest_attempt': latest_attempt,
+                'due_cards': due_cards,
+                'total_cards': len(unit_cards),
+                'state': state,
+                'state_label': state_label,
+                'recommendation': recommendation,
+                'action_label': action_label,
+                'action_url': action_url,
+            })
+
+        average_score = (round(sum(float(a.percentage or 0) for a in completed_attempts) / len(completed_attempts), 1)
+                         if completed_attempts else None)
+        course_plans.append({
+            'course': course,
+            'units': unit_rows,
+            'unit_count': len(units),
+            'read_count': course_read_count,
+            'passed_count': course_passed_count,
+            'due_cards': course_due_count,
+            'average_score': average_score,
+            'material_error': material_error,
+            'action_count': action_count,
+        })
+
+    return render_template('student/revision_centre.html', course_plans=course_plans,
+                           overall=overall, now=now)
 
 
 def _generate_unit_flashcard_content(course, unit, count=10):
@@ -3431,9 +3707,10 @@ def init_db():
             print("  Admin  → username: admin  | password: admin123")
             print("  Teacher → username: teacher1 | password: teacher123")
         
-        # Automatically seed and synchronize all 8 courses and 362 questions from courses_data.json
+        # Seed the exam catalogue only for a brand-new database. Existing installations
+        # can still run the explicit admin /sync-courses action when a refresh is needed.
         json_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'courses_data.json')
-        if os.path.exists(json_file):
+        if Exam.query.count() == 0 and os.path.exists(json_file):
             try:
                 with open(json_file, 'r', encoding='utf-8') as f:
                     seed_data = json.load(f)
@@ -3494,6 +3771,8 @@ def init_db():
                 print(f"courses_data.json sync notice: {err}")
         elif Exam.query.count() == 0:
             create_sample_data()
+        else:
+            print('✓ Existing exam catalogue detected; skipped startup seed sync.')
 
 
 def create_sample_data():
@@ -3712,7 +3991,7 @@ with app.app_context():
 
 
 if __name__ == '__main__':
-    print("\n🚀 NOUN Exam Mock Platform is running!")
+    print("\n🚀 NOUN Learning Companion is running!")
     print("   Open: http://127.0.0.1:5000")
     print("\nDefault accounts:")
     print("   Admin   → admin / admin123")

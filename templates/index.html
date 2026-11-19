@@ -1,179 +1,111 @@
 {% extends "base.html" %}
 
-{% block title %}Welcome - NOUN Exam Mock Platform{% endblock %}
+{% block title %}NOUN Learning Companion | Read, Learn, Practise and Progress{% endblock %}
 
 {% block extra_css %}
 <style>
-    .hero-banner {
-        background: linear-gradient(135deg, rgba(0, 77, 38, 0.96), rgba(0, 102, 51, 0.90));
-        border-radius: 20px;
-        color: white;
-        padding: 3.5rem 2.5rem;
-        box-shadow: 0 15px 35px rgba(0, 102, 51, 0.25);
-        position: relative;
-        overflow: hidden;
-    }
-    .quote-badge {
-        display: inline-block;
-        background: rgba(201, 162, 39, 0.25);
-        border: 1px solid #C9A227;
-        color: #ffde59;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        font-size: 0.9rem;
-        padding: 6px 18px;
-        border-radius: 50px;
-        backdrop-filter: blur(4px);
-    }
-    .hero-headline {
-        font-size: 2.75rem;
-        font-weight: 800;
-        line-height: 1.2;
-    }
-    .hero-img-card {
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-        border: 3px solid rgba(255, 255, 255, 0.2);
-        transition: transform 0.3s ease;
-    }
-    .hero-img-card:hover {
-        transform: scale(1.02);
-    }
-    .hero-img-card img {
-        width: 100%;
-        height: 100%;
-        max-height: 380px;
-        object-fit: cover;
-        display: block;
-    }
-    .feature-card {
-        background: white;
-        border-radius: 14px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-        transition: transform 0.2s ease;
-        height: 100%;
-    }
-    .feature-card:hover {
-        transform: translateY(-4px);
-    }
-    .step-number {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: #006633;
-        color: white;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
-        font-weight: bold;
-    }
+  :root { --lc-green:#063d2b; --lc-green-2:#087044; --lc-gold:#e4b84f; --lc-ink:#15251f; --lc-muted:#64736d; --lc-paper:#f4f7f4; }
+  .landing-wrap { color:var(--lc-ink); }
+  .landing-hero { position:relative; overflow:hidden; border-radius:28px; background:linear-gradient(120deg,#062f23 0%,#075b3b 62%,#0a704a 100%); color:#fff; box-shadow:0 22px 55px rgba(6,61,43,.16); }
+  .landing-hero:after { content:""; position:absolute; width:390px; height:390px; border:1px solid rgba(255,255,255,.13); border-radius:50%; right:35%; top:-250px; pointer-events:none; }
+  .hero-copy { position:relative; z-index:1; padding:clamp(2rem,5vw,4.5rem); }
+  .hero-kicker { display:inline-flex; align-items:center; gap:.55rem; padding:.48rem .85rem; border:1px solid rgba(228,184,79,.55); border-radius:999px; color:#ffe29a; background:rgba(228,184,79,.11); font-size:.79rem; letter-spacing:.06em; font-weight:700; }
+  .hero-title { max-width:760px; margin:1.15rem 0 1rem; font-size:clamp(2.15rem,4.6vw,4.05rem); line-height:1.06; letter-spacing:-.045em; font-weight:850; }
+  .hero-lead { max-width:650px; color:rgba(255,255,255,.84); font-size:clamp(1rem,1.45vw,1.17rem); line-height:1.75; }
+  .hero-actions .btn { border-radius:12px; font-weight:750; padding:.85rem 1.15rem; }
+  .hero-image-wrap { position:relative; z-index:1; padding:1.25rem 1.25rem 1.25rem 0; }
+  .hero-image { width:100%; height:100%; min-height:340px; max-height:490px; object-fit:cover; object-position:center; border-radius:20px; box-shadow:0 18px 45px rgba(0,0,0,.27); }
+  .hero-image-note { position:absolute; bottom:2rem; left:.2rem; background:#fff; color:var(--lc-green); border-radius:13px; padding:.8rem 1rem; box-shadow:0 12px 30px rgba(0,0,0,.18); font-size:.84rem; font-weight:750; }
+  .section-kicker { color:var(--lc-green-2); text-transform:uppercase; letter-spacing:.12em; font-size:.73rem; font-weight:800; }
+  .section-heading { color:var(--lc-ink); font-size:clamp(1.65rem,3vw,2.35rem); letter-spacing:-.035em; font-weight:820; }
+  .section-subtitle { max-width:720px; color:var(--lc-muted); line-height:1.7; }
+  .feature-card { height:100%; border:1px solid #e5ece7; border-radius:19px; background:#fff; padding:1.35rem; box-shadow:0 6px 22px rgba(20,49,35,.045); transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+  .feature-card:hover { transform:translateY(-3px); border-color:#bdd7c7; box-shadow:0 12px 28px rgba(20,49,35,.08); }
+  .feature-icon { width:48px; height:48px; display:grid; place-items:center; border-radius:14px; color:var(--lc-green-2); background:#e9f4ed; font-size:1.35rem; margin-bottom:1rem; }
+  .feature-card h3 { font-size:1.05rem; font-weight:800; margin-bottom:.45rem; }
+  .feature-card p { color:var(--lc-muted); font-size:.91rem; line-height:1.65; margin:0; }
+  .journey-panel { border-radius:22px; background:#edf4ef; padding:clamp(1.4rem,3vw,2.25rem); }
+  .journey-step { background:#fff; border:1px solid #e1ebe4; border-radius:15px; padding:1.1rem; height:100%; }
+  .journey-number { display:inline-grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--lc-green); color:#fff; font-weight:800; margin-bottom:.75rem; }
+  .journey-step h3 { font-size:.98rem; font-weight:800; }
+  .journey-step p { color:var(--lc-muted); font-size:.88rem; margin:0; line-height:1.55; }
+  .closing-cta { border-radius:22px; background:var(--lc-green); color:#fff; padding:clamp(1.5rem,4vw,2.5rem); }
+  .closing-cta p { color:rgba(255,255,255,.8); max-width:650px; }
+  .independent-note { color:#718078; font-size:.79rem; }
+  @media (max-width: 991.98px) { .hero-image-wrap { padding:0 1.4rem 1.4rem; } .hero-image { min-height:250px; max-height:360px; } .hero-image-note { left:2rem; bottom:2rem; } }
+  @media (max-width: 575.98px) { .landing-hero { border-radius:20px; } .hero-copy { padding:1.6rem 1.35rem 1.2rem; } .hero-image-wrap { padding:0 1rem 1rem; } .hero-image { min-height:220px; } .hero-image-note { position:static; display:inline-block; margin-top:-1rem; margin-left:1rem; } .hero-actions .btn { width:100%; } }
+  @media (prefers-reduced-motion: reduce) { .feature-card { transition:none; } .feature-card:hover { transform:none; } }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="hero-banner my-4">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-            <div class="mb-3">
-                <span class="quote-badge">
-                    <i class="bi bi-lightning-charge-fill me-1"></i>Study, Focus, Achieve — NOW OR NEVER
-                </span>
-            </div>
-            <h1 class="hero-headline mb-3">
-                Master Your NOUN Exams with Confidence.
-            </h1>
-            <p class="lead mb-4 text-light opacity-90">
-                Practice with real-style timed mock exams, get instant scoring, review detailed explanations, and build confidence before your real exams.
-            </p>
-            <div class="d-flex flex-wrap gap-3">
-                <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg px-4 py-3 fw-bold text-dark shadow">
-                    <i class="bi bi-person-plus-fill me-2"></i>Register with Matric No
-                </a>
-                <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4 py-3">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Student Login
-                </a>
-                <a href="{{ url_for('staff_login') }}" class="btn btn-link text-white-50 text-decoration-none d-flex align-items-center">
-                    <i class="bi bi-shield-lock me-1"></i>Staff Portal
-                </a>
-            </div>
+<div class="landing-wrap">
+  <section class="landing-hero my-3 my-lg-4">
+    <div class="row g-0 align-items-center">
+      <div class="col-lg-7">
+        <div class="hero-copy">
+          <span class="hero-kicker"><i class="bi bi-journal-richtext"></i> YOUR NOUN STUDY COMPANION</span>
+          <h1 class="hero-title">A clearer path from course reading to real understanding.</h1>
+          <p class="hero-lead mb-4">Study at your own pace with organised course materials, unit-by-unit learning, an AI study tutor, flashcards and knowledge checks — all in one place.</p>
+          <div class="hero-actions d-flex flex-wrap gap-2">
+            <a href="{{ url_for('register') }}" class="btn btn-warning text-dark"><i class="bi bi-person-plus-fill me-2"></i>Create student account</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light"><i class="bi bi-box-arrow-in-right me-2"></i>Student login</a>
+          </div>
+          <div class="d-flex align-items-center flex-wrap gap-3 mt-4 small text-white-50">
+            <span><i class="bi bi-phone me-1"></i>Mobile-friendly</span>
+            <span><i class="bi bi-book-half me-1"></i>Self-paced learning</span>
+            <span><i class="bi bi-graph-up me-1"></i>Progress tracking</span>
+          </div>
         </div>
-        <div class="col-lg-5 text-center">
-            <div class="hero-img-card">
-                <img src="{{ url_for('static', filename='images/landing_hero.png') }}" alt="NOUN Students Preparing for Exams" class="img-fluid">
-            </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="hero-image-wrap">
+          <picture>
+            <source srcset="{{ url_for('static', filename='images/landing_hero.webp') }}?v=1" type="image/webp">
+            <img class="hero-image" src="{{ url_for('static', filename='images/landing_hero.png') }}" alt="Student studying with a laptop" width="1280" height="853" fetchpriority="high" decoding="async">
+          </picture>
+          <div class="hero-image-note"><i class="bi bi-check-circle-fill me-2 text-success"></i>Learn. Practise. Keep progressing.</div>
         </div>
+      </div>
     </div>
-</div>
+  </section>
 
-<!-- Highlights Section -->
-<div class="row g-3 mb-5">
-    <div class="col-md-3 col-6">
-        <div class="feature-card text-center">
-            <i class="bi bi-stopwatch display-5 text-success mb-2"></i>
-            <h6 class="fw-bold mb-1">Timed Mocks</h6>
-            <small class="text-muted">Simulated exam conditions</small>
-        </div>
+  <section class="py-5" aria-labelledby="features-heading">
+    <div class="text-center mb-4 mb-lg-5">
+      <div class="section-kicker mb-2">Everything in one learning space</div>
+      <h2 class="section-heading" id="features-heading">Tools that support your entire study journey</h2>
+      <p class="section-subtitle mx-auto">Move beyond last-minute exam practice. Build understanding as you work through each course unit.</p>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="feature-card text-center">
-            <i class="bi bi-layers display-5 text-success mb-2"></i>
-            <h6 class="fw-bold mb-1">2 & 3 Credit Units</h6>
-            <small class="text-muted">Comprehensive course coverage</small>
-        </div>
+    <div class="row g-3 g-lg-4">
+      <div class="col-sm-6 col-lg-4"><article class="feature-card"><div class="feature-icon"><i class="bi bi-journal-bookmark"></i></div><h3>Course materials</h3><p>Find course materials and use the reading space to work through your units at your own pace.</p></article></div>
+      <div class="col-sm-6 col-lg-4"><article class="feature-card"><div class="feature-icon"><i class="bi bi-chat-square-text"></i></div><h3>AI Study Tutor</h3><p>Ask questions, clarify difficult ideas and request simpler explanations from your unit material.</p></article></div>
+      <div class="col-sm-6 col-lg-4"><article class="feature-card"><div class="feature-icon"><i class="bi bi-layers"></i></div><h3>Smart flashcards</h3><p>Practise active recall, reveal answers and revisit cards using scheduled review.</p></article></div>
+      <div class="col-sm-6 col-lg-4"><article class="feature-card"><div class="feature-icon"><i class="bi bi-clipboard-check"></i></div><h3>Unit Knowledge Checks</h3><p>Check your understanding after reading and use explanations to learn from mistakes.</p></article></div>
+      <div class="col-sm-6 col-lg-4"><article class="feature-card"><div class="feature-icon"><i class="bi bi-calendar2-check"></i></div><h3>Personal learning plan</h3><p>Organise your courses, study tasks and upcoming learning activities in one place.</p></article></div>
+      <div class="col-sm-6 col-lg-4"><article class="feature-card"><div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div><h3>Progress and revision</h3><p>Review your activity, see completed learning and identify areas that need more attention.</p></article></div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="feature-card text-center">
-            <i class="bi bi-check2-circle display-5 text-success mb-2"></i>
-            <h6 class="fw-bold mb-1">Instant Review</h6>
-            <small class="text-muted">Detailed answer rationales</small>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="feature-card text-center">
-            <i class="bi bi-graph-up-arrow display-5 text-success mb-2"></i>
-            <h6 class="fw-bold mb-1">Track Progress</h6>
-            <small class="text-muted">Monitor your performance</small>
-        </div>
-    </div>
-</div>
+  </section>
 
-<!-- How it Works -->
-<div class="row mt-4 mb-4">
-    <div class="col-12 text-center mb-4">
-        <h3 class="fw-bold">How It Works</h3>
-        <p class="text-muted">Three simple steps to exam readiness</p>
+  <section class="journey-panel my-3 my-lg-4" aria-labelledby="journey-heading">
+    <div class="row align-items-end mb-4">
+      <div class="col-lg-8"><div class="section-kicker mb-2">A simple learning rhythm</div><h2 class="section-heading mb-2" id="journey-heading">Learn one unit at a time</h2><p class="section-subtitle mb-0">A structured routine helps you stay focused without rushing through your course.</p></div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 text-center p-4 border-0 shadow-sm">
-            <div class="mb-3">
-                <div class="step-number">1</div>
-            </div>
-            <h5 class="fw-bold">Sign Up Free</h5>
-            <p class="text-muted mb-0">Register with your NOUN Matric Number and select your faculty.</p>
-        </div>
+    <div class="row g-3">
+      <div class="col-6 col-lg-3"><div class="journey-step"><span class="journey-number">1</span><h3>Read</h3><p>Work through the official course material for the unit.</p></div></div>
+      <div class="col-6 col-lg-3"><div class="journey-step"><span class="journey-number">2</span><h3>Understand</h3><p>Use the tutor and study resources to clarify difficult concepts.</p></div></div>
+      <div class="col-6 col-lg-3"><div class="journey-step"><span class="journey-number">3</span><h3>Recall</h3><p>Use flashcards to practise remembering important ideas.</p></div></div>
+      <div class="col-6 col-lg-3"><div class="journey-step"><span class="journey-number">4</span><h3>Check and improve</h3><p>Complete the unit knowledge check and revisit areas that need work.</p></div></div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 text-center p-4 border-0 shadow-sm">
-            <div class="mb-3">
-                <div class="step-number">2</div>
-            </div>
-            <h5 class="fw-bold">Choose a Course</h5>
-            <p class="text-muted mb-0">Select your 2-unit or 3-unit course from the exam catalog.</p>
-        </div>
+  </section>
+
+  <section class="closing-cta my-5 text-center">
+    <h2 class="fw-bold mb-2">Make your next study session count.</h2>
+    <p class="mx-auto mb-4">Create your account and build a steady learning routine around your NOUN courses.</p>
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+      <a href="{{ url_for('register') }}" class="btn btn-warning text-dark fw-bold px-4 py-2"><i class="bi bi-person-plus me-2"></i>Get started</a>
+      <a href="{{ url_for('course_materials') }}" class="btn btn-outline-light fw-semibold px-4 py-2"><i class="bi bi-book me-2"></i>Browse course materials</a>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 text-center p-4 border-0 shadow-sm">
-            <div class="mb-3">
-                <div class="step-number">3</div>
-            </div>
-            <h5 class="fw-bold">Take Mock & Review</h5>
-            <p class="text-muted mb-0">Complete under exam timing, view instant scoring, and review step-by-step solutions.</p>
-        </div>
-    </div>
+  </section>
+  <p class="independent-note text-center mb-2">NOUN Learning Companion is an independent student learning resource and is not an official NOUN institutional portal.</p>
 </div>
 {% endblock %}

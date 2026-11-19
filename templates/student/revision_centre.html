@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Revision Centre - NOUN Learning Companion{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <div class="small text-success fw-semibold text-uppercase">My Learning</div>
+    <h2 class="mb-1"><i class="bi bi-arrow-repeat text-success me-2"></i>Revision Centre</h2>
+    <p class="text-muted mb-0">A practical revision checklist built from your reading, Knowledge Check results and flashcard schedule.</p>
+  </div>
+  <a class="btn btn-outline-success" href="{{ url_for('learning_hub') }}"><i class="bi bi-journal-bookmark me-1"></i>My Learning</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="small text-muted">My courses</div><div class="fs-2 fw-bold">{{ overall.course_count }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="small text-muted">Units read (90%+)</div><div class="fs-2 fw-bold text-success">{{ overall.read_count }}<span class="fs-6 text-muted fw-normal"> / {{ overall.unit_count }}</span></div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="small text-muted">Units passed</div><div class="fs-2 fw-bold">{{ overall.passed_count }}<span class="fs-6 text-muted fw-normal"> / {{ overall.unit_count }}</span></div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="small text-muted">Flashcards due now</div><div class="fs-2 fw-bold {% if overall.due_cards %}text-warning{% endif %}">{{ overall.due_cards }}</div></div></div></div>
+</div>
+
+{% if not course_plans %}
+<div class="card"><div class="card-body text-center py-5">
+  <i class="bi bi-journal-plus display-4 text-success"></i>
+  <h4 class="mt-3">Add a course to get started</h4>
+  <p class="text-muted">Once you add courses to My Learning, this page will organise your next revision steps.</p>
+  <a class="btn btn-noun" href="{{ url_for('learning_hub') }}">Open My Learning</a>
+</div></div>
+{% else %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Course revision plans</h4>
+  <span class="small text-muted">Based on your saved activity</span>
+</div>
+{% for plan in course_plans %}
+<section class="card mb-4">
+  <div class="card-header py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div><h5 class="mb-1">{{ plan.course.course_code }}{% if plan.course.course_title %} — {{ plan.course.course_title }}{% endif %}</h5>
+        <div class="small text-muted">{{ plan.unit_count }} unit(s) detected in the course material</div></div>
+      <a class="btn btn-sm btn-outline-success" href="{{ url_for('learning_classroom', course_id=plan.course.id) }}">Open classroom</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3"><div class="rounded border p-2 h-100"><div class="small text-muted">Reading completed</div><strong>{{ plan.read_count }} / {{ plan.unit_count }}</strong></div></div>
+      <div class="col-6 col-md-3"><div class="rounded border p-2 h-100"><div class="small text-muted">Knowledge Checks passed</div><strong>{{ plan.passed_count }} / {{ plan.unit_count }}</strong></div></div>
+      <div class="col-6 col-md-3"><div class="rounded border p-2 h-100"><div class="small text-muted">Flashcards due</div><strong>{{ plan.due_cards }}</strong></div></div>
+      <div class="col-6 col-md-3"><div class="rounded border p-2 h-100"><div class="small text-muted">Average completed check</div><strong>{% if plan.average_score is not none %}{{ plan.average_score }}%{% else %}Not available{% endif %}</strong></div></div>
+    </div>
+    {% if plan.material_error %}<div class="alert alert-warning py-2 small">Course material could not be analysed: {{ plan.material_error }}</div>{% endif %}
+    {% if plan.units %}
+    <div class="list-group list-group-flush">
+      {% for unit in plan.units %}
+      <div class="list-group-item px-0 py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+          <div class="flex-grow-1">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+              <strong>Unit {{ unit.number }} — {{ unit.title }}</strong>
+              {% if unit.state == 'locked' %}<span class="badge bg-secondary">{{ unit.state_label }}</span>
+              {% elif unit.state == 'knowledge_check' %}<span class="badge bg-primary">{{ unit.state_label }}</span>
+              {% elif unit.state == 'flashcards_due' %}<span class="badge bg-warning text-dark">{{ unit.state_label }}</span>
+              {% elif unit.state == 'passed' or unit.state == 'scheduled' %}<span class="badge bg-success">{{ unit.state_label }}</span>
+              {% else %}<span class="badge bg-light text-dark border">{{ unit.state_label }}</span>{% endif %}
+            </div>
+            {% if unit.unlocked %}
+            <div class="d-flex justify-content-between small text-muted"><span>Reading progress</span><strong>{{ unit.reading_percent }}%</strong></div>
+            <div class="progress mt-1 mb-2" style="height:6px"><div class="progress-bar {% if unit.reading_complete %}bg-success{% else %}bg-info{% endif %}" style="width:{{ unit.reading_percent }}%"></div></div>
+            {% endif %}
+            <p class="small text-muted mb-1">{{ unit.recommendation }}</p>
+            <div class="small text-muted">
+              {% if unit.latest_attempt %}Latest Knowledge Check: {{ unit.latest_attempt.percentage|round(1) }}%{% endif %}
+              {% if unit.total_cards %}{% if unit.latest_attempt %} · {% endif %}{{ unit.total_cards }} flashcard(s){% if unit.due_cards %}, {{ unit.due_cards }} due{% endif %}{% endif %}
+            </div>
+          </div>
+          <div class="flex-shrink-0">
+            {% if unit.action_url %}<a class="btn btn-sm {% if unit.state == 'knowledge_check' %}btn-success{% elif unit.state == 'flashcards_due' %}btn-warning{% else %}btn-outline-success{% endif %}" href="{{ unit.action_url }}">{{ unit.action_label }}</a>
+            {% else %}<span class="btn btn-sm btn-outline-secondary disabled">{{ unit.action_label }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<div class="alert alert-info mb-0">No units were detected for this course. Check that the course PDF is available and readable.</div>{% endif %}
+  </div>
+</section>
+{% endfor %}
+{% endif %}
+<div class="small text-muted mt-3">This page reflects recorded reading progress, submitted Knowledge Checks and scheduled flashcard reviews. It is a revision aid, not an official NOUN examination prediction or guarantee of exam readiness.</div>
+{% endblock %}

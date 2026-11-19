@@ -64,7 +64,7 @@
         </div>
       </div>
       {% elif not u.has_content %}<div class="alert alert-warning mt-3 mb-0">The detected unit has insufficient readable text. Its assessment is unavailable until the source material is checked.</div>
-      {% else %}<p class="text-muted mt-3 mb-0">Pass the previous unit's reading test to unlock this unit.</p>{% endif %}
+      {% else %}<p class="text-muted mt-3 mb-0">Pass the previous unit's Knowledge Check to unlock this unit.</p>{% endif %}
       {% if u.latest_attempt %}<div class="small text-muted mt-3">Latest assessment: {{ u.latest_attempt.percentage|int }}% · {% if u.latest_attempt.passed %}Passed{% else %}Not yet passed{% endif %}</div>{% endif %}
     </div>
   </article>
@@ -83,6 +83,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const collapse = reader.closest('.collapse');
     let furthestPercent = Number(percentEl ? percentEl.textContent.replace('%','') : 0);
     let sending = false, pending = null;
+    let lastSentPercent = furthestPercent;
+    let updateTimer = null;
 
     function calculateProgress() {
       const rect = reader.getBoundingClientRect();
@@ -102,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     function sendProgress(percent) {
       furthestPercent = Math.max(furthestPercent, percent);
-      if (furthestPercent < 1) return;
+      if (furthestPercent <= lastSentPercent) return;
       if (sending) { pending = Math.max(pending || 0, furthestPercent); return; }
       sending = true;
       const value = furthestPercent;
@@ -115,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return response.json();
       }).then(function (data) {
         if (!data.ok) throw new Error(data.message || 'Progress could not be saved');
+        lastSentPercent = Math.max(lastSentPercent, Number(data.percent) || 0);
         if (percentEl) percentEl.textContent = data.percent + '%';
         if (barEl) barEl.style.width = data.percent + '%';
         if (data.completed) {
@@ -128,12 +131,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (hintEl) hintEl.textContent = 'Could not save reading progress. Please check your connection and continue reading.';
       }).finally(function () {
         sending = false;
-        if (pending !== null) { const next = pending; pending = null; sendProgress(next); }
+        if (pending !== null) {
+          const next = pending;
+          pending = null;
+          if (next > lastSentPercent) sendProgress(next);
+        }
       });
     }
     function update() {
       if (collapse && !collapse.classList.contains('show')) return;
-      sendProgress(calculateProgress());
+      const percent = calculateProgress();
+      if (percent <= lastSentPercent) return;
+      // Debounce scroll events and persist only new progress, not every scroll tick.
+      if (updateTimer) window.clearTimeout(updateTimer);
+      updateTimer = window.setTimeout(function () { sendProgress(percent); }, 700);
     }
     window.addEventListener('scroll', update, {passive:true});
     window.addEventListener('resize', update);
